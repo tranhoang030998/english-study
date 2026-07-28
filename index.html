@@ -176,6 +176,35 @@ header{
   width:100%;touch-action:manipulation;
 }
 .btn-restart:active{opacity:.8;}
+.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;touch-action:manipulation;}
+.tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.tab-btn:active{opacity:.8;}
+/* SUMMARY TAB */
+.sum-stats{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.sum-stat-box{flex:1;min-width:80px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;}
+.sum-stat-box .val{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;line-height:1;}
+.sum-stat-box .lbl{font-size:11px;color:var(--muted);margin-top:4px;font-family:'Space Grotesk',sans-serif;}
+.sum-filter{display:flex;gap:6px;margin-bottom:12px;}
+.sum-filter-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:5px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
+.sum-filter-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.sum-empty{text-align:center;color:var(--muted);font-size:14px;padding:40px 0;font-family:'Space Grotesk',sans-serif;}
+.sum-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding-right:2px;}
+.sum-list::-webkit-scrollbar{width:4px;} .sum-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.sum-row{display:grid;grid-template-columns:28px 1fr 1fr 22px;gap:8px;align-items:center;padding:9px 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.sum-row.ok{border-color:rgba(34,197,94,.3);background:rgba(5,46,22,.4);}
+.sum-row.fail{border-color:rgba(239,68,68,.3);background:rgba(45,8,8,.4);}
+.sum-num{font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;text-align:center;}
+.sum-word{font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:500;}
+.sum-word small{display:block;font-size:11px;color:var(--muted);font-weight:400;}
+.sum-ans{font-size:12px;color:var(--muted);}
+.sum-ans span{display:block;}
+.sum-ans .wrong-ans{color:var(--red);}
+.sum-ans .right-ans{color:var(--green);font-size:11px;}
+.sum-icon{font-size:14px;text-align:center;}
+.btn-retry-wrong{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:10px 0;background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:var(--radius);cursor:pointer;transition:all .18s;width:100%;margin-top:12px;touch-action:manipulation;}
+.btn-retry-wrong:hover{background:var(--red);color:white;}
+.btn-retry-wrong:disabled{opacity:.4;cursor:not-allowed;}
+
 
 /* RESPONSIVE — desktop tweaks */
 @media(min-width:600px){
@@ -213,6 +242,10 @@ header{
   <div class="topics-scroll"><div class="topics-wrap" id="topic-chips"></div></div>
 </div>
 
+<div style="width:100%;max-width:680px;padding:12px 16px 0;display:flex;gap:6px;" id="main-tabs">
+  <button class="tab-btn active" onclick="switchMainTab(0,this)">📝 Luyện tập</button>
+  <button class="tab-btn" onclick="switchMainTab(1,this)">📊 Kết quả</button>
+</div>
 <div class="progress-wrap">
   <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
   <div class="progress-label"><span id="prog-text">Thẻ 0 / 0</span><span id="prog-pct">0%</span></div>
@@ -240,10 +273,26 @@ header{
 
 <div class="nav-area">
   <button class="btn-nav" onclick="prevCard()">← Trước</button>
-  <button class="btn-nav btn-skip" onclick="skipCard()">Bỏ qua →</button>
+  <button id="btn-skip" class="btn-nav btn-skip" onclick="skipCard()">Bỏ qua →</button>
 </div>
 
 <div class="swipe-hint">Vuốt trái/phải để bỏ qua · Nhấn Kiểm tra để chấm</div>
+
+<div id="summary-panel" style="display:none;width:100%;max-width:680px;padding:0 16px 20px;">
+  <div class="sum-stats">
+    <div class="sum-stat-box"><div class="val" id="s-total">0</div><div class="lbl">Đã làm</div></div>
+    <div class="sum-stat-box"><div class="val" style="color:var(--green)" id="s-correct">0</div><div class="lbl">Đúng</div></div>
+    <div class="sum-stat-box"><div class="val" style="color:var(--red)" id="s-wrong">0</div><div class="lbl">Sai</div></div>
+    <div class="sum-stat-box"><div class="val" style="color:var(--accent)" id="s-pct">0%</div><div class="lbl">Tỉ lệ</div></div>
+  </div>
+  <div class="sum-filter">
+    <button class="sum-filter-btn active" onclick="filterSum('all',this)">Tất cả</button>
+    <button class="sum-filter-btn" onclick="filterSum('ok',this)">✓ Đúng</button>
+    <button class="sum-filter-btn" onclick="filterSum('fail',this)">✗ Sai</button>
+  </div>
+  <div class="sum-list" id="sum-list"></div>
+  <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()" disabled>🔁 Ôn lại từ sai</button>
+</div>
 <div class="swipe-hint desktop">Nhấn <b>Enter</b> để kiểm tra &nbsp;·&nbsp; <b>→</b> bỏ qua &nbsp;·&nbsp; <b>←</b> quay lại</div>
 
 <div class="score-panel" id="score-panel">
@@ -260,123 +309,676 @@ header{
 
 <script>
 const ALL_WORDS=[
-  // Business & Office
-  {topic:'Business & Office',en:'agenda',en_alt:[],vn:'chương trình nghị sự',vn_alt:['lịch họp','chương trình họp','danh sách nội dung họp'],ex:'The manager sent out the meeting agenda yesterday.'},
-  {topic:'Business & Office',en:'approve',en_alt:['authorize','pass','validate'],vn:'phê duyệt',vn_alt:['chấp thuận','thông qua','đồng ý','chấp nhận'],ex:'The board will approve the new project next week.'},
-  {topic:'Business & Office',en:'budget',en_alt:[],vn:'ngân sách',vn_alt:['kinh phí','ngân quỹ','quỹ'],ex:'We need to increase the marketing budget this quarter.'},
-  {topic:'Business & Office',en:'candidate',en_alt:['applicant','nominee'],vn:'ứng viên',vn_alt:['ứng cử viên','thí sinh','người ứng tuyển'],ex:'The company interviewed three candidates for the position.'},
-  {topic:'Business & Office',en:'conference',en_alt:['seminar','convention'],vn:'hội nghị',vn_alt:['hội thảo','cuộc hội thảo','buổi hội nghị'],ex:'She attended a business conference in Singapore.'},
-  {topic:'Business & Office',en:'contract',en_alt:['agreement'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','hợp đồng làm việc'],ex:'The contract was signed by both parties.'},
-  {topic:'Business & Office',en:'deadline',en_alt:['due date'],vn:'hạn chót',vn_alt:['thời hạn','ngày hết hạn','deadline','hạn cuối'],ex:'The team is working hard to meet the deadline.'},
+  {topic:'Business & Office',en:'agenda',en_alt:[],vn:'chương trình nghị sự',vn_alt:['lịch họp','chương trình họp','nội dung cuộc họp'],ex:'The manager sent out the meeting agenda yesterday.'},
+  {topic:'Business & Office',en:'approve',en_alt:['authorize','pass','validate','agree'],vn:'phê duyệt',vn_alt:['chấp thuận','thông qua','đồng ý','chấp nhận'],ex:'The board will approve the new project next week.'},
+  {topic:'Business & Office',en:'budget',en_alt:['funds','allowance'],vn:'ngân sách',vn_alt:['kinh phí','ngân quỹ','quỹ dự trù'],ex:'We need to increase the marketing budget this quarter.'},
+  {topic:'Business & Office',en:'candidate',en_alt:['applicant','nominee'],vn:'ứng viên',vn_alt:['ứng cử viên','người ứng tuyển','thí sinh'],ex:'The company interviewed three candidates for the position.'},
+  {topic:'Business & Office',en:'conference',en_alt:['seminar','convention','summit'],vn:'hội nghị',vn_alt:['hội thảo','buổi hội nghị'],ex:'She attended a business conference in Singapore.'},
+  {topic:'Business & Office',en:'contract',en_alt:['agreement','deal'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','thỏa thuận'],ex:'The contract was signed by both parties.'},
+  {topic:'Business & Office',en:'deadline',en_alt:['due date','cutoff'],vn:'hạn chót',vn_alt:['thời hạn','ngày hết hạn','hạn cuối','hạn nộp'],ex:'The team is working hard to meet the deadline.'},
   {topic:'Business & Office',en:'department',en_alt:['division','unit','section'],vn:'phòng ban',vn_alt:['bộ phận','phòng','đơn vị'],ex:'She works in the HR department.'},
   {topic:'Business & Office',en:'document',en_alt:['file','paper','record'],vn:'tài liệu',vn_alt:['văn bản','hồ sơ','giấy tờ','chứng từ'],ex:'Please review the attached document before the meeting.'},
-  {topic:'Business & Office',en:'employee',en_alt:['staff','worker'],vn:'nhân viên',vn_alt:['người lao động','công nhân viên','nhân sự'],ex:'The company hired five new employees last month.'},
-  // Travel & Transport
+  {topic:'Business & Office',en:'employee',en_alt:['staff','worker','personnel'],vn:'nhân viên',vn_alt:['người lao động','công nhân viên','nhân sự'],ex:'The company hired five new employees last month.'},
   {topic:'Travel & Transport',en:'airport',en_alt:['airfield'],vn:'sân bay',vn_alt:['phi trường','cảng hàng không'],ex:'We arrived at the airport two hours before the flight.'},
   {topic:'Travel & Transport',en:'boarding pass',en_alt:['boarding card'],vn:'thẻ lên máy bay',vn_alt:['vé lên máy bay','boarding pass','phiếu lên máy bay'],ex:'You need a boarding pass to enter the plane.'},
-  {topic:'Travel & Transport',en:'destination',en_alt:[],vn:'điểm đến',vn_alt:['nơi đến','địa điểm đến','điểm du lịch'],ex:'Paris is our next travel destination.'},
-  {topic:'Travel & Transport',en:'fare',en_alt:['fee','charge'],vn:'giá vé',vn_alt:['tiền vé','cước phí','phí đi lại'],ex:'The taxi fare was higher than expected.'},
-  {topic:'Travel & Transport',en:'luggage',en_alt:['baggage','bags','suitcase'],vn:'hành lý',vn_alt:['đồ đạc','vali','túi xách'],ex:'He checked his luggage at the counter.'},
-  {topic:'Travel & Transport',en:'passport',en_alt:[],vn:'hộ chiếu',vn_alt:['giấy thông hành','passport'],ex:"Don't forget to bring your passport."},
-  {topic:'Travel & Transport',en:'reservation',en_alt:['booking'],vn:'đặt chỗ',vn_alt:['đặt phòng','đặt trước','đặt bàn','đặt vé'],ex:'I made a reservation at the hotel for two nights.'},
-  {topic:'Travel & Transport',en:'ticket',en_alt:[],vn:'vé',vn_alt:['vé xe','vé máy bay','vé tàu','tấm vé'],ex:'She bought a train ticket to London.'},
-  {topic:'Travel & Transport',en:'tourist',en_alt:['traveler','visitor'],vn:'khách du lịch',vn_alt:['du khách','khách tham quan','người du lịch'],ex:'Tourists love visiting this island.'},
-  {topic:'Travel & Transport',en:'visa',en_alt:[],vn:'thị thực',vn_alt:['visa','giấy phép nhập cảnh'],ex:'You need a visa to travel to the United States.'},
-  // Finance & Banking
+  {topic:'Travel & Transport',en:'destination',en_alt:[],vn:'điểm đến',vn_alt:['nơi đến','địa điểm đến'],ex:'Paris is our next travel destination.'},
+  {topic:'Travel & Transport',en:'fare',en_alt:['fee','charge','price'],vn:'giá vé',vn_alt:['tiền vé','cước phí','giá đi lại'],ex:'The taxi fare was higher than expected.'},
+  {topic:'Travel & Transport',en:'luggage',en_alt:['baggage','bags','suitcase'],vn:'hành lý',vn_alt:['đồ đạc','vali','hành lý xách tay'],ex:'He checked his luggage at the counter.'},
+  {topic:'Travel & Transport',en:'passport',en_alt:[],vn:'hộ chiếu',vn_alt:['giấy thông hành'],ex:'Don\'t forget to bring your passport.'},
+  {topic:'Travel & Transport',en:'reservation',en_alt:['booking','table booking'],vn:'đặt chỗ',vn_alt:['đặt bàn','đặt chỗ','đặt trước'],ex:'I made a reservation at the hotel for two nights.'},
+  {topic:'Travel & Transport',en:'ticket',en_alt:[],vn:'vé',vn_alt:['vé xe','vé máy bay','tấm vé'],ex:'She bought a train ticket to London.'},
+  {topic:'Travel & Transport',en:'tourist',en_alt:['traveler','visitor'],vn:'khách du lịch',vn_alt:['du khách','khách tham quan'],ex:'Tourists love visiting this island.'},
+  {topic:'Travel & Transport',en:'visa',en_alt:[],vn:'thị thực',vn_alt:[],ex:'You need a visa to travel to the United States.'},
   {topic:'Finance & Banking',en:'account',en_alt:['bank account'],vn:'tài khoản',vn_alt:['tài khoản ngân hàng','account'],ex:'She opened a new savings account.'},
-  {topic:'Finance & Banking',en:'balance',en_alt:[],vn:'số dư',vn_alt:['số tiền còn lại','số dư tài khoản','cân bằng tài khoản'],ex:'Check your account balance regularly.'},
-  {topic:'Finance & Banking',en:'bill',en_alt:['invoice','note'],vn:'hóa đơn',vn_alt:['tờ tiền','phiếu thanh toán','giấy đòi tiền'],ex:'I received an electricity bill yesterday.'},
+  {topic:'Finance & Banking',en:'balance',en_alt:['remaining amount'],vn:'số dư',vn_alt:['số dư tài khoản','số tiền còn lại'],ex:'Check your account balance regularly.'},
+  {topic:'Finance & Banking',en:'bill',en_alt:['check','tab','invoice'],vn:'hóa đơn',vn_alt:['hóa đơn','tiền ăn','phiếu thanh toán'],ex:'I received an electricity bill yesterday.'},
   {topic:'Finance & Banking',en:'credit',en_alt:[],vn:'tín dụng',vn_alt:['uy tín tài chính','tín chấp'],ex:'She has a good credit history.'},
-  {topic:'Finance & Banking',en:'debt',en_alt:[],vn:'khoản nợ',vn_alt:['nợ','tiền nợ','nợ nần'],ex:'He paid off all his debts last year.'},
-  {topic:'Finance & Banking',en:'deposit',en_alt:[],vn:'tiền gửi',vn_alt:['đặt cọc','ký gửi','tiền đặt cọc'],ex:'I deposited $500 into my account.'},
-  {topic:'Finance & Banking',en:'exchange rate',en_alt:['currency rate'],vn:'tỷ giá hối đoái',vn_alt:['tỷ giá','tỷ giá ngoại tệ','tỷ giá tiền tệ'],ex:'The exchange rate has gone up today.'},
-  {topic:'Finance & Banking',en:'interest',en_alt:[],vn:'lãi suất',vn_alt:['tiền lãi','lãi','lãi ngân hàng'],ex:'The bank offers a low-interest loan.'},
-  {topic:'Finance & Banking',en:'loan',en_alt:[],vn:'khoản vay',vn_alt:['tiền vay','vay tiền','vay ngân hàng'],ex:'They applied for a home loan.'},
-  {topic:'Finance & Banking',en:'tax',en_alt:[],vn:'thuế',vn_alt:['thuế thu nhập','tiền thuế','thuế phí'],ex:'The government increased the income tax rate.'},
-  // Shopping & Services
-  {topic:'Shopping & Services',en:'bargain',en_alt:['deal'],vn:'mặc cả',vn_alt:['hàng giá rẻ','món hời','giá hời','mua được giá tốt'],ex:'I got this bag at a real bargain price.'},
-  {topic:'Shopping & Services',en:'cashier',en_alt:['teller'],vn:'thu ngân',vn_alt:['nhân viên thu ngân','người thu tiền'],ex:'The cashier gave me the wrong change.'},
+  {topic:'Finance & Banking',en:'debt',en_alt:['liability','obligation','owing'],vn:'khoản nợ',vn_alt:['nợ','tiền nợ','khoản nợ phải trả'],ex:'He paid off all his debts last year.'},
+  {topic:'Finance & Banking',en:'deposit',en_alt:['down payment','advance'],vn:'tiền gửi',vn_alt:['đặt cọc','ký gửi','tiền cọc'],ex:'I deposited $500 into my account.'},
+  {topic:'Finance & Banking',en:'exchange rate',en_alt:['currency rate','forex rate'],vn:'tỷ giá hối đoái',vn_alt:['tỷ giá','tỷ giá ngoại tệ','tỷ giá chuyển đổi'],ex:'The exchange rate has gone up today.'},
+  {topic:'Finance & Banking',en:'interest',en_alt:[],vn:'lãi suất',vn_alt:['tiền lãi','lãi','lãi suất ngân hàng'],ex:'The bank offers a low-interest loan.'},
+  {topic:'Finance & Banking',en:'loan',en_alt:['borrowing','advance','credit'],vn:'khoản vay',vn_alt:['tiền vay','vay tiền','khoản vay ngân hàng'],ex:'They applied for a home loan.'},
+  {topic:'Finance & Banking',en:'tax',en_alt:['levy','duty'],vn:'thuế',vn_alt:['thuế thu nhập','tiền thuế','thuế'],ex:'The government increased the income tax rate.'},
+  {topic:'Shopping & Services',en:'bargain',en_alt:['deal','steal'],vn:'mặc cả',vn_alt:['món hời','giá hời','mua được giá tốt'],ex:'I got this bag at a real bargain price.'},
+  {topic:'Shopping & Services',en:'cashier',en_alt:['teller','checkout clerk'],vn:'thu ngân',vn_alt:['nhân viên thu ngân','người thu tiền'],ex:'The cashier gave me the wrong change.'},
   {topic:'Shopping & Services',en:'customer',en_alt:['client','buyer','shopper'],vn:'khách hàng',vn_alt:['khách','người mua','người tiêu dùng'],ex:'The customer is always right.'},
-  {topic:'Shopping & Services',en:'discount',en_alt:['sale','reduction'],vn:'giảm giá',vn_alt:['chiết khấu','khuyến mãi','ưu đãi','giảm'],ex:'This store offers a 10% discount on weekends.'},
-  {topic:'Shopping & Services',en:'guarantee',en_alt:['warranty'],vn:'bảo hành',vn_alt:['bảo đảm','cam kết','phiếu bảo hành'],ex:'The product comes with a two-year guarantee.'},
-  {topic:'Shopping & Services',en:'invoice',en_alt:['bill','receipt'],vn:'hóa đơn',vn_alt:['phiếu xuất hàng','hóa đơn thương mại','phiếu tính tiền'],ex:'Can you issue an invoice for this purchase?'},
-  {topic:'Shopping & Services',en:'price',en_alt:['cost','rate'],vn:'giá cả',vn_alt:['giá','giá tiền','mức giá'],ex:'The price of this laptop is reasonable.'},
-  {topic:'Shopping & Services',en:'receipt',en_alt:[],vn:'biên lai',vn_alt:['hóa đơn','phiếu thu','phiếu mua hàng'],ex:'Keep the receipt for a possible refund.'},
-  {topic:'Shopping & Services',en:'refund',en_alt:['reimbursement'],vn:'hoàn tiền',vn_alt:['trả tiền lại','bồi hoàn','hoàn trả'],ex:'They gave me a full refund for the defective item.'},
-  {topic:'Shopping & Services',en:'service',en_alt:[],vn:'dịch vụ',vn_alt:['sự phục vụ','phục vụ','dịch vụ khách hàng'],ex:'The hotel provides excellent customer service.'},
-  // Technology & Communication
-  {topic:'Technology & Communication',en:'access',en_alt:['log in','enter'],vn:'truy cập',vn_alt:['đăng nhập','vào','truy nhập'],ex:'You need a password to access the system.'},
-  {topic:'Technology & Communication',en:'attach',en_alt:['add','upload'],vn:'đính kèm',vn_alt:['gửi kèm','đính','upload kèm'],ex:'Please attach the file to your email.'},
-  {topic:'Technology & Communication',en:'backup',en_alt:[],vn:'sao lưu',vn_alt:['backup','dự phòng','lưu dự phòng'],ex:'Remember to make a backup of your data.'},
-  {topic:'Technology & Communication',en:'browser',en_alt:['web browser'],vn:'trình duyệt',vn_alt:['trình duyệt web','phần mềm duyệt web'],ex:'Google Chrome is a popular web browser.'},
-  {topic:'Technology & Communication',en:'download',en_alt:[],vn:'tải xuống',vn_alt:['tải về','download','tải file'],ex:'I need to download the latest software update.'},
-  {topic:'Technology & Communication',en:'email',en_alt:['e-mail','mail'],vn:'thư điện tử',vn_alt:['email','e-mail','hòm thư điện tử'],ex:'She sent me an email this morning.'},
-  {topic:'Technology & Communication',en:'network',en_alt:['wifi','internet'],vn:'mạng internet',vn_alt:['mạng','mạng lưới','hệ thống mạng'],ex:'The office network is down today.'},
-  {topic:'Technology & Communication',en:'password',en_alt:['passcode','pin'],vn:'mật khẩu',vn_alt:['mật mã','pass','mã truy cập'],ex:'Always keep your password safe.'},
-  {topic:'Technology & Communication',en:'printer',en_alt:[],vn:'máy in',vn_alt:['printer','thiết bị in'],ex:'The printer is out of paper.'},
-  {topic:'Technology & Communication',en:'update',en_alt:['upgrade'],vn:'cập nhật',vn_alt:['nâng cấp','update','làm mới'],ex:'We need to update the security software.'},
-  // Health & Safety
-  {topic:'Health & Safety',en:'accident',en_alt:['incident','crash'],vn:'tai nạn',vn_alt:['sự cố','rủi ro','vụ tai nạn'],ex:'There was a car accident on the highway.'},
-  {topic:'Health & Safety',en:'appointment',en_alt:['booking','schedule'],vn:'cuộc hẹn',vn_alt:['lịch hẹn','hẹn gặp','buổi hẹn'],ex:'I have a dentist appointment at 3 PM.'},
-  {topic:'Health & Safety',en:'clinic',en_alt:['health center'],vn:'phòng khám',vn_alt:['cơ sở y tế','phòng mạch','trạm y tế'],ex:'She went to the clinic for a check-up.'},
-  {topic:'Health & Safety',en:'doctor',en_alt:['physician','GP'],vn:'bác sĩ',vn_alt:['thầy thuốc','bác sĩ y khoa','bác sĩ điều trị'],ex:'The doctor prescribed some medicine.'},
-  {topic:'Health & Safety',en:'emergency',en_alt:['crisis','urgent situation'],vn:'trường hợp khẩn cấp',vn_alt:['khẩn cấp','tình huống khẩn cấp','cấp cứu'],ex:'Call 911 in case of emergency.'},
-  {topic:'Health & Safety',en:'exercise',en_alt:['workout','training'],vn:'tập thể dục',vn_alt:['tập luyện','vận động','thể dục'],ex:'Regular exercise is good for your health.'},
-  {topic:'Health & Safety',en:'hospital',en_alt:[],vn:'bệnh viện',vn_alt:['nhà thương','cơ sở y tế'],ex:'He was admitted to the hospital last night.'},
-  {topic:'Health & Safety',en:'medicine',en_alt:['medication','drug'],vn:'thuốc',vn_alt:['thuốc men','dược phẩm','thuốc chữa bệnh'],ex:'Take this medicine after meals.'},
-  {topic:'Health & Safety',en:'patient',en_alt:[],vn:'bệnh nhân',vn_alt:['người bệnh','người điều trị','người đang chữa bệnh'],ex:'The patient is recovering well.'},
-  {topic:'Health & Safety',en:'treatment',en_alt:['therapy','care'],vn:'điều trị',vn_alt:['chữa trị','điều trị bệnh','chữa bệnh'],ex:'He is receiving treatment for his injury.'},
-  // Workplace & Employment
-  {topic:'Workplace & Employment',en:'apply',en_alt:['apply for'],vn:'nộp đơn',vn_alt:['ứng tuyển','xin việc','đăng ký'],ex:'She applied for the job last week.'},
-  {topic:'Workplace & Employment',en:'career',en_alt:[],vn:'sự nghiệp',vn_alt:['nghề nghiệp','con đường nghề nghiệp','công danh'],ex:'He is building his career in finance.'},
-  {topic:'Workplace & Employment',en:'colleague',en_alt:['coworker','workmate'],vn:'đồng nghiệp',vn_alt:['bạn đồng nghiệp','người cùng làm'],ex:'I had lunch with my colleagues.'},
-  {topic:'Workplace & Employment',en:'interview',en_alt:[],vn:'phỏng vấn',vn_alt:['cuộc phỏng vấn','buổi phỏng vấn','interview'],ex:'She has a job interview tomorrow.'},
-  {topic:'Workplace & Employment',en:'position',en_alt:['role','post','title'],vn:'vị trí',vn_alt:['chức vụ','chức danh','vị trí công việc'],ex:'He applied for the manager position.'},
-  {topic:'Workplace & Employment',en:'promotion',en_alt:[],vn:'sự thăng chức',vn_alt:['thăng chức','thăng tiến','lên chức'],ex:'She got a promotion last month.'},
-  {topic:'Workplace & Employment',en:'recruit',en_alt:['hire','employ'],vn:'tuyển dụng',vn_alt:['tuyển nhân viên','tuyển người','tuyển'],ex:'The company recruits new staff every year.'},
-  {topic:'Workplace & Employment',en:'resign',en_alt:['quit','step down'],vn:'từ chức',vn_alt:['thôi việc','nghỉ việc','xin từ chức','xin thôi việc'],ex:'He resigned due to personal reasons.'},
-  {topic:'Workplace & Employment',en:'salary',en_alt:['wage','pay','income'],vn:'lương',vn_alt:['tiền lương','thu nhập','lương tháng'],ex:'Her salary increased this year.'},
-  // Office Activities
-  {topic:'Office Activities',en:'arrange',en_alt:['organize','set up'],vn:'sắp xếp',vn_alt:['tổ chức','bố trí','chuẩn bị','thu xếp'],ex:'She arranged a meeting with the team.'},
-  {topic:'Office Activities',en:'attend',en_alt:['join','participate'],vn:'tham dự',vn_alt:['tham gia','dự','có mặt tại'],ex:'I will attend the workshop tomorrow.'},
-  {topic:'Office Activities',en:'meeting',en_alt:['session'],vn:'cuộc họp',vn_alt:['buổi họp','họp','phiên họp'],ex:'The meeting starts at 10 AM.'},
-  {topic:'Office Activities',en:'presentation',en_alt:['talk','pitch'],vn:'bài thuyết trình',vn_alt:['thuyết trình','bài trình bày','bài giới thiệu'],ex:'He gave a presentation on sales growth.'},
-  {topic:'Office Activities',en:'report',en_alt:[],vn:'báo cáo',vn_alt:['bản báo cáo','báo cáo công việc','bản tường trình'],ex:'Please submit the report by Friday.'},
-  {topic:'Office Activities',en:'schedule',en_alt:['timetable','plan'],vn:'lịch trình',vn_alt:['kế hoạch','lịch','thời gian biểu','thời khóa biểu'],ex:'The schedule was sent by email.'},
-  {topic:'Office Activities',en:'supervisor',en_alt:['manager','team lead'],vn:'người giám sát',vn_alt:['quản lý','giám sát viên','trưởng nhóm','cấp trên'],ex:'My supervisor checked my work.'},
-  {topic:'Office Activities',en:'task',en_alt:['job','assignment','work'],vn:'nhiệm vụ',vn_alt:['công việc','bài tập','đầu việc'],ex:'I have three tasks to finish today.'},
-  {topic:'Office Activities',en:'workload',en_alt:[],vn:'khối lượng công việc',vn_alt:['lượng công việc','áp lực công việc','khối lượng việc'],ex:'The workload is very heavy this week.'},
-  // Hotels & Accommodation
-  {topic:'Hotels & Accommodation',en:'accommodation',en_alt:['lodging','housing'],vn:'chỗ ở',vn_alt:['nơi ở','chỗ nghỉ','nơi lưu trú','chỗ lưu trú'],ex:'The hotel provides comfortable accommodation.'},
-  {topic:'Hotels & Accommodation',en:'check-in',en_alt:[],vn:'làm thủ tục nhận phòng',vn_alt:['nhận phòng','check-in','đăng ký phòng'],ex:'We checked in at 2 PM.'},
-  {topic:'Hotels & Accommodation',en:'check-out',en_alt:[],vn:'trả phòng',vn_alt:['thanh toán trả phòng','check-out','làm thủ tục trả phòng'],ex:'They checked out early this morning.'},
-  {topic:'Hotels & Accommodation',en:'double room',en_alt:[],vn:'phòng đôi',vn_alt:['phòng 2 người','phòng cho 2 người'],ex:'I booked a double room for two nights.'},
-  {topic:'Hotels & Accommodation',en:'guest',en_alt:['visitor'],vn:'khách',vn_alt:['khách lưu trú','du khách','vị khách'],ex:'The hotel had 200 guests last weekend.'},
-  {topic:'Hotels & Accommodation',en:'single room',en_alt:[],vn:'phòng đơn',vn_alt:['phòng 1 người','phòng cho 1 người'],ex:'He prefers a single room.'},
-  {topic:'Hotels & Accommodation',en:'suite',en_alt:['penthouse'],vn:'phòng hạng sang',vn_alt:['suite','phòng suite','phòng cao cấp'],ex:'They stayed in a luxury suite.'},
-  {topic:'Hotels & Accommodation',en:'vacancy',en_alt:['available room'],vn:'phòng trống',vn_alt:['phòng còn','chỗ trống','chỗ còn trống'],ex:'The hotel has no vacancies tonight.'},
-  {topic:'Hotels & Accommodation',en:'receptionist',en_alt:['front desk staff'],vn:'lễ tân',vn_alt:['nhân viên lễ tân','tiếp tân','nhân viên tiếp đón'],ex:'The receptionist welcomed us warmly.'},
-  // Dining & Restaurants
-  {topic:'Dining & Restaurants',en:'bill',en_alt:['check','tab'],vn:'hóa đơn',vn_alt:['tiền ăn','phiếu thanh toán','tiền tính'],ex:'Could you bring the bill, please?'},
-  {topic:'Dining & Restaurants',en:'buffet',en_alt:['self-service'],vn:'tiệc đứng',vn_alt:['buffet','tiệc buffet','ăn tự chọn','tiệc tự phục vụ'],ex:'The hotel offers a breakfast buffet.'},
-  {topic:'Dining & Restaurants',en:'cuisine',en_alt:['food','cooking'],vn:'ẩm thực',vn_alt:['món ăn','nền ẩm thực','phong cách nấu ăn'],ex:'Italian cuisine is very popular.'},
-  {topic:'Dining & Restaurants',en:'dish',en_alt:['meal','food'],vn:'món ăn',vn_alt:['món','đĩa ăn','thức ăn'],ex:'This restaurant serves traditional dishes.'},
-  {topic:'Dining & Restaurants',en:'menu',en_alt:[],vn:'thực đơn',vn_alt:['menu','danh sách món','bảng món ăn'],ex:'The waiter gave us the menu.'},
-  {topic:'Dining & Restaurants',en:'order',en_alt:[],vn:'gọi món',vn_alt:['đặt món','order','đặt đồ ăn'],ex:'I ordered a pizza.'},
-  {topic:'Dining & Restaurants',en:'service charge',en_alt:['service fee'],vn:'phí dịch vụ',vn_alt:['phụ phí dịch vụ','phí phục vụ'],ex:'A 10% service charge is included.'},
-  {topic:'Dining & Restaurants',en:'tip',en_alt:['gratuity'],vn:'tiền tip',vn_alt:['tiền bo','tiền thưởng','tiền thêm'],ex:'He left a tip for the waiter.'},
-  {topic:'Dining & Restaurants',en:'waiter',en_alt:['server','waitstaff'],vn:'bồi bàn',vn_alt:['phục vụ','nhân viên phục vụ','người phục vụ bàn'],ex:'The waiter is very friendly.'},
-  // Entertainment & Leisure
-  {topic:'Entertainment & Leisure',en:'cinema',en_alt:['movie theater','theater'],vn:'rạp chiếu phim',vn_alt:['rạp phim','rạp','phòng chiếu phim'],ex:'We went to the cinema last night.'},
-  {topic:'Entertainment & Leisure',en:'concert',en_alt:['show','gig'],vn:'buổi hòa nhạc',vn_alt:['concert','buổi nhạc','đêm nhạc','buổi biểu diễn âm nhạc'],ex:'She attended a live concert.'},
-  {topic:'Entertainment & Leisure',en:'exhibition',en_alt:['expo','show','display'],vn:'triển lãm',vn_alt:['buổi triển lãm','cuộc triển lãm','phòng triển lãm'],ex:'The art exhibition was impressive.'},
-  {topic:'Entertainment & Leisure',en:'leisure',en_alt:['recreation','free time'],vn:'giải trí',vn_alt:['thư giãn','nghỉ ngơi','hoạt động giải trí'],ex:'He enjoys leisure activities on weekends.'},
+  {topic:'Shopping & Services',en:'discount',en_alt:['sale','reduction','markdown'],vn:'giảm giá',vn_alt:['chiết khấu','khuyến mãi','ưu đãi'],ex:'This store offers a 10% discount on weekends.'},
+  {topic:'Shopping & Services',en:'guarantee',en_alt:['warranty','assurance'],vn:'bảo hành',vn_alt:['bảo đảm','phiếu bảo hành'],ex:'The product comes with a two-year guarantee.'},
+  {topic:'Shopping & Services',en:'invoice',en_alt:[],vn:'hóa đơn',vn_alt:[],ex:'Can you issue an invoice for this purchase?'},
+  {topic:'Shopping & Services',en:'price',en_alt:['cost','rate','charge'],vn:'giá cả',vn_alt:['giá','giá tiền','mức giá'],ex:'The price of this laptop is reasonable.'},
+  {topic:'Shopping & Services',en:'receipt',en_alt:['proof of purchase'],vn:'biên lai',vn_alt:['hóa đơn','phiếu thu','phiếu mua hàng'],ex:'Keep the receipt for a possible refund.'},
+  {topic:'Shopping & Services',en:'refund',en_alt:['reimbursement','money back'],vn:'hoàn tiền',vn_alt:['trả tiền lại','bồi hoàn','trả lại tiền'],ex:'They gave me a full refund for the defective item.'},
+  {topic:'Shopping & Services',en:'service',en_alt:[],vn:'dịch vụ',vn_alt:['sự phục vụ','phục vụ'],ex:'The hotel provides excellent customer service.'},
+  {topic:'Technology & IT',en:'access',en_alt:['log in','enter','get into'],vn:'truy cập',vn_alt:['đăng nhập','truy nhập'],ex:'You need a password to access the system.'},
+  {topic:'Technology & IT',en:'attach',en_alt:['add','upload','include'],vn:'đính kèm',vn_alt:['gửi kèm','đính'],ex:'Please attach the file to your email.'},
+  {topic:'Technology & IT',en:'backup',en_alt:['save copy','archive'],vn:'sao lưu',vn_alt:['dự phòng','lưu dự phòng','bản sao'],ex:'Remember to make a backup of your data.'},
+  {topic:'Technology & IT',en:'browser',en_alt:['web browser'],vn:'trình duyệt',vn_alt:['trình duyệt web','phần mềm duyệt web'],ex:'Google Chrome is a popular web browser.'},
+  {topic:'Technology & IT',en:'download',en_alt:['save','fetch'],vn:'tải xuống',vn_alt:['tải về','tải file'],ex:'I need to download the latest software update.'},
+  {topic:'Technology & IT',en:'email',en_alt:['e-mail','mail','electronic mail'],vn:'thư điện tử',vn_alt:['email','e-mail','hòm thư điện tử'],ex:'She sent me an email this morning.'},
+  {topic:'Technology & IT',en:'network',en_alt:['wifi','internet','connection'],vn:'mạng internet',vn_alt:['mạng','mạng lưới','hệ thống mạng'],ex:'The office network is down today.'},
+  {topic:'Technology & IT',en:'password',en_alt:['passcode','pin','login'],vn:'mật khẩu',vn_alt:['mật mã','mã truy cập','mã bảo mật'],ex:'Always keep your password safe.'},
+  {topic:'Technology & IT',en:'printer',en_alt:[],vn:'máy in',vn_alt:[],ex:'The printer is out of paper.'},
+  {topic:'Technology & IT',en:'update',en_alt:['upgrade','refresh','patch'],vn:'cập nhật',vn_alt:['nâng cấp','làm mới','cập nhật mới'],ex:'We need to update the security software.'},
+  {topic:'Health & Medical',en:'accident',en_alt:['incident','crash','mishap'],vn:'tai nạn',vn_alt:['sự cố','vụ tai nạn','cố sự'],ex:'There was a car accident on the highway.'},
+  {topic:'Health & Medical',en:'appointment',en_alt:['booking','scheduled visit','meeting'],vn:'cuộc hẹn',vn_alt:['lịch hẹn','hẹn gặp','buổi hẹn'],ex:'I have a dentist appointment at 3 PM.'},
+  {topic:'Health & Medical',en:'clinic',en_alt:['health center','medical center'],vn:'phòng khám',vn_alt:['cơ sở y tế','phòng mạch','trạm xá'],ex:'She went to the clinic for a check-up.'},
+  {topic:'Health & Medical',en:'doctor',en_alt:['physician','GP','medic'],vn:'bác sĩ',vn_alt:['thầy thuốc','bác sĩ y khoa'],ex:'The doctor prescribed some medicine.'},
+  {topic:'Health & Medical',en:'emergency',en_alt:['crisis','urgent situation'],vn:'trường hợp khẩn cấp',vn_alt:['khẩn cấp','cấp cứu','tình huống khẩn cấp'],ex:'Call 911 in case of emergency.'},
+  {topic:'Health & Medical',en:'exercise',en_alt:['workout','training','physical activity'],vn:'tập thể dục',vn_alt:['tập luyện','vận động','thể dục'],ex:'Regular exercise is good for your health.'},
+  {topic:'Health & Medical',en:'hospital',en_alt:['medical center','infirmary'],vn:'bệnh viện',vn_alt:['nhà thương','cơ sở y tế'],ex:'He was admitted to the hospital last night.'},
+  {topic:'Health & Medical',en:'medicine',en_alt:['medication','drug','remedy'],vn:'thuốc',vn_alt:['thuốc men','dược phẩm','thuốc chữa bệnh'],ex:'Take this medicine after meals.'},
+  {topic:'Health & Medical',en:'patient',en_alt:[],vn:'bệnh nhân',vn_alt:['người bệnh','người đang điều trị'],ex:'The patient is recovering well.'},
+  {topic:'Health & Medical',en:'treatment',en_alt:['therapy','care','cure'],vn:'điều trị',vn_alt:['chữa trị','chữa bệnh','điều trị y tế'],ex:'He is receiving treatment for his injury.'},
+  {topic:'Workplace & HR',en:'apply',en_alt:['apply for','submit application'],vn:'nộp đơn',vn_alt:['ứng tuyển','xin việc','đăng ký tuyển dụng'],ex:'She applied for the job last week.'},
+  {topic:'Workplace & HR',en:'candidate',en_alt:['applicant','nominee'],vn:'ứng viên',vn_alt:['ứng cử viên','người ứng tuyển','thí sinh'],ex:'The company interviewed three candidates.'},
+  {topic:'Workplace & HR',en:'career',en_alt:[],vn:'sự nghiệp',vn_alt:['nghề nghiệp','sự nghiệp nghề nghiệp','con đường sự nghiệp'],ex:'He is building his career in finance.'},
+  {topic:'Workplace & HR',en:'colleague/co-worker',en_alt:[],vn:'đồng nghiệp',vn_alt:[],ex:'I had lunch with my colleagues.'},
+  {topic:'Workplace & HR',en:'interview',en_alt:[],vn:'phỏng vấn',vn_alt:['cuộc phỏng vấn','buổi phỏng vấn','buổi interview'],ex:'She has a job interview tomorrow.'},
+  {topic:'Workplace & HR',en:'position',en_alt:['role','post','title','job'],vn:'vị trí',vn_alt:['chức vụ','chức danh','vị trí công việc'],ex:'He applied for the manager position.'},
+  {topic:'Workplace & HR',en:'promotion',en_alt:['advancement','career advancement'],vn:'sự thăng chức',vn_alt:['thăng chức','thăng tiến','lên chức'],ex:'She got a promotion last month.'},
+  {topic:'Workplace & HR',en:'recruit',en_alt:['hire','employ','take on'],vn:'tuyển dụng',vn_alt:['tuyển nhân viên','tuyển người','tuyển'],ex:'The company recruits new staff every year.'},
+  {topic:'Workplace & HR',en:'resign',en_alt:['quit','step down','leave'],vn:'từ chức',vn_alt:['thôi việc','nghỉ việc','xin từ chức','xin thôi việc'],ex:'He resigned due to personal reasons.'},
+  {topic:'Workplace & HR',en:'salary',en_alt:['wage','pay','income','compensation'],vn:'lương',vn_alt:['tiền lương','thu nhập','lương tháng'],ex:'Her salary increased this year.'},
+  {topic:'Business & Office',en:'arrange',en_alt:['organize','set up','plan'],vn:'sắp xếp',vn_alt:['tổ chức','bố trí','chuẩn bị','thu xếp'],ex:'She arranged a meeting with the team.'},
+  {topic:'Business & Office',en:'attend',en_alt:['join','participate','be present'],vn:'tham dự',vn_alt:['tham gia','dự','có mặt'],ex:'I will attend the workshop tomorrow.'},
+  {topic:'Business & Office',en:'colleague',en_alt:['coworker','workmate','peer'],vn:'đồng nghiệp',vn_alt:['bạn đồng nghiệp','người cùng làm'],ex:'I often discuss projects with my colleagues.'},
+  {topic:'Business & Office',en:'meeting',en_alt:['session','gathering','assembly'],vn:'cuộc họp',vn_alt:['buổi họp','họp','cuộc họp nhóm'],ex:'The meeting starts at 10 AM.'},
+  {topic:'Business & Office',en:'presentation',en_alt:['talk','pitch','briefing'],vn:'bài thuyết trình',vn_alt:['thuyết trình','bài trình bày'],ex:'He gave a presentation on sales growth.'},
+  {topic:'Business & Office',en:'report',en_alt:['summary','brief','account'],vn:'báo cáo',vn_alt:['bản báo cáo','báo cáo kết quả','tường trình'],ex:'Please submit the report by Friday.'},
+  {topic:'Business & Office',en:'schedule',en_alt:['timetable','plan','calendar'],vn:'lịch trình',vn_alt:['kế hoạch','lịch làm việc','thời gian biểu'],ex:'The schedule was sent by email.'},
+  {topic:'Business & Office',en:'supervisor',en_alt:['manager','team lead','boss'],vn:'người giám sát',vn_alt:['quản lý','trưởng nhóm','cấp trên','người phụ trách'],ex:'My supervisor checked my work.'},
+  {topic:'Business & Office',en:'task',en_alt:['job','assignment','work','duty'],vn:'nhiệm vụ',vn_alt:['công việc','bài tập','đầu việc','công tác'],ex:'I have three tasks to finish today.'},
+  {topic:'Business & Office',en:'workload',en_alt:[],vn:'khối lượng công việc',vn_alt:['lượng công việc','áp lực công việc','khối lượng việc'],ex:'The workload is very heavy this week.'},
+  {topic:'Hotels & Hospitality',en:'accommodation',en_alt:['lodging','housing','stay'],vn:'chỗ ở',vn_alt:['nơi ở','chỗ nghỉ','nơi lưu trú','nơi ở lại'],ex:'The hotel provides comfortable accommodation.'},
+  {topic:'Hotels & Hospitality',en:'check-in',en_alt:['register','arrive'],vn:'làm thủ tục nhận phòng',vn_alt:['nhận phòng','làm thủ tục vào phòng','check-in'],ex:'We checked in at 2 PM.'},
+  {topic:'Hotels & Hospitality',en:'check-out',en_alt:['leave','depart'],vn:'trả phòng',vn_alt:['trả phòng','thanh toán trả phòng','check-out'],ex:'They checked out early this morning.'},
+  {topic:'Hotels & Hospitality',en:'double room',en_alt:[],vn:'phòng đôi',vn_alt:['phòng đôi','phòng 2 người'],ex:'I booked a double room for two nights.'},
+  {topic:'Hotels & Hospitality',en:'guest',en_alt:['visitor','patron'],vn:'khách',vn_alt:['khách lưu trú','du khách','vị khách'],ex:'The hotel had 200 guests last weekend.'},
+  {topic:'Hotels & Hospitality',en:'reservation',en_alt:['booking','table booking'],vn:'đặt chỗ',vn_alt:['đặt bàn','đặt chỗ','đặt trước'],ex:'I made a reservation online.'},
+  {topic:'Hotels & Hospitality',en:'single room',en_alt:[],vn:'phòng đơn',vn_alt:['phòng đơn','phòng 1 người'],ex:'He prefers a single room.'},
+  {topic:'Hotels & Hospitality',en:'suite',en_alt:[],vn:'phòng hạng sang',vn_alt:['phòng suite','phòng cao cấp','phòng hạng đặc biệt'],ex:'They stayed in a luxury suite.'},
+  {topic:'Hotels & Hospitality',en:'vacancy',en_alt:['available room','opening'],vn:'phòng trống',vn_alt:['phòng còn','chỗ trống','phòng có sẵn'],ex:'The hotel has no vacancies tonight.'},
+  {topic:'Hotels & Hospitality',en:'receptionist',en_alt:['front desk staff','concierge'],vn:'lễ tân',vn_alt:['nhân viên lễ tân','tiếp tân','nhân viên tiếp đón'],ex:'The receptionist welcomed us warmly.'},
+  {topic:'Dining & Food',en:'bill',en_alt:['check','tab','invoice'],vn:'hóa đơn',vn_alt:['hóa đơn','tiền ăn','phiếu thanh toán'],ex:'Could you bring the bill, please?'},
+  {topic:'Dining & Food',en:'buffet',en_alt:['self-service','all-you-can-eat'],vn:'tiệc đứng',vn_alt:['tiệc buffet','ăn tự chọn','tiệc tự phục vụ'],ex:'The hotel offers a breakfast buffet.'},
+  {topic:'Dining & Food',en:'cuisine',en_alt:['food','cooking','gastronomy'],vn:'ẩm thực',vn_alt:['ẩm thực','phong cách nấu ăn','món ăn đặc trưng'],ex:'Italian cuisine is very popular.'},
+  {topic:'Dining & Food',en:'dish',en_alt:['meal','food','plate'],vn:'món ăn',vn_alt:['món','đĩa ăn','món ăn đặc biệt'],ex:'This restaurant serves traditional dishes.'},
+  {topic:'Dining & Food',en:'menu',en_alt:[],vn:'thực đơn',vn_alt:['thực đơn','menu','danh sách món ăn'],ex:'The waiter gave us the menu.'},
+  {topic:'Dining & Food',en:'order',en_alt:['ask for','request'],vn:'gọi món/đơn hàng',vn_alt:['gọi món','đặt món','đặt đồ ăn'],ex:'I ordered a pizza.'},
+  {topic:'Dining & Food',en:'reservation',en_alt:['booking','table booking'],vn:'đặt bàn',vn_alt:['đặt bàn','đặt chỗ','đặt trước'],ex:'Do you have a reservation?'},
+  {topic:'Dining & Food',en:'service charge',en_alt:['service fee'],vn:'phí dịch vụ',vn_alt:['phụ phí dịch vụ','phí phục vụ'],ex:'A 10% service charge is included.'},
+  {topic:'Dining & Food',en:'tip',en_alt:['gratuity','extra payment'],vn:'tiền tip',vn_alt:['tiền bo','tiền thưởng thêm'],ex:'He left a tip for the waiter.'},
+  {topic:'Dining & Food',en:'waiter/waitress',en_alt:['server','waitstaff'],vn:'bồi bàn',vn_alt:['bồi bàn','phục vụ bàn','nhân viên phục vụ'],ex:'The waiter is very friendly.'},
+  {topic:'Entertainment & Leisure',en:'cinema',en_alt:['movie theater','theater'],vn:'rạp chiếu phim',vn_alt:['rạp phim','rạp chiếu','rạp'],ex:'We went to the cinema last night.'},
+  {topic:'Entertainment & Leisure',en:'concert',en_alt:['show','gig','performance'],vn:'buổi hòa nhạc',vn_alt:['buổi hòa nhạc','đêm nhạc','concert'],ex:'She attended a live concert.'},
+  {topic:'Entertainment & Leisure',en:'exhibition',en_alt:['expo','show','display'],vn:'triển lãm',vn_alt:['buổi triển lãm','cuộc triển lãm'],ex:'The art exhibition was impressive.'},
+  {topic:'Entertainment & Leisure',en:'leisure',en_alt:['recreation','free time','relaxation'],vn:'giải trí',vn_alt:['thư giãn','nghỉ ngơi','thời gian rảnh'],ex:'He enjoys leisure activities on weekends.'},
   {topic:'Entertainment & Leisure',en:'museum',en_alt:[],vn:'bảo tàng',vn_alt:['viện bảo tàng','nhà bảo tàng'],ex:'The museum closes at 6 PM.'},
-  {topic:'Entertainment & Leisure',en:'performance',en_alt:['show','act'],vn:'buổi biểu diễn',vn_alt:['màn trình diễn','màn biểu diễn','tiết mục biểu diễn'],ex:'The performance lasted two hours.'},
+  {topic:'Entertainment & Leisure',en:'performance',en_alt:['show','act','display'],vn:'buổi biểu diễn',vn_alt:['màn trình diễn','buổi biểu diễn','màn biểu diễn'],ex:'The performance lasted two hours.'},
+  {topic:'Entertainment & Leisure',en:'ticket',en_alt:[],vn:'vé',vn_alt:['vé xe','vé máy bay','tấm vé'],ex:'I bought two tickets for the concert.'},
+  {topic:'Entertainment & Leisure',en:'tour',en_alt:['trip','excursion','visit'],vn:'chuyến tham quan',vn_alt:['chuyến tham quan','chuyến du lịch','tour'],ex:'They joined a city tour.'},
+  {topic:'Entertainment & Leisure',en:'tourist attraction',en_alt:['landmark','sight','attraction'],vn:'điểm du lịch',vn_alt:['địa điểm du lịch','danh thắng','điểm tham quan'],ex:'Ha Long Bay is a famous tourist attraction.'},
+  {topic:'Entertainment & Leisure',en:'weekend',en_alt:[],vn:'cuối tuần',vn_alt:['cuối tuần','ngày cuối tuần'],ex:'They usually go hiking at the weekend.'},
+  {topic:'Environment & Industry',en:'climate',en_alt:['weather conditions','atmosphere'],vn:'khí hậu',vn_alt:['khí hậu','điều kiện khí hậu'],ex:'Vietnam has a tropical climate.'},
+  {topic:'Environment & Industry',en:'forest',en_alt:['woodland','jungle','woods'],vn:'rừng',vn_alt:['rừng','khu rừng'],ex:'Many animals live in the forest.'},
+  {topic:'Environment & Industry',en:'pollution',en_alt:['contamination','environmental damage'],vn:'ô nhiễm',vn_alt:['ô nhiễm môi trường','ô nhiễm'],ex:'Air pollution is a big problem.'},
+  {topic:'Environment & Industry',en:'recycle',en_alt:['reuse','repurpose'],vn:'tái chế',vn_alt:['tái chế','tái sử dụng'],ex:'We should recycle plastic bottles.'},
+  {topic:'Environment & Industry',en:'river',en_alt:['stream','waterway'],vn:'sông',vn_alt:['sông','dòng sông'],ex:'The river flows through the city.'},
+  {topic:'Environment & Industry',en:'waste',en_alt:['garbage','trash','rubbish'],vn:'rác thải',vn_alt:['rác thải','chất thải','lãng phí'],ex:'Industrial waste harms the environment.'},
+  {topic:'Environment & Industry',en:'weather',en_alt:['climate','conditions'],vn:'thời tiết',vn_alt:['thời tiết','điều kiện thời tiết'],ex:'The weather is sunny today.'},
+  {topic:'Environment & Industry',en:'wildlife',en_alt:['fauna','nature','wild animals'],vn:'động vật hoang dã',vn_alt:['động vật hoang dã','thiên nhiên hoang dã'],ex:'The park protects local wildlife.'},
+  {topic:'Environment & Industry',en:'natural',en_alt:['organic','native','wild'],vn:'tự nhiên',vn_alt:['tự nhiên','thiên nhiên'],ex:'This area is famous for its natural beauty.'},
+  {topic:'Environment & Industry',en:'energy',en_alt:['power','fuel'],vn:'năng lượng',vn_alt:['năng lượng','điện năng','nguồn năng lượng'],ex:'We need to save more energy.'},
+  {topic:'Education & Culture',en:'assignment',en_alt:['homework','task','exercise'],vn:'bài tập',vn_alt:['bài tập','bài tập về nhà','nhiệm vụ học tập'],ex:'The teacher gave us a new assignment.'},
+  {topic:'Education & Culture',en:'certificate',en_alt:['credential','qualification','diploma'],vn:'chứng chỉ',vn_alt:['chứng chỉ','giấy chứng nhận','bằng'],ex:'She received a certificate in English.'},
+  {topic:'Education & Culture',en:'course',en_alt:['class','program','module'],vn:'khóa học',vn_alt:['khóa học','lớp học','chương trình học'],ex:'He enrolled in a business course.'},
+  {topic:'Education & Culture',en:'degree',en_alt:['qualification','diploma','credential'],vn:'bằng cấp',vn_alt:['bằng cấp','bằng đại học','học vị'],ex:'She holds a master’s degree in finance.'},
+  {topic:'Education & Culture',en:'exam',en_alt:['test','examination','assessment'],vn:'kỳ thi',vn_alt:['kỳ thi','bài kiểm tra','bài thi'],ex:'The exam will take place next week.'},
+  {topic:'Education & Culture',en:'lecture',en_alt:['class','talk','lesson'],vn:'bài giảng',vn_alt:['bài giảng','buổi giảng','bài học'],ex:'The professor gave an interesting lecture.'},
+  {topic:'Education & Culture',en:'library',en_alt:[],vn:'thư viện',vn_alt:['thư viện','phòng đọc sách'],ex:'I borrowed a book from the library.'},
+  {topic:'Education & Culture',en:'professor',en_alt:['lecturer','teacher','faculty'],vn:'giáo sư',vn_alt:['giáo sư','giảng viên đại học'],ex:'The professor explained the topic clearly.'},
+  {topic:'Education & Culture',en:'scholarship',en_alt:['grant','fellowship','bursary'],vn:'học bổng',vn_alt:['học bổng','trợ cấp học tập'],ex:'She won a scholarship to study abroad.'},
+  {topic:'Education & Culture',en:'training',en_alt:['coaching','instruction','development'],vn:'đào tạo',vn_alt:['đào tạo','huấn luyện','tập huấn'],ex:'New employees must attend training.'},
+  {topic:'Real Estate',en:'apartment',en_alt:['flat','unit','condo'],vn:'căn hộ',vn_alt:['căn hộ','chung cư','flat'],ex:'They live in a small apartment.'},
+  {topic:'Real Estate',en:'balcony',en_alt:[],vn:'ban công',vn_alt:['ban công','logia'],ex:'The apartment has a large balcony.'},
+  {topic:'Real Estate',en:'building',en_alt:['tower','block','structure'],vn:'tòa nhà',vn_alt:['tòa nhà','công trình','cao ốc'],ex:'Our office is in that tall building.'},
+  {topic:'Real Estate',en:'contract',en_alt:['agreement','deal'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','thỏa thuận'],ex:'We signed the rental contract yesterday.'},
+  {topic:'Real Estate',en:'landlord',en_alt:['property owner','lessor','owner'],vn:'chủ nhà',vn_alt:['chủ nhà','chủ cho thuê','chủ trọ'],ex:'The landlord fixed the broken door.'},
+  {topic:'Real Estate',en:'lease',en_alt:['rental agreement','tenancy'],vn:'hợp đồng thuê',vn_alt:['hợp đồng thuê','thuê dài hạn'],ex:'The lease is valid for one year.'},
+  {topic:'Real Estate',en:'mortgage',en_alt:['home loan'],vn:'thế chấp',vn_alt:['vay thế chấp','thế chấp nhà','khoản vay mua nhà'],ex:'They applied for a mortgage.'},
+  {topic:'Real Estate',en:'property',en_alt:['real estate','asset','estate'],vn:'tài sản/bất động sản',vn_alt:['bất động sản','tài sản','nhà đất'],ex:'He bought a property in the city.'},
+  {topic:'Real Estate',en:'rent',en_alt:['rental','hire','lease'],vn:'thuê/tiền thuê',vn_alt:['tiền thuê','cho thuê','thuê nhà'],ex:'We rent an apartment downtown.'},
+  {topic:'Real Estate',en:'tenant',en_alt:['renter','occupant','lessee'],vn:'người thuê nhà',vn_alt:['người thuê nhà','bên thuê','người ở trọ'],ex:'The tenant must pay rent on time.'},
+  {topic:'Logistics & Trade',en:'cargo',en_alt:['freight','goods','shipment'],vn:'hàng hóa',vn_alt:['hàng hóa','lô hàng','hàng chở'],ex:'The ship carries heavy cargo.'},
+  {topic:'Logistics & Trade',en:'delivery',en_alt:['shipping','distribution','dispatch'],vn:'giao hàng',vn_alt:['giao hàng','vận chuyển','chuyển phát'],ex:'The delivery will arrive tomorrow.'},
+  {topic:'Logistics & Trade',en:'distribution',en_alt:['delivery','supply','circulation'],vn:'phân phối',vn_alt:['phân phối','phân phối hàng hóa'],ex:'The company handles nationwide distribution.'},
+  {topic:'Logistics & Trade',en:'freight',en_alt:['cargo','goods','shipping cost'],vn:'hàng hóa vận chuyển',vn_alt:['hàng hóa vận chuyển','cước vận chuyển','cước phí'],ex:'The freight cost is very high.'},
+  {topic:'Logistics & Trade',en:'inventory',en_alt:['stock','supply','stockpile'],vn:'hàng tồn kho',vn_alt:['hàng tồn kho','kiểm kê hàng hóa','tồn kho'],ex:'They checked the inventory last night.'},
+  {topic:'Logistics & Trade',en:'logistics',en_alt:['supply chain','operations'],vn:'hậu cần',vn_alt:['hậu cần','vận hành chuỗi cung ứng'],ex:'The logistics team manages transport.'},
+  {topic:'Logistics & Trade',en:'package',en_alt:['parcel','box','bundle'],vn:'gói hàng',vn_alt:['gói hàng','bưu kiện','đóng gói'],ex:'The package was delivered late.'},
+  {topic:'Logistics & Trade',en:'shipment',en_alt:['cargo','consignment','delivery'],vn:'lô hàng',vn_alt:['lô hàng','kiện hàng','chuyến hàng'],ex:'The shipment is on the way.'},
+  {topic:'Logistics & Trade',en:'supplier',en_alt:['vendor','provider','source'],vn:'nhà cung cấp',vn_alt:['nhà cung cấp','đối tác cung ứng'],ex:'We have three suppliers in China.'},
+  {topic:'Logistics & Trade',en:'warehouse',en_alt:['storage','depot','stockroom'],vn:'nhà kho',vn_alt:['kho hàng','nhà kho','kho chứa'],ex:'The goods are stored in the warehouse.'},
+  {topic:'Legal & Government',en:'attorney',en_alt:['lawyer','counsel','solicitor'],vn:'luật sư',vn_alt:['luật sư','trạng sư'],ex:'She hired an attorney for advice.'},
+  {topic:'Legal & Government',en:'case',en_alt:['lawsuit','matter','file'],vn:'vụ án',vn_alt:['vụ án','vụ việc','hồ sơ'],ex:'The lawyer won the case.'},
+  {topic:'Legal & Government',en:'court',en_alt:['tribunal','judiciary'],vn:'tòa án',vn_alt:['tòa án','tòa','pháp đình'],ex:'The case will go to court next week.'},
+  {topic:'Legal & Government',en:'document',en_alt:['file','paper','record'],vn:'tài liệu',vn_alt:['văn bản','hồ sơ','giấy tờ','chứng từ'],ex:'Please sign this legal document.'},
+  {topic:'Legal & Government',en:'judge',en_alt:[],vn:'thẩm phán',vn_alt:['thẩm phán','quan tòa'],ex:'The judge announced the decision.'},
+  {topic:'Legal & Government',en:'law',en_alt:['legislation','act','regulation'],vn:'luật',vn_alt:['luật','luật pháp','bộ luật'],ex:'Everyone must obey the law.'},
+  {topic:'Legal & Government',en:'license',en_alt:['permit','authorization','certificate'],vn:'giấy phép',vn_alt:['giấy phép','bằng lái','giấy chứng nhận'],ex:'You need a license to drive a car.'},
+  {topic:'Legal & Government',en:'regulation',en_alt:['rule','law','requirement'],vn:'quy định',vn_alt:['quy định','điều lệ','luật lệ'],ex:'The company follows government regulations.'},
+  {topic:'Legal & Government',en:'signature',en_alt:['sign','endorsement'],vn:'chữ ký',vn_alt:['chữ ký','chữ ký tên'],ex:'Please put your signature here.'},
+  {topic:'Legal & Government',en:'visa',en_alt:[],vn:'thị thực',vn_alt:[],ex:'She applied for a student visa.'},
+  {topic:'Technology & IT',en:'application',en_alt:['app','program','software'],vn:'ứng dụng',vn_alt:['ứng dụng','phần mềm ứng dụng','app'],ex:'I downloaded a new mobile application.'},
+  {topic:'Technology & IT',en:'cloud',en_alt:['cloud computing','online storage'],vn:'điện toán đám mây',vn_alt:['điện toán đám mây','lưu trữ đám mây','đám mây'],ex:'The data is stored in the cloud.'},
+  {topic:'Technology & IT',en:'database',en_alt:['data store','repository'],vn:'cơ sở dữ liệu',vn_alt:['cơ sở dữ liệu','kho dữ liệu'],ex:'The company updated its database.'},
+  {topic:'Technology & IT',en:'file',en_alt:['document','record'],vn:'tập tin',vn_alt:['tập tin','tệp','file'],ex:'Save the file before closing.'},
+  {topic:'Technology & IT',en:'folder',en_alt:['directory'],vn:'thư mục',vn_alt:['thư mục','folder','hộp chứa file'],ex:'I keep reports in this folder.'},
+  {topic:'Technology & IT',en:'install',en_alt:['set up','deploy'],vn:'cài đặt',vn_alt:['cài đặt','lắp đặt','cài phần mềm'],ex:'I need to install this software.'},
+  {topic:'Technology & IT',en:'program',en_alt:['software','application','app'],vn:'chương trình',vn_alt:['chương trình phần mềm','phần mềm'],ex:'The program has some errors.'},
+  {topic:'Technology & IT',en:'security',en_alt:['protection','safety','cybersecurity'],vn:'bảo mật',vn_alt:['bảo mật','an ninh','an toàn'],ex:'Security is important for online banking.'},
+  {topic:'Technology & IT',en:'server',en_alt:['host','mainframe'],vn:'máy chủ',vn_alt:['máy chủ','hệ thống máy chủ'],ex:'The server is under maintenance.'},
+  {topic:'Technology & IT',en:'system',en_alt:['network','platform','infrastructure'],vn:'hệ thống',vn_alt:['hệ thống','hệ thống máy tính'],ex:'The new system is more efficient.'},
+  {topic:'Health & Medical',en:'calorie',en_alt:['kcal'],vn:'calo',vn_alt:['calo','năng lượng thực phẩm'],ex:'This meal has 500 calories.'},
+  {topic:'Health & Medical',en:'diet',en_alt:['eating plan','nutrition plan'],vn:'chế độ ăn',vn_alt:['chế độ ăn','chế độ dinh dưỡng','ăn kiêng'],ex:'He is on a low-carb diet.'},
+  {topic:'Health & Medical',en:'gym',en_alt:['fitness center','health club'],vn:'phòng tập',vn_alt:['phòng tập','phòng tập thể hình','câu lạc bộ thể thao'],ex:'She goes to the gym three times a week.'},
+  {topic:'Health & Medical',en:'nutrition',en_alt:['diet','nourishment'],vn:'dinh dưỡng',vn_alt:['dinh dưỡng','chất dinh dưỡng'],ex:'Good nutrition is essential for health.'},
+  {topic:'Health & Medical',en:'relax',en_alt:['unwind','rest','chill'],vn:'thư giãn',vn_alt:['thư giãn','nghỉ ngơi'],ex:'He relaxed after a long day.'},
+  {topic:'Health & Medical',en:'stress',en_alt:['pressure','anxiety','tension'],vn:'căng thẳng',vn_alt:['căng thẳng','áp lực','lo âu'],ex:'Work stress affects many employees.'},
+  {topic:'Health & Medical',en:'surgery',en_alt:['operation','procedure'],vn:'phẫu thuật',vn_alt:['phẫu thuật','ca mổ','giải phẫu'],ex:'The patient had surgery yesterday.'},
+  {topic:'Health & Medical',en:'symptom',en_alt:['sign','indication','warning sign'],vn:'triệu chứng',vn_alt:['triệu chứng','biểu hiện','dấu hiệu'],ex:'He has flu symptoms.'},
+  {topic:'Health & Medical',en:'vaccine',en_alt:['immunization','shot','jab'],vn:'vắc-xin',vn_alt:['vắc-xin','tiêm phòng'],ex:'Children must receive vaccines.'},
+  {topic:'Health & Medical',en:'virus',en_alt:['pathogen','bug'],vn:'vi-rút',vn_alt:['vi-rút','vi rút gây bệnh'],ex:'A new virus is spreading quickly.'},
+  {topic:'Marketing & Sales',en:'advertise',en_alt:['promote','market','publicize'],vn:'quảng cáo',vn_alt:['quảng cáo','chạy quảng cáo','đăng quảng cáo'],ex:'They advertise their products on TV.'},
+  {topic:'Marketing & Sales',en:'advertisement',en_alt:['ad','commercial','promo'],vn:'quảng cáo',vn_alt:['mẩu quảng cáo','quảng cáo','bài quảng cáo'],ex:'I saw an advertisement in the newspaper.'},
+  {topic:'Marketing & Sales',en:'brand',en_alt:['label','trademark','make'],vn:'thương hiệu',vn_alt:['thương hiệu','nhãn hiệu','nhãn'],ex:'Nike is a famous sports brand.'},
+  {topic:'Marketing & Sales',en:'campaign',en_alt:['drive','initiative','push'],vn:'chiến dịch',vn_alt:['chiến dịch quảng cáo','chiến dịch tiếp thị'],ex:'The company launched a new marketing campaign.'},
+  {topic:'Marketing & Sales',en:'commercial',en_alt:['ad','advertisement'],vn:'quảng cáo thương mại',vn_alt:['quảng cáo thương mại','phim quảng cáo','TVC'],ex:'The commercial was shown during the football match.'},
+  {topic:'Marketing & Sales',en:'consumer',en_alt:['customer','buyer','end user'],vn:'người tiêu dùng',vn_alt:['người tiêu dùng','khách hàng tiêu dùng'],ex:'Consumers are demanding better quality.'},
+  {topic:'Marketing & Sales',en:'market',en_alt:[],vn:'thị trường',vn_alt:['thị trường','thị trường tiêu thụ'],ex:'The Asian market is growing fast.'},
+  {topic:'Marketing & Sales',en:'promote',en_alt:['advertise','market','publicize'],vn:'quảng bá',vn_alt:['quảng bá','tiếp thị','thúc đẩy'],ex:'They promote their products online.'},
+  {topic:'Marketing & Sales',en:'sales',en_alt:['revenue','turnover'],vn:'doanh số',vn_alt:['doanh số','doanh thu bán hàng'],ex:'Sales increased by 20% this year.'},
+  {topic:'Marketing & Sales',en:'strategy',en_alt:['plan','approach','tactic'],vn:'chiến lược',vn_alt:['chiến lược kinh doanh','kế hoạch chiến lược'],ex:'The company changed its marketing strategy.'},
+  {topic:'Shopping & Services',en:'aisle',en_alt:['lane','passage','row'],vn:'lối đi (siêu thị)',vn_alt:['lối đi','lối đi siêu thị','hành lang'],ex:'The bread is in the next aisle.'},
+  {topic:'Shopping & Services',en:'brand-new',en_alt:['new','fresh','unused'],vn:'mới toanh',vn_alt:['mới tinh','mới toanh','hoàn toàn mới'],ex:'She bought a brand-new phone.'},
+  {topic:'Shopping & Services',en:'cashier',en_alt:['teller','checkout clerk'],vn:'thu ngân',vn_alt:['nhân viên thu ngân','người thu tiền'],ex:'The cashier counted the money.'},
+  {topic:'Shopping & Services',en:'checkout',en_alt:['register','till','payment counter'],vn:'quầy tính tiền',vn_alt:['quầy tính tiền','quầy thanh toán'],ex:'Please go to the checkout.'},
+  {topic:'Shopping & Services',en:'consumer goods',en_alt:['retail goods','products'],vn:'hàng tiêu dùng',vn_alt:['hàng tiêu dùng','sản phẩm tiêu dùng'],ex:'Consumer goods are in high demand.'},
+  {topic:'Shopping & Services',en:'outlet',en_alt:['store','shop','factory outlet'],vn:'cửa hàng bán lẻ',vn_alt:['cửa hàng bán lẻ','cửa hàng factory outlet'],ex:'They opened a new outlet downtown.'},
+  {topic:'Shopping & Services',en:'purchase',en_alt:['buy','acquisition','transaction'],vn:'mua hàng',vn_alt:['mua hàng','giao dịch mua','việc mua'],ex:'He purchased a new laptop.'},
+  {topic:'Shopping & Services',en:'retailer',en_alt:['store','shop','merchant'],vn:'nhà bán lẻ',vn_alt:['nhà bán lẻ','người bán lẻ'],ex:'The retailer offers discounts.'},
+  {topic:'Shopping & Services',en:'shopping mall',en_alt:['mall','shopping center','plaza'],vn:'trung tâm thương mại',vn_alt:['trung tâm thương mại','khu mua sắm'],ex:'The shopping mall is crowded.'},
+  {topic:'Shopping & Services',en:'stock',en_alt:['inventory','supply','goods'],vn:'hàng tồn',vn_alt:['hàng tồn','hàng tồn kho','hàng dự trữ'],ex:'This item is out of stock.'},
+  {topic:'Finance & Banking',en:'asset',en_alt:['property','resource','holding'],vn:'tài sản',vn_alt:['tài sản','tài sản có'],ex:'Property is a valuable asset.'},
+  {topic:'Finance & Banking',en:'bond',en_alt:[],vn:'trái phiếu',vn_alt:['trái phiếu','trái khoán'],ex:'Investors buy government bonds.'},
+  {topic:'Finance & Banking',en:'capital',en_alt:['funds','money','investment'],vn:'vốn',vn_alt:['vốn','vốn đầu tư','nguồn vốn'],ex:'The company raised more capital.'},
+  {topic:'Finance & Banking',en:'currency',en_alt:['money','cash','denomination'],vn:'tiền tệ',vn_alt:['tiền tệ','đồng tiền','ngoại tệ'],ex:'The local currency is the yen.'},
+  {topic:'Finance & Banking',en:'dividend',en_alt:[],vn:'cổ tức',vn_alt:['cổ tức','tiền lợi tức'],ex:'Shareholders receive dividends yearly.'},
+  {topic:'Finance & Banking',en:'equity',en_alt:['shares','ownership','capital'],vn:'vốn chủ sở hữu',vn_alt:['vốn cổ phần','vốn chủ sở hữu','cổ phần'],ex:'He invested in company equity.'},
+  {topic:'Finance & Banking',en:'fund',en_alt:['capital','money','finance'],vn:'quỹ',vn_alt:['quỹ','nguồn vốn','tài trợ'],ex:'They created a new investment fund.'},
+  {topic:'Finance & Banking',en:'profit',en_alt:['gain','earnings','return'],vn:'lợi nhuận',vn_alt:['lợi nhuận','tiền lời','thu lãi'],ex:'The company made a huge profit.'},
+  {topic:'Finance & Banking',en:'revenue',en_alt:['income','earnings','sales'],vn:'doanh thu',vn_alt:['doanh thu','thu nhập','nguồn thu'],ex:'Advertising brings in revenue.'},
+  {topic:'Finance & Banking',en:'stockholder',en_alt:['shareholder','investor'],vn:'cổ đông',vn_alt:['cổ đông','cổ đông công ty'],ex:'Stockholders attended the meeting.'},
+  {topic:'Workplace & HR',en:'bonus',en_alt:['reward','incentive','extra pay'],vn:'tiền thưởng',vn_alt:['tiền thưởng','thưởng','phần thưởng'],ex:'Employees get a bonus at year-end.'},
+  {topic:'Workplace & HR',en:'candidate',en_alt:['applicant','nominee'],vn:'ứng viên',vn_alt:['ứng cử viên','người ứng tuyển','thí sinh'],ex:'Many candidates applied for the job.'},
+  {topic:'Workplace & HR',en:'contract',en_alt:['agreement','deal'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','thỏa thuận'],ex:'He signed a two-year contract.'},
+  {topic:'Workplace & HR',en:'employee',en_alt:['staff','worker','personnel'],vn:'nhân viên',vn_alt:['người lao động','công nhân viên','nhân sự'],ex:'The company has 100 employees.'},
+  {topic:'Workplace & HR',en:'employer',en_alt:['boss','company','organization'],vn:'nhà tuyển dụng',vn_alt:['nhà tuyển dụng','người sử dụng lao động','chủ doanh nghiệp'],ex:'The employer offered good benefits.'},
+  {topic:'Workplace & HR',en:'hire',en_alt:['employ','recruit','take on'],vn:'tuyển dụng',vn_alt:['tuyển dụng','thuê người','tuyển nhân viên'],ex:'The company plans to hire more staff.'},
+  {topic:'Workplace & HR',en:'overtime',en_alt:['extra hours','OT'],vn:'tăng ca',vn_alt:['tăng ca','làm thêm giờ','ngoài giờ làm'],ex:'He worked overtime last week.'},
+  {topic:'Workplace & HR',en:'payroll',en_alt:['salary list','wage sheet'],vn:'bảng lương',vn_alt:['bảng lương','danh sách lương','thanh toán lương'],ex:'The payroll is processed monthly.'},
+  {topic:'Workplace & HR',en:'retirement',en_alt:['pension','superannuation'],vn:'nghỉ hưu',vn_alt:['nghỉ hưu','về hưu'],ex:'He is planning for retirement.'},
+  {topic:'Workplace & HR',en:'training program',en_alt:['course','development program'],vn:'chương trình đào tạo',vn_alt:['chương trình đào tạo','khóa huấn luyện'],ex:'New staff joined the training program.'},
+  {topic:'Travel & Transport',en:'baggage claim',en_alt:['luggage pickup'],vn:'băng chuyền nhận hành lý',vn_alt:['khu vực nhận hành lý','băng chuyền nhận hành lý'],ex:'We waited at the baggage claim.'},
+  {topic:'Travel & Transport',en:'cabin crew',en_alt:['flight crew','air crew'],vn:'tiếp viên',vn_alt:['tiếp viên hàng không','phi hành đoàn','tổ bay'],ex:'The cabin crew welcomed passengers.'},
+  {topic:'Travel & Transport',en:'departure',en_alt:['takeoff','leaving','setting off'],vn:'khởi hành',vn_alt:['giờ khởi hành','lúc khởi hành'],ex:'The departure is at 9 AM.'},
+  {topic:'Travel & Transport',en:'flight attendant',en_alt:['cabin crew','air host'],vn:'tiếp viên hàng không',vn_alt:['tiếp viên hàng không','nữ tiếp viên','nam tiếp viên'],ex:'The flight attendant served drinks.'},
+  {topic:'Travel & Transport',en:'gate',en_alt:['boarding gate','entrance'],vn:'cổng',vn_alt:['cổng lên máy bay','cổng vào','cửa ra'],ex:'Our gate is number 15.'},
+  {topic:'Travel & Transport',en:'itinerary',en_alt:['travel plan','schedule'],vn:'lịch trình',vn_alt:['lịch trình chuyến đi','kế hoạch du lịch'],ex:'The travel agent prepared the itinerary.'},
+  {topic:'Travel & Transport',en:'layover',en_alt:['stopover','connection','transit stop'],vn:'điểm dừng quá cảnh',vn_alt:['điểm dừng quá cảnh','chờ nối chuyến'],ex:'We had a layover in Singapore.'},
+  {topic:'Travel & Transport',en:'runway',en_alt:[],vn:'đường băng',vn_alt:['đường băng','đường cất hạ cánh'],ex:'The plane landed on the runway.'},
+  {topic:'Travel & Transport',en:'security check',en_alt:['security screening','baggage check'],vn:'kiểm tra an ninh',vn_alt:['kiểm tra an ninh','soi hành lý','qua máy soi'],ex:'We passed through security check.'},
+  {topic:'Travel & Transport',en:'terminal',en_alt:['station','gateway','airport building'],vn:'nhà ga',vn_alt:['nhà ga','ga hàng không','sân bay terminal'],ex:'The bus leaves from Terminal 2.'},
+  {topic:'Technology & IT',en:'analysis',en_alt:['review','assessment','examination'],vn:'phân tích',vn_alt:['phân tích','sự phân tích'],ex:'The lab finished the analysis.'},
+  {topic:'Technology & IT',en:'device',en_alt:['gadget','tool','instrument'],vn:'thiết bị',vn_alt:['thiết bị','thiết bị điện tử','dụng cụ'],ex:'This device measures temperature.'},
+  {topic:'Technology & IT',en:'engineer',en_alt:[],vn:'kỹ sư',vn_alt:['kỹ sư','kỹ thuật viên'],ex:'She is a software engineer.'},
+  {topic:'Technology & IT',en:'innovation',en_alt:['invention','improvement','creativity'],vn:'đổi mới',vn_alt:['đổi mới','cải tiến','sáng tạo'],ex:'The company invests in innovation.'},
+  {topic:'Technology & IT',en:'laboratory',en_alt:['lab','research facility'],vn:'phòng thí nghiệm',vn_alt:['phòng thí nghiệm','lab'],ex:'The experiment was done in a laboratory.'},
+  {topic:'Technology & IT',en:'research',en_alt:['study','investigation','inquiry'],vn:'nghiên cứu',vn_alt:['nghiên cứu','tìm hiểu','nghiên cứu khoa học'],ex:'The team is doing cancer research.'},
+  {topic:'Technology & IT',en:'solution',en_alt:['answer','fix','resolution'],vn:'giải pháp',vn_alt:['giải pháp','cách giải quyết','lời giải'],ex:'We need a better solution.'},
+  {topic:'Technology & IT',en:'technology',en_alt:['tech','science','engineering'],vn:'công nghệ',vn_alt:['công nghệ','kỹ thuật','khoa học kỹ thuật'],ex:'Technology is advancing rapidly.'},
+  {topic:'Technology & IT',en:'theory',en_alt:['concept','hypothesis','idea'],vn:'lý thuyết',vn_alt:['lý thuyết','học thuyết'],ex:'They tested the theory in practice.'},
+  {topic:'Technology & IT',en:'experiment',en_alt:['test','trial','study'],vn:'thí nghiệm',vn_alt:['thí nghiệm','thực nghiệm'],ex:'The experiment proved successful.'},
+  {topic:'Environment & Industry',en:'assemble',en_alt:['put together','build','construct'],vn:'lắp ráp',vn_alt:['lắp ráp','ghép nối','ráp lại'],ex:'Workers assemble cars in the factory.'},
+  {topic:'Environment & Industry',en:'component',en_alt:['part','element','piece'],vn:'linh kiện',vn_alt:['linh kiện','bộ phận','thành phần'],ex:'The machine has many small components.'},
+  {topic:'Environment & Industry',en:'defect',en_alt:['fault','flaw','imperfection'],vn:'lỗi sản phẩm',vn_alt:['lỗi sản phẩm','khuyết tật','hàng lỗi'],ex:'The product was returned due to a defect.'},
+  {topic:'Environment & Industry',en:'efficiency',en_alt:['productivity','performance','output'],vn:'hiệu suất',vn_alt:['hiệu suất','hiệu quả','năng suất'],ex:'The new system improved efficiency.'},
+  {topic:'Environment & Industry',en:'equipment',en_alt:['machinery','tools','apparatus'],vn:'thiết bị',vn_alt:['thiết bị','máy móc','dụng cụ'],ex:'The factory bought new equipment.'},
+  {topic:'Environment & Industry',en:'factory',en_alt:['plant','mill','manufacturing site'],vn:'nhà máy',vn_alt:['nhà máy','xưởng sản xuất','cơ sở sản xuất'],ex:'The factory produces textiles.'},
+  {topic:'Environment & Industry',en:'machinery',en_alt:['equipment','machines','apparatus'],vn:'máy móc',vn_alt:['máy móc','thiết bị máy móc'],ex:'The machinery needs maintenance.'},
+  {topic:'Environment & Industry',en:'mass production',en_alt:['bulk production'],vn:'sản xuất hàng loạt',vn_alt:['sản xuất hàng loạt','sản xuất đại trà'],ex:'Cars are made by mass production.'},
+  {topic:'Environment & Industry',en:'output',en_alt:['production','yield','result'],vn:'sản lượng',vn_alt:['sản lượng','đầu ra','kết quả sản xuất'],ex:'The factory increased its output.'},
+  {topic:'Environment & Industry',en:'quality control',en_alt:['QA','quality assurance'],vn:'kiểm soát chất lượng',vn_alt:['kiểm soát chất lượng','kiểm tra chất lượng','QC'],ex:'Quality control is essential in production.'},
+  {topic:'Shopping & Services',en:'assistance',en_alt:['help','support','aid'],vn:'hỗ trợ',vn_alt:['sự hỗ trợ','giúp đỡ','trợ giúp'],ex:'The staff provides customer assistance.'},
+  {topic:'Shopping & Services',en:'complaint',en_alt:['grievance','objection','issue'],vn:'phàn nàn',vn_alt:['phàn nàn','khiếu nại','sự phản ánh'],ex:'The customer filed a complaint.'},
+  {topic:'Shopping & Services',en:'feedback',en_alt:['response','comment','review'],vn:'phản hồi',vn_alt:['phản hồi','ý kiến phản hồi','nhận xét'],ex:'We received positive feedback.'},
+  {topic:'Shopping & Services',en:'hotline',en_alt:['helpline','support line'],vn:'đường dây nóng',vn_alt:['đường dây nóng','số điện thoại hỗ trợ'],ex:'Call the hotline for help.'},
+  {topic:'Shopping & Services',en:'inquiry',en_alt:['question','query','request'],vn:'yêu cầu thông tin',vn_alt:['yêu cầu thông tin','thắc mắc','câu hỏi'],ex:'We answered the customer’s inquiry.'},
+  {topic:'Shopping & Services',en:'polite',en_alt:['courteous','respectful','civil'],vn:'lịch sự',vn_alt:['lịch sự','nhã nhặn','tế nhị'],ex:'The staff was very polite.'},
+  {topic:'Shopping & Services',en:'satisfaction',en_alt:['contentment','fulfillment','pleasure'],vn:'sự hài lòng',vn_alt:['sự hài lòng','mức độ hài lòng','sự thỏa mãn'],ex:'Customer satisfaction is our priority.'},
+  {topic:'Shopping & Services',en:'support',en_alt:['help','assistance','aid'],vn:'hỗ trợ',vn_alt:['hỗ trợ','hỗ trợ khách hàng','giúp đỡ'],ex:'The IT team gives technical support.'},
+  {topic:'Shopping & Services',en:'warranty',en_alt:['guarantee','assurance'],vn:'bảo hành',vn_alt:['bảo hành','giấy bảo hành'],ex:'This TV has a two-year warranty.'},
+  {topic:'Shopping & Services',en:'resolve',en_alt:['solve','fix','settle','address'],vn:'giải quyết',vn_alt:['giải quyết','xử lý','tháo gỡ'],ex:'They resolved the issue quickly.'},
+  {topic:'Environment & Industry',en:'alternative',en_alt:['option','substitute','replacement'],vn:'thay thế',vn_alt:['phương án thay thế','lựa chọn khác','giải pháp thay thế'],ex:'Solar energy is an alternative to coal.'},
+  {topic:'Environment & Industry',en:'conserve',en_alt:['preserve','protect','save'],vn:'bảo tồn',vn_alt:['bảo tồn','gìn giữ','tiết kiệm'],ex:'We must conserve natural resources.'},
+  {topic:'Environment & Industry',en:'eco-friendly',en_alt:['green','sustainable','environmentally friendly'],vn:'thân thiện môi trường',vn_alt:['thân thiện môi trường','xanh','thân thiện với thiên nhiên'],ex:'This bag is eco-friendly.'},
+  {topic:'Environment & Industry',en:'emission',en_alt:['discharge','output','exhaust'],vn:'khí thải',vn_alt:['khí thải','phát thải'],ex:'Car emissions cause pollution.'},
+  {topic:'Environment & Industry',en:'global warming',en_alt:['climate change'],vn:'nóng lên toàn cầu',vn_alt:['nóng lên toàn cầu','biến đổi khí hậu'],ex:'Global warming affects the climate.'},
+  {topic:'Environment & Industry',en:'recycle',en_alt:['reuse','repurpose'],vn:'tái chế',vn_alt:['tái chế','tái sử dụng'],ex:'Please recycle bottles and cans.'},
+  {topic:'Environment & Industry',en:'renewable',en_alt:['sustainable','green','clean'],vn:'tái tạo',vn_alt:['có thể tái tạo','tái tạo được','nguồn tái tạo'],ex:'Wind is a renewable source of energy.'},
+  {topic:'Environment & Industry',en:'resource',en_alt:['supply','asset','material'],vn:'tài nguyên',vn_alt:['tài nguyên','nguồn tài nguyên'],ex:'Water is a precious resource.'},
+  {topic:'Environment & Industry',en:'sustainable',en_alt:['eco-friendly','green','long-term'],vn:'bền vững',vn_alt:['bền vững','có thể duy trì lâu dài'],ex:'The company follows sustainable practices.'},
+  {topic:'Environment & Industry',en:'waste',en_alt:['garbage','trash','rubbish'],vn:'chất thải',vn_alt:['rác thải','chất thải','lãng phí'],ex:'Industrial waste pollutes rivers.'},
+  {topic:'Education & Culture',en:'article',en_alt:['piece','story','report'],vn:'bài báo',vn_alt:['bài báo','bài viết','bài'],ex:'I read an article in the magazine.'},
+  {topic:'Education & Culture',en:'broadcast',en_alt:['air','transmit','stream'],vn:'phát sóng',vn_alt:['phát sóng','phát thanh','truyền hình'],ex:'The news was broadcast on TV.'},
+  {topic:'Education & Culture',en:'journalist',en_alt:['reporter','correspondent','writer'],vn:'nhà báo',vn_alt:['nhà báo','phóng viên'],ex:'Journalists reported on the event.'},
+  {topic:'Education & Culture',en:'magazine',en_alt:['journal','periodical','publication'],vn:'tạp chí',vn_alt:['tạp chí','tạp san'],ex:'She bought a fashion magazine.'},
+  {topic:'Education & Culture',en:'media',en_alt:['press','communications'],vn:'truyền thông',vn_alt:['truyền thông','phương tiện truyền thông'],ex:'Social media is very popular.'},
+  {topic:'Education & Culture',en:'newspaper',en_alt:['paper','daily','tabloid'],vn:'báo in',vn_alt:['báo in','nhật báo','tờ báo'],ex:'He reads the newspaper every day.'},
+  {topic:'Education & Culture',en:'press',en_alt:['media','news organizations','journalism'],vn:'báo chí',vn_alt:['báo chí','giới báo chí'],ex:'The press attended the conference.'},
+  {topic:'Education & Culture',en:'publish',en_alt:['release','issue','print'],vn:'xuất bản',vn_alt:['xuất bản','phát hành','đăng tải'],ex:'They publish books every year.'},
+  {topic:'Education & Culture',en:'review',en_alt:['assessment','critique','feedback'],vn:'bài đánh giá',vn_alt:['bài đánh giá','nhận xét','bình luận'],ex:'The movie got a great review.'},
+  {topic:'Education & Culture',en:'headline',en_alt:['title','header','caption'],vn:'tiêu đề',vn_alt:['tiêu đề','tít báo','đầu đề'],ex:'The headline caught my attention.'},
+  {topic:'Business & Office',en:'agenda',en_alt:[],vn:'chương trình nghị sự',vn_alt:['lịch họp','chương trình họp','nội dung cuộc họp'],ex:'The agenda was shared in advance.'},
+  {topic:'Business & Office',en:'agreement',en_alt:['deal','contract','treaty'],vn:'thỏa thuận',vn_alt:['thỏa thuận','hiệp định','hợp đồng','thỏa hiệp'],ex:'They reached an agreement.'},
+  {topic:'Business & Office',en:'argue',en_alt:['debate','dispute','contend'],vn:'tranh luận',vn_alt:['tranh luận','tranh cãi','lập luận'],ex:'They argued over the contract terms.'},
+  {topic:'Business & Office',en:'compromise',en_alt:['concession','middle ground','settlement'],vn:'thỏa hiệp',vn_alt:['thỏa hiệp','nhượng bộ','dàn xếp'],ex:'Both sides made a compromise.'},
+  {topic:'Business & Office',en:'conclude',en_alt:['finish','end','wrap up'],vn:'kết thúc',vn_alt:['kết thúc','đi đến kết luận','hoàn thành'],ex:'The meeting concluded at 5 PM.'},
+  {topic:'Business & Office',en:'discuss',en_alt:['talk about','debate','confer'],vn:'thảo luận',vn_alt:['thảo luận','bàn bạc','trao đổi'],ex:'They discussed the new policy.'},
+  {topic:'Business & Office',en:'negotiate',en_alt:['bargain','discuss','deal'],vn:'đàm phán',vn_alt:['đàm phán','thương lượng'],ex:'They negotiated a better price.'},
+  {topic:'Business & Office',en:'participant',en_alt:['attendee','delegate','member'],vn:'người tham gia',vn_alt:['người tham gia','thành viên','người dự'],ex:'Ten participants joined the meeting.'},
+  {topic:'Business & Office',en:'proposal',en_alt:['suggestion','plan','offer'],vn:'đề xuất',vn_alt:['đề xuất','kế hoạch đề nghị','bản đề nghị'],ex:'He submitted a proposal to the board.'},
+  {topic:'Business & Office',en:'vote',en_alt:['ballot','elect','decide'],vn:'bỏ phiếu',vn_alt:['bỏ phiếu','biểu quyết'],ex:'The members voted for the new leader.'},
+  {topic:'Education & Culture',en:'celebrate',en_alt:['commemorate','mark','observe'],vn:'ăn mừng',vn_alt:['ăn mừng','kỷ niệm','tổ chức lễ'],ex:'They celebrate New Year together.'},
+  {topic:'Education & Culture',en:'ceremony',en_alt:['ritual','event','occasion'],vn:'nghi lễ',vn_alt:['nghi lễ','lễ nghi','buổi lễ'],ex:'The wedding ceremony was beautiful.'},
+  {topic:'Education & Culture',en:'community',en_alt:['society','group','neighborhood'],vn:'cộng đồng',vn_alt:['cộng đồng','xã hội','tập thể'],ex:'The community supports the project.'},
+  {topic:'Education & Culture',en:'custom',en_alt:['tradition','habit','practice'],vn:'phong tục',vn_alt:['phong tục','tập quán','tục lệ'],ex:'It’s their custom to greet with a bow.'},
+  {topic:'Education & Culture',en:'diversity',en_alt:['variety','inclusion','multiculturalism'],vn:'đa dạng',vn_alt:['sự đa dạng','đa văn hóa'],ex:'The city is known for its cultural diversity.'},
+  {topic:'Education & Culture',en:'festival',en_alt:['celebration','event','fair'],vn:'lễ hội',vn_alt:['lễ hội','hội lễ','ngày lễ'],ex:'They joined the lantern festival.'},
+  {topic:'Education & Culture',en:'generation',en_alt:['age group','cohort'],vn:'thế hệ',vn_alt:['thế hệ','thế hệ dân số'],ex:'The young generation is tech-savvy.'},
+  {topic:'Education & Culture',en:'holiday',en_alt:['public holiday','day off','vacation'],vn:'ngày lễ',vn_alt:['ngày lễ','ngày nghỉ lễ','kỳ nghỉ'],ex:'Christmas is a public holiday.'},
+  {topic:'Education & Culture',en:'tradition',en_alt:['custom','heritage','practice'],vn:'truyền thống',vn_alt:['truyền thống','văn hóa truyền thống'],ex:'They keep their family tradition.'},
+  {topic:'Education & Culture',en:'volunteer',en_alt:['helper','unpaid worker'],vn:'tình nguyện viên/tình nguyện',vn_alt:['tình nguyện viên','người tình nguyện','làm tình nguyện'],ex:'She volunteers at the hospital.'},
+  {topic:'Logistics & Trade',en:'address',en_alt:[],vn:'địa chỉ',vn_alt:['địa chỉ','địa chỉ giao hàng'],ex:'Please write your home address clearly.'},
+  {topic:'Logistics & Trade',en:'courier',en_alt:['delivery person','messenger','shipper'],vn:'người giao hàng',vn_alt:['nhân viên giao hàng','người đưa thư','shipper'],ex:'The courier delivered the package.'},
+  {topic:'Logistics & Trade',en:'deliver',en_alt:['ship','send','dispatch'],vn:'giao hàng',vn_alt:['giao hàng','chuyển hàng','giao tới'],ex:'They deliver goods within two days.'},
+  {topic:'Logistics & Trade',en:'express',en_alt:['fast','priority','urgent'],vn:'nhanh/chuyển phát nhanh',vn_alt:['chuyển phát nhanh','nhanh','tốc hành'],ex:'We used express shipping.'},
+  {topic:'Logistics & Trade',en:'fragile',en_alt:['breakable','delicate'],vn:'dễ vỡ',vn_alt:['dễ vỡ','dễ bể','mỏng manh'],ex:'This box is fragile.'},
+  {topic:'Logistics & Trade',en:'label',en_alt:['sticker','tag','mark'],vn:'nhãn',vn_alt:['nhãn','nhãn hàng','thẻ dán'],ex:'Check the label before shipping.'},
+  {topic:'Logistics & Trade',en:'package',en_alt:['parcel','box','bundle'],vn:'gói hàng',vn_alt:['gói hàng','bưu kiện','đóng gói'],ex:'The package arrived safely.'},
+  {topic:'Logistics & Trade',en:'parcel',en_alt:['package','box','bundle'],vn:'bưu kiện',vn_alt:['bưu kiện','gói bưu phẩm'],ex:'She sent a parcel to her friend.'},
+  {topic:'Logistics & Trade',en:'shipping fee',en_alt:['delivery fee','freight charge'],vn:'phí vận chuyển',vn_alt:['phí vận chuyển','phí giao hàng','cước vận chuyển'],ex:'The shipping fee is $10.'},
+  {topic:'Logistics & Trade',en:'tracking number',en_alt:['tracking code','order number'],vn:'mã theo dõi',vn_alt:['mã theo dõi','số theo dõi đơn hàng'],ex:'You can check the tracking number online.'},
+  {topic:'Environment & Industry',en:'architect',en_alt:[],vn:'kiến trúc sư',vn_alt:['kiến trúc sư','nhà thiết kế'],ex:'The architect designed the building.'},
+  {topic:'Environment & Industry',en:'blueprint',en_alt:['plan','design','schematic'],vn:'bản thiết kế',vn_alt:['bản thiết kế','bản vẽ kỹ thuật','sơ đồ'],ex:'They reviewed the blueprint carefully.'},
+  {topic:'Environment & Industry',en:'construction',en_alt:['building','development','structure'],vn:'xây dựng',vn_alt:['xây dựng','công trình xây dựng'],ex:'The construction will finish next year.'},
+  {topic:'Environment & Industry',en:'contractor',en_alt:['builder','subcontractor'],vn:'nhà thầu',vn_alt:['nhà thầu','đơn vị thầu'],ex:'The contractor hired more workers.'},
+  {topic:'Environment & Industry',en:'crane',en_alt:[],vn:'cần cẩu',vn_alt:['cần cẩu','máy cẩu'],ex:'The crane lifted heavy materials.'},
+  {topic:'Environment & Industry',en:'foundation',en_alt:['base','footing','groundwork'],vn:'nền móng',vn_alt:['nền móng','móng công trình','cơ sở'],ex:'The foundation must be strong.'},
+  {topic:'Environment & Industry',en:'maintenance',en_alt:['upkeep','servicing','repair'],vn:'bảo trì',vn_alt:['bảo trì','bảo dưỡng','duy tu','sửa chữa định kỳ'],ex:'The bridge needs maintenance.'},
+  {topic:'Environment & Industry',en:'renovation',en_alt:['refurbishment','remodeling','restoration'],vn:'cải tạo',vn_alt:['cải tạo','tu sửa','sửa chữa','tân trang'],ex:'The office is under renovation.'},
+  {topic:'Environment & Industry',en:'site',en_alt:['location','area','ground'],vn:'công trường',vn_alt:['công trường','địa điểm','khu vực'],ex:'Workers are at the construction site.'},
+  {topic:'Environment & Industry',en:'structure',en_alt:['building','framework','construction'],vn:'công trình',vn_alt:['công trình','kết cấu','cấu trúc'],ex:'This structure is very solid.'},
+  {topic:'Hotels & Hospitality',en:'bellboy',en_alt:['porter','bellhop'],vn:'nhân viên khuân vác',vn_alt:['nhân viên khuân vác','nhân viên hành lý','bell boy'],ex:'The bellboy carried our luggage.'},
+  {topic:'Hotels & Hospitality',en:'check-in desk',en_alt:['reception','front desk'],vn:'quầy làm thủ tục',vn_alt:['quầy làm thủ tục','quầy lễ tân','quầy nhận phòng'],ex:'We waited at the check-in desk.'},
+  {topic:'Hotels & Hospitality',en:'concierge',en_alt:['guest services'],vn:'nhân viên hỗ trợ khách',vn_alt:['nhân viên hỗ trợ khách','lễ tân cao cấp','nhân viên tiếp tân đặc biệt'],ex:'Ask the concierge for directions.'},
+  {topic:'Hotels & Hospitality',en:'guesthouse',en_alt:['B&B','bed and breakfast','inn'],vn:'nhà nghỉ',vn_alt:['nhà nghỉ','khách sạn nhỏ','nhà trọ'],ex:'They stayed at a small guesthouse.'},
+  {topic:'Hotels & Hospitality',en:'hospitality',en_alt:['welcome','warmth','service'],vn:'lòng hiếu khách',vn_alt:['lòng hiếu khách','sự đón tiếp nồng hậu'],ex:'We appreciated their hospitality.'},
+  {topic:'Hotels & Hospitality',en:'lounge',en_alt:['waiting area','lobby','sitting room'],vn:'sảnh chờ',vn_alt:['sảnh chờ','phòng chờ','khu vực nghỉ ngơi'],ex:'We sat in the hotel lounge.'},
+  {topic:'Hotels & Hospitality',en:'minibar',en_alt:[],vn:'tủ lạnh mini',vn_alt:['tủ lạnh mini','minibar'],ex:'Drinks are available in the minibar.'},
+  {topic:'Hotels & Hospitality',en:'reservation number',en_alt:['booking number','confirmation code'],vn:'mã đặt phòng',vn_alt:['mã đặt phòng','số đặt phòng','mã xác nhận'],ex:'Please confirm your reservation number.'},
+  {topic:'Hotels & Hospitality',en:'suite',en_alt:[],vn:'phòng hạng sang',vn_alt:['phòng suite','phòng cao cấp','phòng hạng đặc biệt'],ex:'They booked a deluxe suite.'},
+  {topic:'Hotels & Hospitality',en:'valet',en_alt:['parking attendant'],vn:'nhân viên đỗ xe',vn_alt:['nhân viên đỗ xe','nhân viên trông xe'],ex:'The valet parked the car.'},
+  {topic:'Workplace & HR',en:'announcement',en_alt:['notice','statement','bulletin'],vn:'thông báo',vn_alt:['thông báo','bản thông báo','tuyên bố'],ex:'The manager made an announcement.'},
+  {topic:'Workplace & HR',en:'clarify',en_alt:['explain','clear up','elaborate'],vn:'làm rõ',vn_alt:['làm rõ','giải thích rõ','đính chính'],ex:'Could you clarify your point?'},
+  {topic:'Workplace & HR',en:'confirm',en_alt:['verify','validate','affirm'],vn:'xác nhận',vn_alt:['xác nhận','khẳng định'],ex:'Please confirm the meeting time.'},
+  {topic:'Workplace & HR',en:'discuss',en_alt:['talk about','debate','confer'],vn:'thảo luận',vn_alt:['thảo luận','bàn bạc','trao đổi'],ex:'We discussed the budget issue.'},
+  {topic:'Workplace & HR',en:'instruction',en_alt:['direction','guideline','order'],vn:'hướng dẫn',vn_alt:['hướng dẫn','chỉ dẫn','chỉ thị'],ex:'Follow the instructions carefully.'},
+  {topic:'Workplace & HR',en:'message',en_alt:['text','note','communication'],vn:'tin nhắn',vn_alt:['tin nhắn','thông điệp','tin'],ex:'I left a message for you.'},
+  {topic:'Workplace & HR',en:'notice',en_alt:['announcement','memo','bulletin'],vn:'thông báo',vn_alt:['thông báo','thông cáo','ghi chú'],ex:'The notice was posted on the board.'},
+  {topic:'Workplace & HR',en:'reply',en_alt:['respond','answer','respond'],vn:'trả lời',vn_alt:['trả lời','hồi đáp','phản hồi'],ex:'He replied to the email quickly.'},
+  {topic:'Workplace & HR',en:'suggestion',en_alt:['recommendation','idea','proposal'],vn:'gợi ý',vn_alt:['gợi ý','đề nghị','đề xuất'],ex:'Do you have any suggestions?'},
+  {topic:'Workplace & HR',en:'update',en_alt:['upgrade','refresh','patch'],vn:'cập nhật',vn_alt:['nâng cấp','làm mới','cập nhật mới'],ex:'The system update is available.'},
+  {topic:'Finance & Banking',en:'ATM',en_alt:[],vn:'máy rút tiền',vn_alt:['máy rút tiền','cây ATM','máy ATM'],ex:'She withdrew cash from the ATM.'},
+  {topic:'Finance & Banking',en:'balance',en_alt:['remaining amount'],vn:'số dư',vn_alt:['số dư tài khoản','số tiền còn lại'],ex:'Please check your bank balance.'},
+  {topic:'Finance & Banking',en:'branch',en_alt:['office','location'],vn:'chi nhánh',vn_alt:['chi nhánh','văn phòng chi nhánh','phòng giao dịch'],ex:'He visited the bank branch downtown.'},
+  {topic:'Finance & Banking',en:'cash',en_alt:['money','notes','coins'],vn:'tiền mặt',vn_alt:['tiền mặt','tiền'],ex:'She paid in cash.'},
+  {topic:'Finance & Banking',en:'check',en_alt:['cheque'],vn:'ngân phiếu',vn_alt:['ngân phiếu','séc','tờ séc'],ex:'He wrote a check for $500.'},
+  {topic:'Finance & Banking',en:'credit card',en_alt:[],vn:'thẻ tín dụng',vn_alt:['thẻ tín dụng'],ex:'I paid with my credit card.'},
+  {topic:'Finance & Banking',en:'debit card',en_alt:[],vn:'thẻ ghi nợ',vn_alt:['thẻ ghi nợ','thẻ thanh toán'],ex:'Use a debit card to withdraw cash.'},
+  {topic:'Finance & Banking',en:'interest rate',en_alt:[],vn:'lãi suất',vn_alt:['lãi suất','mức lãi suất'],ex:'The interest rate is very low.'},
+  {topic:'Finance & Banking',en:'investment',en_alt:['funding','capital outlay'],vn:'khoản đầu tư',vn_alt:['khoản đầu tư','đầu tư'],ex:'They made an investment in real estate.'},
+  {topic:'Finance & Banking',en:'withdrawal',en_alt:['takeout'],vn:'rút tiền',vn_alt:['rút tiền','việc rút tiền'],ex:'The withdrawal was successful.'},
+  {topic:'Entertainment & Leisure',en:'athlete',en_alt:['sportsperson','player','competitor'],vn:'vận động viên',vn_alt:['vận động viên','thể thao'],ex:'The athlete won a gold medal.'},
+  {topic:'Entertainment & Leisure',en:'championship',en_alt:['title','cup','tournament'],vn:'giải vô địch',vn_alt:['giải vô địch','chức vô địch'],ex:'They are preparing for the championship.'},
+  {topic:'Entertainment & Leisure',en:'coach',en_alt:['trainer','instructor'],vn:'huấn luyện viên',vn_alt:['huấn luyện viên','HLV'],ex:'The coach gave advice to the team.'},
+  {topic:'Entertainment & Leisure',en:'competition',en_alt:['contest','tournament','event'],vn:'cuộc thi',vn_alt:['cuộc thi','thi đấu','giải đấu'],ex:'She entered a swimming competition.'},
+  {topic:'Entertainment & Leisure',en:'exercise',en_alt:['workout','training','physical activity'],vn:'tập thể dục',vn_alt:['tập luyện','vận động','thể dục'],ex:'Daily exercise keeps you healthy.'},
+  {topic:'Entertainment & Leisure',en:'fitness',en_alt:['health','shape','physical condition'],vn:'thể hình',vn_alt:['thể hình','sức khỏe thể chất','thể lực'],ex:'He goes to the gym for fitness.'},
+  {topic:'Entertainment & Leisure',en:'game',en_alt:['match','contest','event'],vn:'trận đấu',vn_alt:['trận đấu','cuộc chơi','ván đấu'],ex:'They watched a football game.'},
+  {topic:'Entertainment & Leisure',en:'player',en_alt:['athlete','competitor','participant'],vn:'người chơi',vn_alt:['người chơi','cầu thủ','tay vợt'],ex:'The player scored a goal.'},
+  {topic:'Entertainment & Leisure',en:'referee',en_alt:['umpire','judge','official'],vn:'trọng tài',vn_alt:['trọng tài','người phán xử'],ex:'The referee stopped the game.'},
+  {topic:'Entertainment & Leisure',en:'stadium',en_alt:['arena','ground','sports venue'],vn:'sân vận động',vn_alt:['sân vận động','sân thể thao'],ex:'The stadium was full of fans.'},
+  {topic:'Business & Office',en:'calculator',en_alt:[],vn:'máy tính',vn_alt:['máy tính','máy tính bỏ túi'],ex:'I use a calculator for quick math.'},
+  {topic:'Business & Office',en:'clipboard',en_alt:[],vn:'bảng kẹp giấy',vn_alt:['bảng kẹp giấy','tấm kẹp hồ sơ'],ex:'The manager wrote notes on a clipboard.'},
+  {topic:'Business & Office',en:'copier',en_alt:['photocopier','copy machine'],vn:'máy photocopy',vn_alt:['máy photocopy','máy phô-tô','máy sao chép'],ex:'The copier is not working.'},
+  {topic:'Business & Office',en:'desk',en_alt:['table','workstation'],vn:'bàn làm việc',vn_alt:['bàn làm việc','bàn học','bàn'],ex:'She has a tidy desk.'},
+  {topic:'Business & Office',en:'file cabinet',en_alt:['filing cabinet','document cabinet'],vn:'tủ hồ sơ',vn_alt:['tủ hồ sơ','tủ đựng tài liệu'],ex:'The files are in the cabinet.'},
+  {topic:'Business & Office',en:'highlighter',en_alt:['marker'],vn:'bút dạ quang',vn_alt:['bút dạ quang','bút highlight'],ex:'Use a highlighter for key points.'},
+  {topic:'Business & Office',en:'notebook',en_alt:['notepad','journal'],vn:'sổ tay',vn_alt:['sổ tay','tập ghi chép','cuốn sổ'],ex:'He wrote the idea in his notebook.'},
+  {topic:'Business & Office',en:'paperclip',en_alt:[],vn:'kẹp giấy',vn_alt:['kẹp giấy'],ex:'Please attach the papers with a paperclip.'},
+  {topic:'Business & Office',en:'stapler',en_alt:[],vn:'dập ghim',vn_alt:['dập ghim','máy bấm ghim'],ex:'I need a stapler for these documents.'},
+  {topic:'Business & Office',en:'whiteboard',en_alt:['board','marker board'],vn:'bảng trắng',vn_alt:['bảng trắng','bảng viết'],ex:'The teacher wrote on the whiteboard.'},
+  {topic:'Travel & Transport',en:'bus stop',en_alt:['bus station'],vn:'trạm xe buýt',vn_alt:['trạm xe buýt','điểm dừng xe buýt'],ex:'They waited at the bus stop.'},
+  {topic:'Travel & Transport',en:'car rental',en_alt:['car hire','vehicle rental'],vn:'thuê xe',vn_alt:['thuê xe','dịch vụ thuê xe'],ex:'We used a car rental service.'},
+  {topic:'Travel & Transport',en:'ferry',en_alt:['boat','ship'],vn:'phà',vn_alt:['phà','tàu phà','phà qua sông'],ex:'The ferry crosses the river every hour.'},
+  {topic:'Travel & Transport',en:'license plate',en_alt:['number plate','registration plate'],vn:'biển số xe',vn_alt:['biển số xe','biển số đăng ký'],ex:'The police checked the license plate.'},
+  {topic:'Travel & Transport',en:'metro',en_alt:['subway','underground','tube'],vn:'tàu điện ngầm',vn_alt:['tàu điện ngầm','metro','tàu ngầm đô thị'],ex:'The metro is very crowded.'},
+  {topic:'Travel & Transport',en:'motorcycle',en_alt:['motorbike','scooter','moped'],vn:'xe máy',vn_alt:['xe máy','xe gắn máy','mô-tô'],ex:'He rides a motorcycle to work.'},
+  {topic:'Travel & Transport',en:'parking lot',en_alt:['car park','parking area','garage'],vn:'bãi đỗ xe',vn_alt:['bãi đỗ xe','nơi gửi xe','bãi giữ xe'],ex:'The parking lot is full.'},
+  {topic:'Travel & Transport',en:'passenger',en_alt:['traveler','rider','commuter'],vn:'hành khách',vn_alt:['hành khách','hành khách đi tàu xe','khách đi'],ex:'There are 20 passengers on the bus.'},
+  {topic:'Travel & Transport',en:'speed limit',en_alt:['maximum speed'],vn:'giới hạn tốc độ',vn_alt:['giới hạn tốc độ','tốc độ tối đa'],ex:'He drove over the speed limit.'},
+  {topic:'Travel & Transport',en:'traffic jam',en_alt:['gridlock','congestion','bottleneck'],vn:'kẹt xe',vn_alt:['kẹt xe','ùn tắc giao thông','tắc đường'],ex:'We were stuck in a traffic jam.'},
+  {topic:'Business & Office',en:'analysis',en_alt:['review','assessment','examination'],vn:'phân tích',vn_alt:['phân tích','sự phân tích'],ex:'The team presented a market analysis.'},
+  {topic:'Business & Office',en:'benchmark',en_alt:['standard','reference point'],vn:'tiêu chuẩn so sánh',vn_alt:['tiêu chuẩn so sánh','chuẩn mực','điểm tham chiếu'],ex:'The company set new benchmarks.'},
+  {topic:'Business & Office',en:'competitor',en_alt:['rival','opponent','contender'],vn:'đối thủ',vn_alt:['đối thủ cạnh tranh','đối thủ','đối thủ kinh doanh'],ex:'They studied their main competitor.'},
+  {topic:'Business & Office',en:'growth',en_alt:['expansion','increase','development'],vn:'tăng trưởng',vn_alt:['tăng trưởng','sự phát triển','mức tăng'],ex:'Sales growth reached 15%.'},
+  {topic:'Business & Office',en:'innovation',en_alt:['invention','improvement','creativity'],vn:'đổi mới',vn_alt:['đổi mới','cải tiến','sáng tạo'],ex:'Innovation drives success.'},
+  {topic:'Business & Office',en:'objective',en_alt:['goal','aim','target'],vn:'mục tiêu',vn_alt:['mục tiêu','mục đích'],ex:'The objective is to reduce costs.'},
+  {topic:'Business & Office',en:'opportunity',en_alt:['chance','opening','prospect'],vn:'cơ hội',vn_alt:['cơ hội','thời cơ'],ex:'This market offers great opportunities.'},
+  {topic:'Business & Office',en:'strength',en_alt:['advantage','asset','forte'],vn:'điểm mạnh',vn_alt:['điểm mạnh','thế mạnh'],ex:'Customer service is our strength.'},
+  {topic:'Business & Office',en:'weakness',en_alt:['shortcoming','disadvantage','flaw'],vn:'điểm yếu',vn_alt:['điểm yếu','hạn chế'],ex:'A high price is their weakness.'},
+  {topic:'Business & Office',en:'vision',en_alt:['mission','direction'],vn:'tầm nhìn',vn_alt:['tầm nhìn','định hướng','chiến lược tương lai'],ex:'The CEO shared his vision for the future.'},
+  {topic:'Health & Medical',en:'ambulance',en_alt:['emergency vehicle'],vn:'xe cứu thương',vn_alt:['xe cứu thương','xe cấp cứu'],ex:'The ambulance arrived quickly.'},
+  {topic:'Health & Medical',en:'blood test',en_alt:[],vn:'xét nghiệm máu',vn_alt:['xét nghiệm máu','thử máu'],ex:'He had a blood test at the clinic.'},
+  {topic:'Health & Medical',en:'clinic',en_alt:['health center','medical center'],vn:'phòng khám',vn_alt:['cơ sở y tế','phòng mạch','trạm xá'],ex:'The clinic closes at 6 PM.'},
+  {topic:'Health & Medical',en:'emergency room',en_alt:['ER','A&E'],vn:'phòng cấp cứu',vn_alt:['phòng cấp cứu','khoa cấp cứu'],ex:'She was taken to the emergency room.'},
+  {topic:'Health & Medical',en:'injection',en_alt:['shot','jab','vaccination'],vn:'tiêm',vn_alt:['tiêm','mũi tiêm','chích thuốc'],ex:'The nurse gave me an injection.'},
+  {topic:'Health & Medical',en:'medical check-up',en_alt:['health check','physical exam'],vn:'kiểm tra sức khỏe',vn_alt:['kiểm tra sức khỏe','khám sức khỏe tổng quát','thăm khám'],ex:'A yearly medical check-up is important.'},
+  {topic:'Health & Medical',en:'nurse',en_alt:[],vn:'y tá',vn_alt:['y tá','điều dưỡng','y tá điều dưỡng'],ex:'The nurse helped the patient.'},
+  {topic:'Health & Medical',en:'operation',en_alt:['surgery','procedure'],vn:'ca phẫu thuật',vn_alt:['ca phẫu thuật','phẫu thuật','ca mổ'],ex:'The operation lasted three hours.'},
+  {topic:'Health & Medical',en:'prescription',en_alt:['medical order','script'],vn:'đơn thuốc',vn_alt:['toa thuốc','đơn thuốc bác sĩ'],ex:'The doctor gave him a prescription.'},
+  {topic:'Health & Medical',en:'surgeon',en_alt:[],vn:'bác sĩ phẫu thuật',vn_alt:['bác sĩ phẫu thuật','phẫu thuật viên'],ex:'The surgeon performed heart surgery.'},
+  {topic:'Entertainment & Leisure',en:'actor',en_alt:['performer','star'],vn:'diễn viên nam',vn_alt:['diễn viên','diễn viên nam','nghệ sĩ'],ex:'He is a famous actor.'},
+  {topic:'Entertainment & Leisure',en:'actress',en_alt:['performer','star'],vn:'diễn viên nữ',vn_alt:['diễn viên nữ','nữ nghệ sĩ'],ex:'The actress won an award.'},
+  {topic:'Entertainment & Leisure',en:'album',en_alt:['record','disc'],vn:'album',vn_alt:['album nhạc','đĩa nhạc'],ex:'She released a new album.'},
+  {topic:'Entertainment & Leisure',en:'audience',en_alt:['spectators','viewers','crowd'],vn:'khán giả',vn_alt:['khán giả','người xem','công chúng'],ex:'The audience applauded loudly.'},
+  {topic:'Entertainment & Leisure',en:'award',en_alt:['prize','honor','trophy'],vn:'giải thưởng',vn_alt:['giải thưởng','phần thưởng'],ex:'The film won an award.'},
+  {topic:'Entertainment & Leisure',en:'band',en_alt:['group','ensemble','musical group'],vn:'ban nhạc',vn_alt:['ban nhạc','nhóm nhạc'],ex:'The band played live music.'},
+  {topic:'Entertainment & Leisure',en:'director',en_alt:['filmmaker','manager','head'],vn:'đạo diễn',vn_alt:['đạo diễn','giám đốc','người chỉ đạo'],ex:'The director filmed a new movie.'},
+  {topic:'Entertainment & Leisure',en:'drama',en_alt:['play','show','series'],vn:'kịch/phim tình cảm',vn_alt:['kịch','phim tâm lý','phim truyền hình'],ex:'She likes watching Korean dramas.'},
+  {topic:'Entertainment & Leisure',en:'performance',en_alt:['show','act','display'],vn:'buổi biểu diễn',vn_alt:['màn trình diễn','buổi biểu diễn','màn biểu diễn'],ex:'The performance was amazing.'},
+  {topic:'Entertainment & Leisure',en:'stage',en_alt:['platform','theater','phase'],vn:'sân khấu',vn_alt:['sân khấu','giai đoạn'],ex:'The singer stood on the stage.'},
+  {topic:'Dining & Food',en:'appetizer',en_alt:['starter','first course'],vn:'món khai vị',vn_alt:['món khai vị','món ăn đầu'],ex:'We ordered soup as an appetizer.'},
+  {topic:'Dining & Food',en:'beverage',en_alt:['drink','liquid refreshment'],vn:'đồ uống',vn_alt:['đồ uống','thức uống','nước giải khát'],ex:'The restaurant offers various beverages.'},
+  {topic:'Dining & Food',en:'chef',en_alt:['cook','head chef'],vn:'bếp trưởng',vn_alt:['bếp trưởng','đầu bếp','nấu bếp chính'],ex:'The chef cooked a delicious meal.'},
+  {topic:'Dining & Food',en:'cuisine',en_alt:['food','cooking','gastronomy'],vn:'ẩm thực',vn_alt:['ẩm thực','phong cách nấu ăn','món ăn đặc trưng'],ex:'French cuisine is famous worldwide.'},
+  {topic:'Dining & Food',en:'dessert',en_alt:['sweet','pudding','after dinner'],vn:'món tráng miệng',vn_alt:['tráng miệng','món ăn tráng miệng','món ngọt'],ex:'Ice cream is my favorite dessert.'},
+  {topic:'Dining & Food',en:'ingredient',en_alt:['component','element','item'],vn:'nguyên liệu',vn_alt:['nguyên liệu','thành phần','nguyên liệu nấu ăn'],ex:'Rice is the main ingredient in sushi.'},
+  {topic:'Dining & Food',en:'main course',en_alt:['main dish','entree'],vn:'món chính',vn_alt:['món chính','món ăn chính'],ex:'Steak was served as the main course.'},
+  {topic:'Dining & Food',en:'recipe',en_alt:[],vn:'công thức nấu ăn',vn_alt:['công thức nấu ăn','cách làm món ăn'],ex:'She followed the recipe carefully.'},
+  {topic:'Dining & Food',en:'restaurant',en_alt:['eatery','diner','bistro'],vn:'nhà hàng',vn_alt:['nhà hàng','quán ăn','tiệm ăn'],ex:'We had dinner at a nice restaurant.'},
+  {topic:'Dining & Food',en:'waiter',en_alt:['server','waitstaff','attendant'],vn:'bồi bàn',vn_alt:['bồi bàn','phục vụ','nhân viên phục vụ bàn'],ex:'The waiter brought the menu.'},
+  {topic:'Finance & Banking',en:'accountant',en_alt:['bookkeeper','CPA'],vn:'kế toán',vn_alt:['kế toán viên','nhân viên kế toán'],ex:'The accountant prepared the report.'},
+  {topic:'Finance & Banking',en:'audit',en_alt:['inspection','examination','review'],vn:'kiểm toán',vn_alt:['kiểm toán','kiểm tra sổ sách','thanh tra tài chính'],ex:'The company had an external audit.'},
+  {topic:'Finance & Banking',en:'balance sheet',en_alt:[],vn:'bảng cân đối kế toán',vn_alt:['bảng cân đối kế toán','bảng cân đối tài sản'],ex:'The balance sheet was presented.'},
+  {topic:'Finance & Banking',en:'budget',en_alt:['funds','allowance'],vn:'ngân sách',vn_alt:['kinh phí','ngân quỹ','quỹ dự trù'],ex:'We need to cut the budget.'},
+  {topic:'Finance & Banking',en:'calculate',en_alt:['compute','figure out','work out'],vn:'tính toán',vn_alt:['tính toán','tính','tính ra'],ex:'She calculated the expenses.'},
+  {topic:'Finance & Banking',en:'cost',en_alt:['expense','price','charge'],vn:'chi phí',vn_alt:['chi phí','giá thành','giá cả'],ex:'The cost of living is rising.'},
+  {topic:'Finance & Banking',en:'expense',en_alt:['cost','outlay','spending'],vn:'chi phí',vn_alt:['khoản chi','chi tiêu','khoản chi phí'],ex:'Travel expenses were reimbursed.'},
+  {topic:'Finance & Banking',en:'financial statement',en_alt:[],vn:'báo cáo tài chính',vn_alt:['báo cáo tài chính','bảng báo cáo tài chính'],ex:'The financial statement was approved.'},
+  {topic:'Finance & Banking',en:'income',en_alt:['earnings','revenue','salary'],vn:'thu nhập',vn_alt:['thu nhập','doanh thu','nguồn thu'],ex:'His monthly income is high.'},
+  {topic:'Finance & Banking',en:'profit margin',en_alt:[],vn:'tỷ suất lợi nhuận',vn_alt:['biên lợi nhuận','tỷ suất lợi nhuận'],ex:'The profit margin increased.'},
+  {topic:'Workplace & HR',en:'assistant',en_alt:['helper','aide','support staff'],vn:'trợ lý',vn_alt:['trợ lý','nhân viên hỗ trợ','thư ký'],ex:'The assistant arranged the meeting.'},
+  {topic:'Workplace & HR',en:'director',en_alt:['filmmaker','manager','head'],vn:'giám đốc',vn_alt:['đạo diễn','giám đốc','người chỉ đạo'],ex:'The director approved the plan.'},
+  {topic:'Workplace & HR',en:'executive',en_alt:['senior manager','leader','C-level'],vn:'lãnh đạo cấp cao',vn_alt:['lãnh đạo cấp cao','giám đốc điều hành','cấp điều hành'],ex:'The executives met yesterday.'},
+  {topic:'Workplace & HR',en:'intern',en_alt:['trainee','apprentice'],vn:'thực tập sinh',vn_alt:['thực tập sinh','người thực tập'],ex:'The intern helped with reports.'},
+  {topic:'Workplace & HR',en:'manager',en_alt:['supervisor','director','head'],vn:'quản lý',vn_alt:['quản lý','giám đốc bộ phận','người quản lý'],ex:'The manager reviewed the tasks.'},
+  {topic:'Workplace & HR',en:'officer',en_alt:['official','staff','executive'],vn:'nhân viên/viên chức',vn_alt:['nhân viên','viên chức','cán bộ'],ex:'The bank officer checked my ID.'},
+  {topic:'Workplace & HR',en:'president',en_alt:['CEO','chair','head'],vn:'chủ tịch',vn_alt:['chủ tịch','giám đốc điều hành cao nhất'],ex:'The president gave a speech.'},
+  {topic:'Workplace & HR',en:'secretary',en_alt:['assistant','PA','admin'],vn:'thư ký',vn_alt:['thư ký','văn thư'],ex:'The secretary answered the phone.'},
+  {topic:'Workplace & HR',en:'staff',en_alt:['employees','personnel','workforce'],vn:'nhân viên',vn_alt:['nhân viên','đội ngũ nhân viên','tập thể nhân viên'],ex:'The staff are very helpful.'},
+  {topic:'Workplace & HR',en:'vice president',en_alt:['VP','deputy president'],vn:'phó chủ tịch',vn_alt:['phó chủ tịch','phó giám đốc điều hành'],ex:'She was promoted to vice president.'},
+  {topic:'Technology & IT',en:'algorithm',en_alt:[],vn:'thuật toán',vn_alt:['thuật toán','quy trình tính toán'],ex:'The algorithm solves problems.'},
+  {topic:'Technology & IT',en:'bandwidth',en_alt:[],vn:'băng thông',vn_alt:['băng thông','tốc độ đường truyền'],ex:'The network has limited bandwidth.'},
+  {topic:'Technology & IT',en:'cybersecurity',en_alt:['information security','IT security'],vn:'an ninh mạng',vn_alt:['an ninh mạng','bảo mật mạng'],ex:'Cybersecurity is very important.'},
+  {topic:'Technology & IT',en:'hardware',en_alt:['equipment','device','machine'],vn:'phần cứng',vn_alt:['phần cứng','thiết bị phần cứng'],ex:'The hardware was upgraded.'},
+  {topic:'Technology & IT',en:'software',en_alt:['application','program','app'],vn:'phần mềm',vn_alt:['phần mềm','ứng dụng'],ex:'He installed new software.'},
+  {topic:'Technology & IT',en:'artificial intelligence',en_alt:['AI','machine learning','deep learning'],vn:'trí tuệ nhân tạo',vn_alt:['trí tuệ nhân tạo','AI'],ex:'Artificial intelligence is trending.'},
+  {topic:'Technology & IT',en:'data',en_alt:['information','figures','stats'],vn:'dữ liệu',vn_alt:['dữ liệu','thông tin số liệu'],ex:'The data is stored in a cloud.'},
+  {topic:'Technology & IT',en:'database',en_alt:['data store','repository'],vn:'cơ sở dữ liệu',vn_alt:['cơ sở dữ liệu','kho dữ liệu'],ex:'The company maintains a database.'},
+  {topic:'Technology & IT',en:'interface',en_alt:['UI','display','screen'],vn:'giao diện',vn_alt:['giao diện','màn hình điều khiển'],ex:'The new interface is user-friendly.'},
+  {topic:'Technology & IT',en:'program',en_alt:['software','application','app'],vn:'chương trình',vn_alt:['chương trình phần mềm','phần mềm'],ex:'The program crashed suddenly.'},
+  {topic:'Logistics & Trade',en:'agreement',en_alt:['deal','contract','treaty'],vn:'hiệp định',vn_alt:['thỏa thuận','hiệp định','hợp đồng','thỏa hiệp'],ex:'They signed a trade agreement.'},
+  {topic:'Logistics & Trade',en:'cargo',en_alt:['freight','goods','shipment'],vn:'hàng hóa',vn_alt:['hàng hóa','lô hàng','hàng chở'],ex:'The cargo was shipped overseas.'},
+  {topic:'Logistics & Trade',en:'customs',en_alt:['border control','customs authority'],vn:'hải quan',vn_alt:['hải quan','thủ tục hải quan','cơ quan hải quan'],ex:'Goods were checked at customs.'},
+  {topic:'Logistics & Trade',en:'export',en_alt:['ship abroad','send overseas'],vn:'xuất khẩu',vn_alt:['xuất khẩu','hàng xuất khẩu'],ex:'They export rice worldwide.'},
+  {topic:'Logistics & Trade',en:'import',en_alt:['bring in','ship in'],vn:'nhập khẩu',vn_alt:['nhập khẩu','hàng nhập khẩu'],ex:'The country imports oil.'},
+  {topic:'Logistics & Trade',en:'invoice',en_alt:[],vn:'hóa đơn',vn_alt:[],ex:'The invoice must be paid.'},
+  {topic:'Logistics & Trade',en:'tariff',en_alt:['duty','customs tax'],vn:'thuế quan',vn_alt:['thuế quan','thuế nhập khẩu','biểu thuế'],ex:'Tariffs were increased last year.'},
+  {topic:'Logistics & Trade',en:'trade fair',en_alt:['trade show','expo'],vn:'hội chợ thương mại',vn_alt:['hội chợ thương mại','triển lãm thương mại'],ex:'They attended a trade fair.'},
+  {topic:'Logistics & Trade',en:'supplier',en_alt:['vendor','provider','source'],vn:'nhà cung cấp',vn_alt:['nhà cung cấp','đối tác cung ứng'],ex:'The supplier delivered on time.'},
+  {topic:'Logistics & Trade',en:'quota',en_alt:['limit','cap','allocation'],vn:'hạn ngạch',vn_alt:['hạn ngạch','hạn mức','định mức'],ex:'The country set a rice quota.'},
+  {topic:'Travel & Transport',en:'arrival',en_alt:['landing','reaching'],vn:'sự đến nơi',vn_alt:['giờ đến','sự đến nơi','hạ cánh'],ex:'The flight arrival was delayed.'},
+  {topic:'Travel & Transport',en:'baggage allowance',en_alt:[],vn:'hành lý miễn cước',vn_alt:['hành lý được phép','hành lý miễn phí','giới hạn hành lý'],ex:'The baggage allowance is 20 kg.'},
+  {topic:'Travel & Transport',en:'boarding gate',en_alt:['gate'],vn:'cổng lên máy bay',vn_alt:['cổng lên máy bay','cửa lên máy bay'],ex:'Go to boarding gate 12.'},
+  {topic:'Travel & Transport',en:'cabin',en_alt:[],vn:'khoang hành khách',vn_alt:['khoang máy bay','khoang hành khách'],ex:'Smoking is not allowed in the cabin.'},
+  {topic:'Travel & Transport',en:'captain',en_alt:['pilot','commander'],vn:'cơ trưởng',vn_alt:['cơ trưởng','phi công chính','thuyền trưởng'],ex:'The captain announced the flight time.'},
+  {topic:'Travel & Transport',en:'delay',en_alt:['postpone','be late','hold up'],vn:'sự trì hoãn',vn_alt:['trì hoãn','chậm trễ','bị chậm'],ex:'The flight was delayed by 2 hours.'},
+  {topic:'Travel & Transport',en:'landing',en_alt:['touchdown','descent'],vn:'hạ cánh',vn_alt:['hạ cánh','đáp xuống'],ex:'The landing was smooth.'},
+  {topic:'Travel & Transport',en:'nonstop flight',en_alt:['direct flight'],vn:'chuyến bay thẳng',vn_alt:['chuyến bay thẳng','bay thẳng không dừng'],ex:'They booked a nonstop flight.'},
+  {topic:'Travel & Transport',en:'turbulence',en_alt:[],vn:'nhiễu loạn',vn_alt:['nhiễu loạn không khí','không khí nhiễu động'],ex:'The plane experienced turbulence.'},
+  {topic:'Travel & Transport',en:'upgrade',en_alt:['move up','improve'],vn:'nâng hạng',vn_alt:['nâng hạng','nâng cấp'],ex:'She got a free seat upgrade.'},
+  {topic:'Education & Culture',en:'anniversary',en_alt:['commemoration','celebration'],vn:'ngày kỷ niệm',vn_alt:['ngày kỷ niệm','lễ kỷ niệm'],ex:'They celebrated their wedding anniversary.'},
+  {topic:'Education & Culture',en:'appointment',en_alt:['booking','scheduled visit','meeting'],vn:'cuộc hẹn',vn_alt:['lịch hẹn','hẹn gặp','buổi hẹn'],ex:'I have a doctor’s appointment.'},
+  {topic:'Education & Culture',en:'charity',en_alt:['donation','nonprofit','philanthropy'],vn:'từ thiện',vn_alt:['từ thiện','tổ chức từ thiện'],ex:'They donated money to charity.'},
+  {topic:'Education & Culture',en:'daily routine',en_alt:['everyday schedule','habits'],vn:'thói quen hàng ngày',vn_alt:['thói quen hàng ngày','lịch sinh hoạt'],ex:'Exercise is part of my daily routine.'},
+  {topic:'Education & Culture',en:'friendship',en_alt:['companionship','bond'],vn:'tình bạn',vn_alt:['tình bạn','tình thân','mối quan hệ bạn bè'],ex:'Their friendship is strong.'},
+  {topic:'Education & Culture',en:'hobby',en_alt:['interest','pastime','activity'],vn:'sở thích',vn_alt:['sở thích','thú vui','hoạt động yêu thích'],ex:'Reading is my favorite hobby.'},
+  {topic:'Education & Culture',en:'marriage',en_alt:['wedding','matrimony'],vn:'hôn nhân',vn_alt:['hôn nhân','đám cưới','kết hôn'],ex:'Their marriage is very happy.'},
+  {topic:'Education & Culture',en:'neighbor',en_alt:[],vn:'hàng xóm',vn_alt:['hàng xóm','người hàng xóm'],ex:'My neighbor is very kind.'},
+  {topic:'Education & Culture',en:'vacation',en_alt:['holiday','break','time off'],vn:'kỳ nghỉ',vn_alt:['kỳ nghỉ','kỳ nghỉ hè','nghỉ phép'],ex:'They went on vacation to Thailand.'},
+  {topic:'Education & Culture',en:'wedding',en_alt:['marriage ceremony','nuptials'],vn:'đám cưới',vn_alt:['đám cưới','lễ cưới','tiệc cưới'],ex:'The wedding was held in June.'},
+  {topic:'Business & Office',en:'annual report',en_alt:[],vn:'báo cáo thường niên',vn_alt:['báo cáo thường niên','báo cáo năm'],ex:'The annual report was released.'},
+  {topic:'Business & Office',en:'board of directors',en_alt:['board','management'],vn:'hội đồng quản trị',vn_alt:['hội đồng quản trị','ban giám đốc'],ex:'The board of directors met yesterday.'},
+  {topic:'Business & Office',en:'branch',en_alt:['office','location'],vn:'chi nhánh',vn_alt:['chi nhánh','văn phòng chi nhánh','phòng giao dịch'],ex:'The company opened a new branch.'},
+  {topic:'Business & Office',en:'division',en_alt:['unit','department','section'],vn:'bộ phận',vn_alt:['bộ phận','phân nhánh','đơn vị'],ex:'She works in the finance division.'},
+  {topic:'Business & Office',en:'headquarters',en_alt:['HQ','head office','main office'],vn:'trụ sở chính',vn_alt:['trụ sở chính','văn phòng trung tâm','tổng hành dinh'],ex:'The headquarters is in New York.'},
+  {topic:'Business & Office',en:'merger',en_alt:['acquisition','consolidation'],vn:'sự sáp nhập',vn_alt:['sự sáp nhập','hợp nhất công ty'],ex:'The two companies announced a merger.'},
+  {topic:'Business & Office',en:'subsidiary',en_alt:['affiliate','branch company'],vn:'công ty con',vn_alt:['công ty con','công ty thành viên'],ex:'This is a subsidiary of Toyota.'},
+  {topic:'Business & Office',en:'takeover',en_alt:['acquisition','buyout'],vn:'thâu tóm',vn_alt:['thâu tóm','thâu tóm doanh nghiệp','mua lại'],ex:'The takeover was successful.'},
+  {topic:'Business & Office',en:'policy',en_alt:['rule','regulation','guideline'],vn:'chính sách',vn_alt:['quy định','nội quy','chính sách công ty'],ex:'The company changed its policy.'},
+  {topic:'Business & Office',en:'procedure',en_alt:['process','method','protocol'],vn:'thủ tục',vn_alt:['thủ tục','quy trình','cách thức'],ex:'Follow the correct procedure.'},
+  {topic:'Business & Office',en:'audience',en_alt:['spectators','viewers','crowd'],vn:'khán giả',vn_alt:['khán giả','người xem','công chúng'],ex:'The audience listened carefully.'},
+  {topic:'Business & Office',en:'chart',en_alt:['graph','diagram','table'],vn:'biểu đồ',vn_alt:['biểu đồ','đồ thị','sơ đồ'],ex:'He presented the sales chart.'},
+  {topic:'Business & Office',en:'conference room',en_alt:['meeting room','boardroom'],vn:'phòng họp',vn_alt:['phòng họp','phòng hội nghị'],ex:'The conference room is on the 3rd floor.'},
+  {topic:'Business & Office',en:'discussion',en_alt:['conversation','debate','talk'],vn:'cuộc thảo luận',vn_alt:['cuộc thảo luận','cuộc trao đổi'],ex:'The discussion was very productive.'},
+  {topic:'Business & Office',en:'flip chart',en_alt:[],vn:'bảng lật giấy',vn_alt:['bảng lật','bảng giấy lật'],ex:'The trainer used a flip chart.'},
+  {topic:'Business & Office',en:'handout',en_alt:['printout','leaflet','material'],vn:'tài liệu phát tay',vn_alt:['tài liệu phát tay','tờ in phát','tài liệu'],ex:'She distributed the handouts.'},
+  {topic:'Business & Office',en:'keynote speech',en_alt:['main speech','keynote address'],vn:'bài phát biểu chính',vn_alt:['bài phát biểu chính','bài diễn văn chủ đạo'],ex:'The keynote speech was inspiring.'},
+  {topic:'Business & Office',en:'participant',en_alt:['attendee','delegate','member'],vn:'người tham dự',vn_alt:['người tham gia','thành viên','người dự'],ex:'There were 50 participants in the workshop.'},
+  {topic:'Business & Office',en:'presentation',en_alt:['talk','pitch','briefing'],vn:'bài thuyết trình',vn_alt:['thuyết trình','bài trình bày'],ex:'The presentation lasted 30 minutes.'},
+  {topic:'Business & Office',en:'projector',en_alt:[],vn:'máy chiếu',vn_alt:['máy chiếu','đèn chiếu'],ex:'The projector is not working.'},
+  {topic:'Marketing & Sales',en:'brochure',en_alt:['pamphlet','leaflet','flyer'],vn:'tờ quảng cáo',vn_alt:['tập gấp','tờ bướm quảng cáo','tài liệu du lịch'],ex:'The brochure has product details.'},
+  {topic:'Marketing & Sales',en:'catalog',en_alt:['catalogue','product list'],vn:'danh mục',vn_alt:['danh mục sản phẩm','bộ sưu tập'],ex:'Customers received a new catalog.'},
+  {topic:'Marketing & Sales',en:'commercial',en_alt:['ad','advertisement'],vn:'quảng cáo',vn_alt:['quảng cáo thương mại','phim quảng cáo','TVC'],ex:'The TV commercial was funny.'},
+  {topic:'Marketing & Sales',en:'coupon',en_alt:['voucher','discount code','promo code'],vn:'phiếu giảm giá',vn_alt:['phiếu giảm giá','voucher','mã ưu đãi'],ex:'I used a 10% coupon.'},
+  {topic:'Marketing & Sales',en:'distribution',en_alt:['delivery','supply','circulation'],vn:'phân phối',vn_alt:['phân phối','phân phối hàng hóa'],ex:'The distribution network is wide.'},
+  {topic:'Marketing & Sales',en:'leaflet',en_alt:['flyer','brochure','pamphlet'],vn:'tờ rơi',vn_alt:['tờ rơi','tờ quảng cáo','tờ giới thiệu'],ex:'They handed out leaflets.'},
+  {topic:'Marketing & Sales',en:'logo',en_alt:['symbol','emblem','icon'],vn:'biểu tượng',vn_alt:['biểu tượng thương hiệu','logo','huy hiệu'],ex:'The company redesigned its logo.'},
+  {topic:'Marketing & Sales',en:'publicity',en_alt:['promotion','PR','advertising'],vn:'sự quảng bá',vn_alt:['sự quảng bá','truyền thông','PR'],ex:'The event got a lot of publicity.'},
+  {topic:'Marketing & Sales',en:'slogan',en_alt:['tagline','motto','catchphrase'],vn:'khẩu hiệu',vn_alt:['khẩu hiệu','slogan','tagline'],ex:'“Just do it” is Nike’s slogan.'},
+  {topic:'Marketing & Sales',en:'target market',en_alt:['target audience'],vn:'thị trường mục tiêu',vn_alt:['thị trường mục tiêu','khách hàng mục tiêu'],ex:'The target market is young adults.'},
+  {topic:'Real Estate',en:'broker',en_alt:['agent','intermediary','middleman'],vn:'môi giới',vn_alt:['môi giới','nhà môi giới'],ex:'He works as a real estate broker.'},
+  {topic:'Real Estate',en:'deed',en_alt:['title','ownership document'],vn:'văn tự',vn_alt:['văn tự','giấy chứng nhận quyền sở hữu','sổ đỏ'],ex:'The deed proves ownership.'},
+  {topic:'Real Estate',en:'down payment',en_alt:['deposit','advance payment'],vn:'tiền đặt cọc',vn_alt:['tiền đặt cọc','trả trước','tiền cọc mua nhà'],ex:'They made a 20% down payment.'},
+  {topic:'Real Estate',en:'estate',en_alt:['property','land','real estate'],vn:'bất động sản',vn_alt:['bất động sản','khu đất','tài sản đất đai'],ex:'He owns a large estate.'},
+  {topic:'Real Estate',en:'mortgage',en_alt:['home loan'],vn:'khoản thế chấp',vn_alt:['vay thế chấp','thế chấp nhà','khoản vay mua nhà'],ex:'They applied for a mortgage loan.'},
+  {topic:'Real Estate',en:'property value',en_alt:['home value','appraisal'],vn:'giá trị tài sản',vn_alt:['giá trị tài sản','giá trị bất động sản'],ex:'The property value increased.'},
+  {topic:'Real Estate',en:'real estate agent',en_alt:['realtor','property agent','broker'],vn:'nhân viên bất động sản',vn_alt:['nhân viên bất động sản','môi giới bất động sản'],ex:'The agent showed us the house.'},
+  {topic:'Real Estate',en:'tenant',en_alt:['renter','occupant','lessee'],vn:'người thuê',vn_alt:['người thuê nhà','bên thuê','người ở trọ'],ex:'The tenant signed the lease.'},
+  {topic:'Real Estate',en:'utility bill',en_alt:['utility payment'],vn:'hóa đơn tiện ích',vn_alt:['hóa đơn tiện ích','hóa đơn điện nước','tiền điện nước'],ex:'Please pay the utility bill monthly.'},
+  {topic:'Real Estate',en:'zoning',en_alt:['land use','planning'],vn:'quy hoạch',vn_alt:['quy hoạch','phân khu','quy hoạch đất đai'],ex:'The land is under residential zoning.'},
+  {topic:'Hotels & Hospitality',en:'attraction',en_alt:['sight','landmark','destination'],vn:'điểm tham quan',vn_alt:['điểm tham quan','địa điểm du lịch','danh thắng'],ex:'The Eiffel Tower is a famous attraction.'},
+  {topic:'Hotels & Hospitality',en:'brochure',en_alt:['pamphlet','leaflet','flyer'],vn:'tập gấp du lịch',vn_alt:['tập gấp','tờ bướm quảng cáo','tài liệu du lịch'],ex:'The hotel gave us a travel brochure.'},
+  {topic:'Hotels & Hospitality',en:'cruise',en_alt:['voyage','boat trip'],vn:'chuyến du thuyền',vn_alt:['chuyến du thuyền','du lịch biển bằng tàu','tàu du lịch'],ex:'They went on a luxury cruise.'},
+  {topic:'Hotels & Hospitality',en:'excursion',en_alt:['day trip','outing','trip'],vn:'chuyến tham quan ngắn',vn_alt:['chuyến tham quan ngắn','chuyến đi ngắn'],ex:'We joined a half-day excursion.'},
+  {topic:'Hotels & Hospitality',en:'landmark',en_alt:['monument','sight','attraction'],vn:'địa danh',vn_alt:['địa danh','điểm mốc','công trình nổi tiếng'],ex:'Big Ben is a London landmark.'},
+  {topic:'Hotels & Hospitality',en:'package tour',en_alt:['all-inclusive tour','group tour'],vn:'tour trọn gói',vn_alt:['du lịch trọn gói','tour trọn gói','tour du lịch','gói du lịch'],ex:'They booked a package tour.'},
+  {topic:'Hotels & Hospitality',en:'resort',en_alt:['retreat','holiday destination'],vn:'khu nghỉ dưỡng',vn_alt:['khu nghỉ dưỡng','resort','nơi nghỉ mát'],ex:'They stayed in a seaside resort.'},
+  {topic:'Hotels & Hospitality',en:'sightseeing',en_alt:['touring','visiting attractions'],vn:'tham quan',vn_alt:['tham quan','đi xem danh lam','ngắm cảnh'],ex:'We went sightseeing around the city.'},
+  {topic:'Hotels & Hospitality',en:'souvenir',en_alt:['keepsake','memento','gift'],vn:'quà lưu niệm',vn_alt:['quà lưu niệm','đồ lưu niệm'],ex:'I bought a souvenir from Paris.'},
+  {topic:'Hotels & Hospitality',en:'travel agency',en_alt:['tour operator','travel agent'],vn:'công ty du lịch',vn_alt:['công ty du lịch','đại lý du lịch'],ex:'The travel agency arranged everything.'},
+  {topic:'Workplace & HR',en:'ambition',en_alt:['aspiration','drive','goal'],vn:'tham vọng',vn_alt:['tham vọng','hoài bão','khát vọng'],ex:'Her ambition is to become a CEO.'},
+  {topic:'Workplace & HR',en:'attitude',en_alt:['behavior','mindset','approach'],vn:'thái độ',vn_alt:['thái độ','cách ứng xử'],ex:'He has a positive attitude.'},
+  {topic:'Workplace & HR',en:'diligence',en_alt:['hardworking','dedication','perseverance'],vn:'sự siêng năng',vn_alt:['sự siêng năng','sự chăm chỉ','cần cù'],ex:'Diligence leads to success.'},
+  {topic:'Workplace & HR',en:'discipline',en_alt:['order','control','rigor'],vn:'kỷ luật',vn_alt:['kỷ luật','kỷ cương'],ex:'Discipline is important at work.'},
+  {topic:'Workplace & HR',en:'efficiency',en_alt:['productivity','performance','output'],vn:'hiệu quả',vn_alt:['hiệu suất','hiệu quả','năng suất'],ex:'The new system improved efficiency.'},
+  {topic:'Workplace & HR',en:'honesty',en_alt:['integrity','truthfulness','sincerity'],vn:'sự trung thực',vn_alt:['sự trung thực','thật thà'],ex:'Honesty is valued in business.'},
+  {topic:'Workplace & HR',en:'leadership',en_alt:['management','direction','command'],vn:'khả năng lãnh đạo',vn_alt:['khả năng lãnh đạo','tố chất lãnh đạo','lãnh đạo'],ex:'Good leadership inspires teams.'},
+  {topic:'Workplace & HR',en:'motivation',en_alt:['drive','inspiration','incentive'],vn:'động lực',vn_alt:['động lực','sự khích lệ','cảm hứng'],ex:'Bonuses increase motivation.'},
+  {topic:'Workplace & HR',en:'punctuality',en_alt:['timeliness','promptness'],vn:'sự đúng giờ',vn_alt:['sự đúng giờ','tính đúng giờ'],ex:'Punctuality is required.'},
+  {topic:'Workplace & HR',en:'teamwork',en_alt:['collaboration','cooperation','team spirit'],vn:'làm việc nhóm',vn_alt:['làm việc nhóm','hợp tác nhóm','tinh thần đội'],ex:'Teamwork helps achieve goals.'},
+  {topic:'Business & Office',en:'application form',en_alt:[],vn:'đơn xin',vn_alt:['đơn xin','mẫu đơn đăng ký','phiếu đăng ký'],ex:'Please fill in the application form.'},
+  {topic:'Business & Office',en:'certificate',en_alt:['credential','qualification','diploma'],vn:'giấy chứng nhận',vn_alt:['chứng chỉ','giấy chứng nhận','bằng'],ex:'She received a training certificate.'},
+  {topic:'Business & Office',en:'contract',en_alt:['agreement','deal'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','thỏa thuận'],ex:'Both parties signed the contract.'},
+  {topic:'Business & Office',en:'document',en_alt:['file','paper','record'],vn:'tài liệu',vn_alt:['văn bản','hồ sơ','giấy tờ','chứng từ'],ex:'Please attach the required document.'},
+  {topic:'Business & Office',en:'draft',en_alt:['outline','preliminary','sketch'],vn:'bản nháp',vn_alt:['bản nháp','dự thảo','phác thảo'],ex:'He prepared a draft of the agreement.'},
+  {topic:'Business & Office',en:'form',en_alt:['template','sheet'],vn:'biểu mẫu',vn_alt:['biểu mẫu','mẫu giấy','phiếu'],ex:'Complete the form carefully.'},
+  {topic:'Business & Office',en:'guideline',en_alt:['instruction','directive','rule'],vn:'hướng dẫn',vn_alt:['hướng dẫn','chỉ dẫn','quy tắc hướng dẫn'],ex:'The guideline was published.'},
+  {topic:'Business & Office',en:'manual',en_alt:['handbook','guide'],vn:'sổ tay hướng dẫn',vn_alt:['sổ tay hướng dẫn','hướng dẫn sử dụng','tài liệu hướng dẫn'],ex:'The user manual is easy to follow.'},
+  {topic:'Business & Office',en:'policy',en_alt:['rule','regulation','guideline'],vn:'chính sách',vn_alt:['quy định','nội quy','chính sách công ty'],ex:'The new policy was announced.'},
+  {topic:'Business & Office',en:'record',en_alt:['file','log','data'],vn:'hồ sơ',vn_alt:['hồ sơ','biên bản','dữ liệu ghi lại'],ex:'Keep a record of your expenses.'},
+  {topic:'Business & Office',en:'brainstorm',en_alt:['ideate','think up','generate ideas'],vn:'động não',vn_alt:['động não','họp ý tưởng','tư duy sáng tạo'],ex:'The team brainstormed new ideas.'},
+  {topic:'Business & Office',en:'collaborate',en_alt:['cooperate','work together','partner'],vn:'hợp tác',vn_alt:['hợp tác','làm việc cùng nhau'],ex:'We collaborate with foreign partners.'},
+  {topic:'Business & Office',en:'delegate',en_alt:['assign','entrust','hand over'],vn:'giao việc',vn_alt:['giao việc','ủy quyền','phân công'],ex:'The manager delegated tasks.'},
+  {topic:'Business & Office',en:'implement',en_alt:['execute','carry out','apply'],vn:'triển khai',vn_alt:['triển khai','thực hiện','áp dụng'],ex:'They implemented a new system.'},
+  {topic:'Business & Office',en:'improve',en_alt:['enhance','upgrade','better'],vn:'cải thiện',vn_alt:['cải thiện','nâng cao','phát triển hơn'],ex:'We must improve productivity.'},
+  {topic:'Business & Office',en:'organize',en_alt:['arrange','set up','manage'],vn:'tổ chức',vn_alt:['tổ chức','sắp xếp','quản lý'],ex:'She organized the files.'},
+  {topic:'Business & Office',en:'prioritize',en_alt:['rank','order','focus on'],vn:'ưu tiên',vn_alt:['ưu tiên','đặt ưu tiên','xếp thứ tự ưu tiên'],ex:'Please prioritize urgent tasks.'},
+  {topic:'Business & Office',en:'report',en_alt:['summary','brief','account'],vn:'báo cáo',vn_alt:['bản báo cáo','báo cáo kết quả','tường trình'],ex:'He submitted the monthly report.'},
+  {topic:'Business & Office',en:'schedule',en_alt:['timetable','plan','calendar'],vn:'lịch trình',vn_alt:['kế hoạch','lịch làm việc','thời gian biểu'],ex:'The project is on schedule.'},
+  {topic:'Business & Office',en:'supervise',en_alt:['oversee','manage','monitor'],vn:'giám sát',vn_alt:['giám sát','quản lý','kiểm tra'],ex:'She supervises the junior staff.'},
+  {topic:'Finance & Banking',en:'bankruptcy',en_alt:['insolvency','failure'],vn:'phá sản',vn_alt:['phá sản','vỡ nợ','mất khả năng thanh toán'],ex:'The company declared bankruptcy.'},
+  {topic:'Finance & Banking',en:'cash flow',en_alt:[],vn:'dòng tiền',vn_alt:['dòng tiền','luồng tiền mặt'],ex:'Cash flow is important for startups.'},
+  {topic:'Finance & Banking',en:'debt',en_alt:['liability','obligation','owing'],vn:'nợ',vn_alt:['nợ','tiền nợ','khoản nợ phải trả'],ex:'He is paying off his debt.'},
+  {topic:'Finance & Banking',en:'equity',en_alt:['shares','ownership','capital'],vn:'vốn cổ phần',vn_alt:['vốn cổ phần','vốn chủ sở hữu','cổ phần'],ex:'Investors bought company equity.'},
+  {topic:'Finance & Banking',en:'forecast',en_alt:['predict','project','estimate'],vn:'dự báo',vn_alt:['dự báo','dự đoán','ước tính'],ex:'Sales forecast looks positive.'},
+  {topic:'Finance & Banking',en:'fund',en_alt:['capital','money','finance'],vn:'quỹ',vn_alt:['quỹ','nguồn vốn','tài trợ'],ex:'They raised a charity fund.'},
+  {topic:'Finance & Banking',en:'liability',en_alt:['debt','obligation','responsibility'],vn:'khoản nợ, trách nhiệm',vn_alt:['nợ phải trả','trách nhiệm tài chính','khoản nợ'],ex:'The company has high liabilities.'},
+  {topic:'Finance & Banking',en:'overhead',en_alt:['fixed cost','running cost'],vn:'chi phí chung',vn_alt:['chi phí cố định','chi phí chung','chi phí hoạt động'],ex:'They reduced overhead costs.'},
+  {topic:'Finance & Banking',en:'savings',en_alt:['nest egg','reserves'],vn:'tiền tiết kiệm',vn_alt:['tiền tiết kiệm','khoản tiết kiệm','tích lũy'],ex:'She put money into her savings.'},
+  {topic:'Finance & Banking',en:'transaction',en_alt:['deal','operation','payment'],vn:'giao dịch',vn_alt:['giao dịch','nghiệp vụ','phiên giao dịch'],ex:'The bank recorded the transaction.'},
+  {topic:'Technology & IT',en:'conference call',en_alt:['group call','teleconference','call'],vn:'cuộc gọi hội nghị',vn_alt:['cuộc gọi hội nghị','cuộc họp qua điện thoại','gọi nhóm'],ex:'We had a conference call.'},
+  {topic:'Technology & IT',en:'email',en_alt:['e-mail','mail','electronic mail'],vn:'thư điện tử',vn_alt:['email','e-mail','hòm thư điện tử'],ex:'I sent an email yesterday.'},
+  {topic:'Technology & IT',en:'fax',en_alt:[],vn:'fax',vn_alt:['máy fax','gửi fax','fax'],ex:'They still use fax in some offices.'},
+  {topic:'Technology & IT',en:'memo',en_alt:['note','notice','internal message'],vn:'bản ghi nhớ',vn_alt:['bản ghi nhớ','thông báo nội bộ','ghi chú'],ex:'The manager sent a memo.'},
+  {topic:'Technology & IT',en:'message',en_alt:['text','note','communication'],vn:'tin nhắn',vn_alt:['tin nhắn','thông điệp','tin'],ex:'Did you get my message?'},
+  {topic:'Technology & IT',en:'note',en_alt:['memo','reminder','record'],vn:'ghi chú',vn_alt:['ghi chú','lưu ý','bản ghi'],ex:'I took notes during the meeting.'},
+  {topic:'Technology & IT',en:'notification',en_alt:['alert','notice','announcement'],vn:'thông báo',vn_alt:['thông báo','cảnh báo'],ex:'I received a phone notification.'},
+  {topic:'Technology & IT',en:'phone call',en_alt:['call','ring'],vn:'cuộc gọi',vn_alt:['cuộc gọi điện thoại','cuộc gọi','gọi điện'],ex:'He made a phone call to his boss.'},
+  {topic:'Technology & IT',en:'voicemail',en_alt:[],vn:'thư thoại',vn_alt:['hộp thư thoại','tin nhắn thoại'],ex:'I left a voicemail.'},
+  {topic:'Technology & IT',en:'reply',en_alt:['respond','answer','respond'],vn:'trả lời',vn_alt:['trả lời','hồi đáp','phản hồi'],ex:'She replied quickly.'},
+  {topic:'Logistics & Trade',en:'airway bill',en_alt:['air waybill','AWB'],vn:'vận đơn hàng không',vn_alt:['vận đơn hàng không','hóa đơn vận chuyển hàng không'],ex:'The airway bill was signed.'},
+  {topic:'Logistics & Trade',en:'bill of lading',en_alt:['B/L','shipping document'],vn:'vận đơn đường biển',vn_alt:['vận đơn đường biển','B/L'],ex:'The bill of lading is required.'},
+  {topic:'Logistics & Trade',en:'container',en_alt:[],vn:'công-ten-nơ',vn_alt:['công-ten-nơ','thùng container','hộp chứa hàng lớn'],ex:'Goods are shipped in containers.'},
+  {topic:'Logistics & Trade',en:'dock',en_alt:['pier','wharf','port'],vn:'bến tàu',vn_alt:['bến tàu','cảng tàu','bến cảng'],ex:'The ship is at the dock.'},
+  {topic:'Logistics & Trade',en:'fleet',en_alt:['fleet of vehicles','convoy'],vn:'hạm đội/phương tiện',vn_alt:['đội xe','đội phương tiện','hạm đội'],ex:'The company owns a fleet of trucks.'},
+  {topic:'Logistics & Trade',en:'freight',en_alt:['cargo','goods','shipping cost'],vn:'hàng hóa vận tải',vn_alt:['hàng hóa vận chuyển','cước vận chuyển','cước phí'],ex:'The freight was delayed.'},
+  {topic:'Logistics & Trade',en:'port',en_alt:['harbor','dock','wharf'],vn:'cảng',vn_alt:['cảng','cảng biển','bến cảng'],ex:'The ship arrived at the port.'},
+  {topic:'Logistics & Trade',en:'route',en_alt:['path','way','itinerary'],vn:'tuyến đường',vn_alt:['tuyến đường','lộ trình','đường đi'],ex:'This is the fastest route.'},
+  {topic:'Logistics & Trade',en:'shipment',en_alt:['cargo','consignment','delivery'],vn:'lô hàng',vn_alt:['lô hàng','kiện hàng','chuyến hàng'],ex:'The shipment left yesterday.'},
+  {topic:'Logistics & Trade',en:'transit',en_alt:['transfer','stopover','connection'],vn:'quá cảnh',vn_alt:['quá cảnh','trung chuyển','vận chuyển quá cảnh'],ex:'The goods are in transit.'},
+  {topic:'Shopping & Services',en:'appointment',en_alt:['booking','scheduled visit','meeting'],vn:'cuộc hẹn',vn_alt:['lịch hẹn','hẹn gặp','buổi hẹn'],ex:'I have a dentist appointment.'},
+  {topic:'Shopping & Services',en:'barber',en_alt:['hairdresser','hair stylist'],vn:'thợ cắt tóc',vn_alt:['thợ cắt tóc','thợ hớt tóc'],ex:'The barber cut my hair.'},
+  {topic:'Shopping & Services',en:'laundry',en_alt:['washing','dry cleaning'],vn:'giặt ủi',vn_alt:['giặt ủi','tiệm giặt','quần áo cần giặt'],ex:'I need to do my laundry.'},
+  {topic:'Shopping & Services',en:'mechanic',en_alt:['repairman','technician'],vn:'thợ máy',vn_alt:['thợ máy','thợ sửa xe'],ex:'The mechanic repaired my car.'},
+  {topic:'Shopping & Services',en:'pharmacy',en_alt:['drugstore','chemist','dispensary'],vn:'nhà thuốc',vn_alt:['nhà thuốc','tiệm thuốc','dược phẩm'],ex:'I bought medicine at the pharmacy.'},
+  {topic:'Shopping & Services',en:'plumber',en_alt:[],vn:'thợ sửa ống nước',vn_alt:['thợ sửa ống nước','thợ hàn ống'],ex:'The plumber fixed the leak.'},
+  {topic:'Shopping & Services',en:'salon',en_alt:['beauty salon','hair salon'],vn:'tiệm làm đẹp',vn_alt:['tiệm làm đẹp','salon tóc','spa'],ex:'She went to the beauty salon.'},
+  {topic:'Shopping & Services',en:'service',en_alt:[],vn:'dịch vụ',vn_alt:['sự phục vụ','phục vụ'],ex:'The service was excellent.'},
+  {topic:'Shopping & Services',en:'shop',en_alt:['store','outlet','boutique'],vn:'cửa hàng',vn_alt:['cửa hàng','tiệm','quán'],ex:'They opened a new shop.'},
+  {topic:'Shopping & Services',en:'supermarket',en_alt:['grocery store','hypermarket'],vn:'siêu thị',vn_alt:['siêu thị','chợ siêu thị'],ex:'I bought fruit at the supermarket.'},
 ];
 
 let mode='en-vn',activeTopic='all',deck=[],idx=0,answered=false;
 let correctCount=0,wrongCount=0,skipCount=0;
+let history=[];
+let sumFilter='all';
+
+function switchMainTab(idx,btn){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const practiceEls=['#card-area','.input-area','.nav-area','.feedback','.swipe-hint','.swipe-hint.desktop','.progress-wrap'];
+  const showPractice=idx===0;
+  practiceEls.forEach(sel=>{
+    document.querySelectorAll(sel).forEach(el=>el.style.display=showPractice?'':'none');
+  });
+  document.getElementById('summary-panel').style.display=showPractice?'none':'block';
+  if(!showPractice) renderSummary();
+}
+
+function renderSummary(){
+  const ok=history.filter(h=>h.ok).length;
+  const fail=history.filter(h=>!h.ok).length;
+  const total=history.length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-correct').textContent=ok;
+  document.getElementById('s-wrong').textContent=fail;
+  document.getElementById('s-pct').textContent=total?Math.round(ok/total*100)+'%':'0%';
+  document.getElementById('btn-retry-wrong').disabled=fail===0;
+
+  const filtered=sumFilter==='all'?history:history.filter(h=>sumFilter==='ok'?h.ok:!h.ok);
+  const list=document.getElementById('sum-list');
+
+  if(filtered.length===0){
+    list.innerHTML='<div class="sum-empty">'+(history.length===0?'Chưa có từ nào được làm.<br>Quay lại tab Luyện tập để bắt đầu!':'Không có từ nào.')+'</div>';
+    return;
+  }
+
+  list.innerHTML=filtered.map((h,i)=>{
+    const dispWord=h.cardMode==='en-vn'?h.en:h.vn;
+    const dispMeaning=h.cardMode==='en-vn'?h.vn:h.en;
+    const wrongPart=!h.ok?`<span class="wrong-ans">Bạn: "${h.userAnswer}"</span><span class="right-ans">Đúng: "${dispMeaning}"</span>`:`<span>${dispMeaning}</span>`;
+    return `<div class="sum-row ${h.ok?'ok':'fail'}">
+      <div class="sum-num">${history.indexOf(h)+1}</div>
+      <div class="sum-word">${dispWord}<small>${h.topic}</small></div>
+      <div class="sum-ans">${wrongPart}</div>
+      <div class="sum-icon">${h.ok?'✅':'❌'}</div>
+    </div>`;
+  }).join('');
+}
+
+function filterSum(f,btn){
+  sumFilter=f;
+  document.querySelectorAll('.sum-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSummary();
+}
+
+function retryWrong(){
+  const wrongCards=history.filter(h=>!h.ok);
+  if(!wrongCards.length)return;
+  // Switch back to practice tab
+  document.querySelectorAll('.tab-btn')[0].click();
+  // Build new deck from wrong cards only
+  deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
+  // shuffle
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
+  updateStats();renderCard();
+}
+
 const topics=[...new Set(ALL_WORDS.map(w=>w.topic))];
 
 function normalize(s){return s.toLowerCase().trim().replace(/\s+/g,' ');}
@@ -423,6 +1025,7 @@ function buildDeck(){
 function renderCard(){
   if(idx>=deck.length){showScore();return;}
   const card=deck[idx];answered=false;
+  document.getElementById('btn-skip').textContent='Bỏ qua →';
   document.getElementById('flashcard').className='flashcard';
   document.getElementById('card-topic').textContent=card.topic;
   document.getElementById('card-counter').textContent=`${idx+1} / ${deck.length}`;
@@ -457,6 +1060,8 @@ function checkAnswer(){
   answered=true;inp.disabled=true;document.getElementById('btn-check').disabled=true;
   document.getElementById('card-example').style.visibility='visible';
   const fc=document.getElementById('flashcard'),fb=document.getElementById('feedback');
+  const displayAns=card.cardMode==='en-vn'?card.vn:card.en;
+  history.push({en:card.en,vn:card.vn,topic:card.topic,cardMode:card.cardMode,userAnswer:userAns,ok});
   if(ok){
     fc.className='flashcard correct';inp.className='correct';
     fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
@@ -468,7 +1073,12 @@ function checkAnswer(){
     fb.textContent=`✗ Sai. Đáp án: "${allAns.join(' / ')}"`;fb.className='feedback wrong';wrongCount++;
   }
   updateStats();
-  setTimeout(()=>nextCard(),1600);
+  if(ok){
+    setTimeout(()=>nextCard(),1400);
+  } else {
+    // Sai: không tự chuyển, đổi nút thành "Tiếp tục"
+    document.getElementById('btn-skip').textContent='Tiếp tục →';
+  }
 }
 
 function nextCard(){idx++;renderCard();}
@@ -511,7 +1121,7 @@ function restart(){
   document.querySelector('.feedback').style.display='';
   document.querySelectorAll('.swipe-hint').forEach(e=>e.style.display='');
   document.getElementById('score-panel').classList.remove('show');
-  buildDeck();renderCard();
+  history=[];buildDeck();renderCard();
 }
 
 // Touch swipe on card
