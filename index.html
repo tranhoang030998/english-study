@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TOEIC Flashcards</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+  --text:#e8eaf0; --muted:#7b82a0; --accent:#4f7cff; --accent2:#7c5cff;
+  --green:#22c55e; --green-bg:#052e16; --red:#ef4444; --red-bg:#2d0808;
+  --yellow:#f59e0b; --radius:14px; --card-radius:20px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Noto Sans',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding-bottom:env(safe-area-inset-bottom,16px);
+}
+
+/* HEADER */
+header{
+  width:100%;max-width:680px;
+  padding:20px 16px 0;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.logo{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;
+  letter-spacing:-0.5px;color:var(--text);display:flex;align-items:center;gap:8px;
+}
+.logo-dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.stats-bar{display:flex;gap:12px;font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;}
+.stat{display:flex;align-items:center;gap:4px;}
+.stat-dot{width:6px;height:6px;border-radius:50%;}
+.stat-dot.green{background:var(--green);}
+.stat-dot.red{background:var(--red);}
+
+/* CONTROLS */
+.controls{width:100%;max-width:680px;padding:14px 16px 0;display:flex;flex-direction:column;gap:10px;}
+.mode-toggle{
+  display:flex;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:3px;gap:3px;
+}
+.mode-btn{
+  flex:1;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;
+  padding:8px 6px;border-radius:9px;border:none;cursor:pointer;
+  background:transparent;color:var(--muted);transition:all .2s;
+  letter-spacing:.01em;touch-action:manipulation;
+}
+.mode-btn.active{background:var(--accent);color:white;}
+
+/* TOPICS — horizontal scroll on mobile */
+.topics-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+.topics-scroll::-webkit-scrollbar{display:none;}
+.topics-wrap{display:flex;gap:6px;width:max-content;}
+.topic-chip{
+  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;
+  padding:6px 13px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;
+  transition:all .18s;white-space:nowrap;touch-action:manipulation;
+}
+.topic-chip.active{background:var(--accent);border-color:var(--accent);color:white;}
+
+/* PROGRESS */
+.progress-wrap{width:100%;max-width:680px;padding:12px 16px 0;}
+.progress-track{height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .4s ease;}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;margin-top:5px;}
+
+/* CARD */
+.card-area{width:100%;max-width:680px;padding:14px 16px 0;}
+.flashcard{
+  width:100%;min-height:220px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--card-radius);padding:32px 24px 24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;transition:border-color .25s,background .25s,box-shadow .25s;
+}
+.flashcard.correct{border-color:var(--green);background:var(--green-bg);box-shadow:0 0 32px rgba(34,197,94,.12);}
+.flashcard.wrong{border-color:var(--red);background:var(--red-bg);box-shadow:0 0 32px rgba(239,68,68,.12);}
+
+.card-topic{
+  font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;padding:3px 10px;border:1px solid var(--border);border-radius:20px;
+}
+.card-word{
+  font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:clamp(26px,8vw,42px);
+  letter-spacing:-0.5px;text-align:center;color:var(--text);line-height:1.1;margin-bottom:10px;
+}
+.card-word.vn{font-size:clamp(20px,5.5vw,30px);letter-spacing:-.3px;}
+.card-example{font-size:12px;color:var(--muted);text-align:center;font-style:italic;max-width:100%;line-height:1.6;}
+.card-counter{position:absolute;top:14px;right:16px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);}
+.result-icon{position:absolute;top:14px;left:16px;font-size:20px;display:none;}
+.flashcard.correct .result-icon.ok{display:block;}
+.flashcard.wrong .result-icon.fail{display:block;}
+
+/* INPUT */
+.input-area{width:100%;max-width:680px;padding:12px 16px 0;}
+.input-row{display:flex;gap:8px;align-items:stretch;}
+#answer-input{
+  flex:1;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);color:var(--text);
+  font-family:'Noto Sans',sans-serif;font-size:16px;
+  padding:13px 16px;outline:none;transition:border-color .2s;
+  -webkit-appearance:none;
+}
+#answer-input:focus{border-color:var(--accent);}
+#answer-input.correct{border-color:var(--green);background:var(--green-bg);}
+#answer-input.wrong{border-color:var(--red);background:var(--red-bg);}
+#answer-input::placeholder{color:var(--muted);}
+
+.btn-check{
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
+  padding:13px 20px;background:var(--accent);color:white;
+  border:none;border-radius:var(--radius);cursor:pointer;
+  transition:opacity .2s,transform .1s;white-space:nowrap;touch-action:manipulation;
+  min-width:90px;
+}
+.btn-check:active{transform:scale(.97);}
+.btn-check:disabled{opacity:.4;cursor:not-allowed;}
+
+/* FEEDBACK */
+.feedback{
+  width:100%;max-width:680px;padding:8px 16px 0;
+  min-height:26px;font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:500;
+}
+.feedback.correct{color:var(--green);}
+.feedback.wrong{color:var(--red);}
+
+/* NAV */
+.nav-area{width:100%;max-width:680px;padding:10px 16px 0;display:flex;gap:8px;}
+.btn-nav{
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
+  padding:11px 18px;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);border-radius:var(--radius);cursor:pointer;
+  transition:all .18s;touch-action:manipulation;flex:1;
+}
+.btn-nav:active{opacity:.75;}
+.btn-skip{color:var(--muted);}
+
+/* SWIPE HINT — mobile only */
+.swipe-hint{
+  font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;
+  text-align:center;padding:10px 16px 20px;
+}
+.swipe-hint.desktop{display:none;}
+
+/* SCORE */
+.score-panel{
+  width:100%;max-width:680px;margin:20px 16px 0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--card-radius);padding:40px 24px;text-align:center;display:none;
+}
+.score-panel.show{display:block;}
+.score-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.5px;margin-bottom:6px;}
+.score-sub{color:var(--muted);font-size:13px;margin-bottom:24px;}
+.score-big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:64px;letter-spacing:-2px;line-height:1;color:var(--accent);margin-bottom:4px;}
+.score-detail{
+  display:flex;justify-content:center;flex-wrap:wrap;gap:16px 24px;
+  font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);
+  margin:14px 0 32px;
+}
+.score-detail span{display:flex;align-items:center;gap:6px;}
+.btn-restart{
+  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
+  padding:13px 32px;background:var(--accent);color:white;
+  border:none;border-radius:var(--radius);cursor:pointer;transition:opacity .2s;
+  width:100%;touch-action:manipulation;
+}
+.btn-restart:active{opacity:.8;}
+
+/* RESPONSIVE — desktop tweaks */
+@media(min-width:600px){
+  header{padding:24px 24px 0;}
+  .controls{padding:16px 24px 0;flex-direction:row;flex-wrap:wrap;align-items:flex-start;}
+  .mode-toggle{flex-shrink:0;}
+  .topics-scroll{flex:1;overflow-x:auto;}
+  .topics-wrap{width:auto;flex-wrap:wrap;}
+  .progress-wrap,.card-area,.input-area,.feedback,.nav-area{padding-left:24px;padding-right:24px;}
+  .flashcard{min-height:250px;padding:38px 40px 30px;}
+  .btn-nav{flex:0 0 auto;}
+  .btn-skip{margin-left:auto;flex:0 0 auto;}
+  .swipe-hint{display:none;}
+  .swipe-hint.desktop{display:block;font-size:11.5px;}
+  .score-panel{margin-left:24px;margin-right:24px;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><div class="logo-dot"></div>TOEIC Flashcards</div>
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-dot green"></div><span id="stat-correct">0 đúng</span></div>
+    <div class="stat"><div class="stat-dot red"></div><span id="stat-wrong">0 sai</span></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="mode-toggle">
+    <button class="mode-btn active" onclick="setMode('en-vn')">EN → VN</button>
+    <button class="mode-btn" onclick="setMode('vn-en')">VN → EN</button>
+    <button class="mode-btn" onclick="setMode('random')">🔀 Mix</button>
+  </div>
+  <div class="topics-scroll"><div class="topics-wrap" id="topic-chips"></div></div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-label"><span id="prog-text">Thẻ 0 / 0</span><span id="prog-pct">0%</span></div>
+</div>
+
+<div class="card-area" id="card-area">
+  <div class="flashcard" id="flashcard">
+    <span class="result-icon ok">✅</span>
+    <span class="result-icon fail">❌</span>
+    <div class="card-counter" id="card-counter">1 / 10</div>
+    <div class="card-topic" id="card-topic">Business & Office</div>
+    <div class="card-word" id="card-word">agenda</div>
+    <div class="card-example" id="card-example">The manager sent out the meeting agenda yesterday.</div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <input type="text" id="answer-input" placeholder="Nhập nghĩa tiếng Việt..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+    <button class="btn-check" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
+  </div>
+</div>
+
+<div class="feedback" id="feedback"></div>
+
+<div class="nav-area">
+  <button class="btn-nav" onclick="prevCard()">← Trước</button>
+  <button class="btn-nav btn-skip" onclick="skipCard()">Bỏ qua →</button>
+</div>
+
+<div class="swipe-hint">Vuốt trái/phải để bỏ qua · Nhấn Kiểm tra để chấm</div>
+<div class="swipe-hint desktop">Nhấn <b>Enter</b> để kiểm tra &nbsp;·&nbsp; <b>→</b> bỏ qua &nbsp;·&nbsp; <b>←</b> quay lại</div>
+
+<div class="score-panel" id="score-panel">
+  <div class="score-title">🎉 Hoàn thành!</div>
+  <div class="score-sub">Kết quả lần này</div>
+  <div class="score-big" id="score-pct">0%</div>
+  <div class="score-detail">
+    <span><span style="color:var(--green)">✓</span><span id="sc-correct">0 đúng</span></span>
+    <span><span style="color:var(--red)">✗</span><span id="sc-wrong">0 sai</span></span>
+    <span><span style="color:var(--muted)">⏩</span><span id="sc-skip">0 bỏ qua</span></span>
+  </div>
+  <button class="btn-restart" onclick="restart()">Làm lại</button>
+</div>
+
+<script>
+const ALL_WORDS=[
+  // Business & Office
+  {topic:'Business & Office',en:'agenda',en_alt:[],vn:'chương trình nghị sự',vn_alt:['lịch họp','chương trình họp','danh sách nội dung họp'],ex:'The manager sent out the meeting agenda yesterday.'},
+  {topic:'Business & Office',en:'approve',en_alt:['authorize','pass','validate'],vn:'phê duyệt',vn_alt:['chấp thuận','thông qua','đồng ý','chấp nhận'],ex:'The board will approve the new project next week.'},
+  {topic:'Business & Office',en:'budget',en_alt:[],vn:'ngân sách',vn_alt:['kinh phí','ngân quỹ','quỹ'],ex:'We need to increase the marketing budget this quarter.'},
+  {topic:'Business & Office',en:'candidate',en_alt:['applicant','nominee'],vn:'ứng viên',vn_alt:['ứng cử viên','thí sinh','người ứng tuyển'],ex:'The company interviewed three candidates for the position.'},
+  {topic:'Business & Office',en:'conference',en_alt:['seminar','convention'],vn:'hội nghị',vn_alt:['hội thảo','cuộc hội thảo','buổi hội nghị'],ex:'She attended a business conference in Singapore.'},
+  {topic:'Business & Office',en:'contract',en_alt:['agreement'],vn:'hợp đồng',vn_alt:['văn bản ký kết','khế ước','hợp đồng làm việc'],ex:'The contract was signed by both parties.'},
+  {topic:'Business & Office',en:'deadline',en_alt:['due date'],vn:'hạn chót',vn_alt:['thời hạn','ngày hết hạn','deadline','hạn cuối'],ex:'The team is working hard to meet the deadline.'},
+  {topic:'Business & Office',en:'department',en_alt:['division','unit','section'],vn:'phòng ban',vn_alt:['bộ phận','phòng','đơn vị'],ex:'She works in the HR department.'},
+  {topic:'Business & Office',en:'document',en_alt:['file','paper','record'],vn:'tài liệu',vn_alt:['văn bản','hồ sơ','giấy tờ','chứng từ'],ex:'Please review the attached document before the meeting.'},
+  {topic:'Business & Office',en:'employee',en_alt:['staff','worker'],vn:'nhân viên',vn_alt:['người lao động','công nhân viên','nhân sự'],ex:'The company hired five new employees last month.'},
+  // Travel & Transport
+  {topic:'Travel & Transport',en:'airport',en_alt:['airfield'],vn:'sân bay',vn_alt:['phi trường','cảng hàng không'],ex:'We arrived at the airport two hours before the flight.'},
+  {topic:'Travel & Transport',en:'boarding pass',en_alt:['boarding card'],vn:'thẻ lên máy bay',vn_alt:['vé lên máy bay','boarding pass','phiếu lên máy bay'],ex:'You need a boarding pass to enter the plane.'},
+  {topic:'Travel & Transport',en:'destination',en_alt:[],vn:'điểm đến',vn_alt:['nơi đến','địa điểm đến','điểm du lịch'],ex:'Paris is our next travel destination.'},
+  {topic:'Travel & Transport',en:'fare',en_alt:['fee','charge'],vn:'giá vé',vn_alt:['tiền vé','cước phí','phí đi lại'],ex:'The taxi fare was higher than expected.'},
+  {topic:'Travel & Transport',en:'luggage',en_alt:['baggage','bags','suitcase'],vn:'hành lý',vn_alt:['đồ đạc','vali','túi xách'],ex:'He checked his luggage at the counter.'},
+  {topic:'Travel & Transport',en:'passport',en_alt:[],vn:'hộ chiếu',vn_alt:['giấy thông hành','passport'],ex:"Don't forget to bring your passport."},
+  {topic:'Travel & Transport',en:'reservation',en_alt:['booking'],vn:'đặt chỗ',vn_alt:['đặt phòng','đặt trước','đặt bàn','đặt vé'],ex:'I made a reservation at the hotel for two nights.'},
+  {topic:'Travel & Transport',en:'ticket',en_alt:[],vn:'vé',vn_alt:['vé xe','vé máy bay','vé tàu','tấm vé'],ex:'She bought a train ticket to London.'},
+  {topic:'Travel & Transport',en:'tourist',en_alt:['traveler','visitor'],vn:'khách du lịch',vn_alt:['du khách','khách tham quan','người du lịch'],ex:'Tourists love visiting this island.'},
+  {topic:'Travel & Transport',en:'visa',en_alt:[],vn:'thị thực',vn_alt:['visa','giấy phép nhập cảnh'],ex:'You need a visa to travel to the United States.'},
+  // Finance & Banking
+  {topic:'Finance & Banking',en:'account',en_alt:['bank account'],vn:'tài khoản',vn_alt:['tài khoản ngân hàng','account'],ex:'She opened a new savings account.'},
+  {topic:'Finance & Banking',en:'balance',en_alt:[],vn:'số dư',vn_alt:['số tiền còn lại','số dư tài khoản','cân bằng tài khoản'],ex:'Check your account balance regularly.'},
+  {topic:'Finance & Banking',en:'bill',en_alt:['invoice','note'],vn:'hóa đơn',vn_alt:['tờ tiền','phiếu thanh toán','giấy đòi tiền'],ex:'I received an electricity bill yesterday.'},
+  {topic:'Finance & Banking',en:'credit',en_alt:[],vn:'tín dụng',vn_alt:['uy tín tài chính','tín chấp'],ex:'She has a good credit history.'},
+  {topic:'Finance & Banking',en:'debt',en_alt:[],vn:'khoản nợ',vn_alt:['nợ','tiền nợ','nợ nần'],ex:'He paid off all his debts last year.'},
+  {topic:'Finance & Banking',en:'deposit',en_alt:[],vn:'tiền gửi',vn_alt:['đặt cọc','ký gửi','tiền đặt cọc'],ex:'I deposited $500 into my account.'},
+  {topic:'Finance & Banking',en:'exchange rate',en_alt:['currency rate'],vn:'tỷ giá hối đoái',vn_alt:['tỷ giá','tỷ giá ngoại tệ','tỷ giá tiền tệ'],ex:'The exchange rate has gone up today.'},
+  {topic:'Finance & Banking',en:'interest',en_alt:[],vn:'lãi suất',vn_alt:['tiền lãi','lãi','lãi ngân hàng'],ex:'The bank offers a low-interest loan.'},
+  {topic:'Finance & Banking',en:'loan',en_alt:[],vn:'khoản vay',vn_alt:['tiền vay','vay tiền','vay ngân hàng'],ex:'They applied for a home loan.'},
+  {topic:'Finance & Banking',en:'tax',en_alt:[],vn:'thuế',vn_alt:['thuế thu nhập','tiền thuế','thuế phí'],ex:'The government increased the income tax rate.'},
+  // Shopping & Services
+  {topic:'Shopping & Services',en:'bargain',en_alt:['deal'],vn:'mặc cả',vn_alt:['hàng giá rẻ','món hời','giá hời','mua được giá tốt'],ex:'I got this bag at a real bargain price.'},
+  {topic:'Shopping & Services',en:'cashier',en_alt:['teller'],vn:'thu ngân',vn_alt:['nhân viên thu ngân','người thu tiền'],ex:'The cashier gave me the wrong change.'},
+  {topic:'Shopping & Services',en:'customer',en_alt:['client','buyer','shopper'],vn:'khách hàng',vn_alt:['khách','người mua','người tiêu dùng'],ex:'The customer is always right.'},
+  {topic:'Shopping & Services',en:'discount',en_alt:['sale','reduction'],vn:'giảm giá',vn_alt:['chiết khấu','khuyến mãi','ưu đãi','giảm'],ex:'This store offers a 10% discount on weekends.'},
+  {topic:'Shopping & Services',en:'guarantee',en_alt:['warranty'],vn:'bảo hành',vn_alt:['bảo đảm','cam kết','phiếu bảo hành'],ex:'The product comes with a two-year guarantee.'},
+  {topic:'Shopping & Services',en:'invoice',en_alt:['bill','receipt'],vn:'hóa đơn',vn_alt:['phiếu xuất hàng','hóa đơn thương mại','phiếu tính tiền'],ex:'Can you issue an invoice for this purchase?'},
+  {topic:'Shopping & Services',en:'price',en_alt:['cost','rate'],vn:'giá cả',vn_alt:['giá','giá tiền','mức giá'],ex:'The price of this laptop is reasonable.'},
+  {topic:'Shopping & Services',en:'receipt',en_alt:[],vn:'biên lai',vn_alt:['hóa đơn','phiếu thu','phiếu mua hàng'],ex:'Keep the receipt for a possible refund.'},
+  {topic:'Shopping & Services',en:'refund',en_alt:['reimbursement'],vn:'hoàn tiền',vn_alt:['trả tiền lại','bồi hoàn','hoàn trả'],ex:'They gave me a full refund for the defective item.'},
+  {topic:'Shopping & Services',en:'service',en_alt:[],vn:'dịch vụ',vn_alt:['sự phục vụ','phục vụ','dịch vụ khách hàng'],ex:'The hotel provides excellent customer service.'},
+  // Technology & Communication
+  {topic:'Technology & Communication',en:'access',en_alt:['log in','enter'],vn:'truy cập',vn_alt:['đăng nhập','vào','truy nhập'],ex:'You need a password to access the system.'},
+  {topic:'Technology & Communication',en:'attach',en_alt:['add','upload'],vn:'đính kèm',vn_alt:['gửi kèm','đính','upload kèm'],ex:'Please attach the file to your email.'},
+  {topic:'Technology & Communication',en:'backup',en_alt:[],vn:'sao lưu',vn_alt:['backup','dự phòng','lưu dự phòng'],ex:'Remember to make a backup of your data.'},
+  {topic:'Technology & Communication',en:'browser',en_alt:['web browser'],vn:'trình duyệt',vn_alt:['trình duyệt web','phần mềm duyệt web'],ex:'Google Chrome is a popular web browser.'},
+  {topic:'Technology & Communication',en:'download',en_alt:[],vn:'tải xuống',vn_alt:['tải về','download','tải file'],ex:'I need to download the latest software update.'},
+  {topic:'Technology & Communication',en:'email',en_alt:['e-mail','mail'],vn:'thư điện tử',vn_alt:['email','e-mail','hòm thư điện tử'],ex:'She sent me an email this morning.'},
+  {topic:'Technology & Communication',en:'network',en_alt:['wifi','internet'],vn:'mạng internet',vn_alt:['mạng','mạng lưới','hệ thống mạng'],ex:'The office network is down today.'},
+  {topic:'Technology & Communication',en:'password',en_alt:['passcode','pin'],vn:'mật khẩu',vn_alt:['mật mã','pass','mã truy cập'],ex:'Always keep your password safe.'},
+  {topic:'Technology & Communication',en:'printer',en_alt:[],vn:'máy in',vn_alt:['printer','thiết bị in'],ex:'The printer is out of paper.'},
+  {topic:'Technology & Communication',en:'update',en_alt:['upgrade'],vn:'cập nhật',vn_alt:['nâng cấp','update','làm mới'],ex:'We need to update the security software.'},
+  // Health & Safety
+  {topic:'Health & Safety',en:'accident',en_alt:['incident','crash'],vn:'tai nạn',vn_alt:['sự cố','rủi ro','vụ tai nạn'],ex:'There was a car accident on the highway.'},
+  {topic:'Health & Safety',en:'appointment',en_alt:['booking','schedule'],vn:'cuộc hẹn',vn_alt:['lịch hẹn','hẹn gặp','buổi hẹn'],ex:'I have a dentist appointment at 3 PM.'},
+  {topic:'Health & Safety',en:'clinic',en_alt:['health center'],vn:'phòng khám',vn_alt:['cơ sở y tế','phòng mạch','trạm y tế'],ex:'She went to the clinic for a check-up.'},
+  {topic:'Health & Safety',en:'doctor',en_alt:['physician','GP'],vn:'bác sĩ',vn_alt:['thầy thuốc','bác sĩ y khoa','bác sĩ điều trị'],ex:'The doctor prescribed some medicine.'},
+  {topic:'Health & Safety',en:'emergency',en_alt:['crisis','urgent situation'],vn:'trường hợp khẩn cấp',vn_alt:['khẩn cấp','tình huống khẩn cấp','cấp cứu'],ex:'Call 911 in case of emergency.'},
+  {topic:'Health & Safety',en:'exercise',en_alt:['workout','training'],vn:'tập thể dục',vn_alt:['tập luyện','vận động','thể dục'],ex:'Regular exercise is good for your health.'},
+  {topic:'Health & Safety',en:'hospital',en_alt:[],vn:'bệnh viện',vn_alt:['nhà thương','cơ sở y tế'],ex:'He was admitted to the hospital last night.'},
+  {topic:'Health & Safety',en:'medicine',en_alt:['medication','drug'],vn:'thuốc',vn_alt:['thuốc men','dược phẩm','thuốc chữa bệnh'],ex:'Take this medicine after meals.'},
+  {topic:'Health & Safety',en:'patient',en_alt:[],vn:'bệnh nhân',vn_alt:['người bệnh','người điều trị','người đang chữa bệnh'],ex:'The patient is recovering well.'},
+  {topic:'Health & Safety',en:'treatment',en_alt:['therapy','care'],vn:'điều trị',vn_alt:['chữa trị','điều trị bệnh','chữa bệnh'],ex:'He is receiving treatment for his injury.'},
+  // Workplace & Employment
+  {topic:'Workplace & Employment',en:'apply',en_alt:['apply for'],vn:'nộp đơn',vn_alt:['ứng tuyển','xin việc','đăng ký'],ex:'She applied for the job last week.'},
+  {topic:'Workplace & Employment',en:'career',en_alt:[],vn:'sự nghiệp',vn_alt:['nghề nghiệp','con đường nghề nghiệp','công danh'],ex:'He is building his career in finance.'},
+  {topic:'Workplace & Employment',en:'colleague',en_alt:['coworker','workmate'],vn:'đồng nghiệp',vn_alt:['bạn đồng nghiệp','người cùng làm'],ex:'I had lunch with my colleagues.'},
+  {topic:'Workplace & Employment',en:'interview',en_alt:[],vn:'phỏng vấn',vn_alt:['cuộc phỏng vấn','buổi phỏng vấn','interview'],ex:'She has a job interview tomorrow.'},
+  {topic:'Workplace & Employment',en:'position',en_alt:['role','post','title'],vn:'vị trí',vn_alt:['chức vụ','chức danh','vị trí công việc'],ex:'He applied for the manager position.'},
+  {topic:'Workplace & Employment',en:'promotion',en_alt:[],vn:'sự thăng chức',vn_alt:['thăng chức','thăng tiến','lên chức'],ex:'She got a promotion last month.'},
+  {topic:'Workplace & Employment',en:'recruit',en_alt:['hire','employ'],vn:'tuyển dụng',vn_alt:['tuyển nhân viên','tuyển người','tuyển'],ex:'The company recruits new staff every year.'},
+  {topic:'Workplace & Employment',en:'resign',en_alt:['quit','step down'],vn:'từ chức',vn_alt:['thôi việc','nghỉ việc','xin từ chức','xin thôi việc'],ex:'He resigned due to personal reasons.'},
+  {topic:'Workplace & Employment',en:'salary',en_alt:['wage','pay','income'],vn:'lương',vn_alt:['tiền lương','thu nhập','lương tháng'],ex:'Her salary increased this year.'},
+  // Office Activities
+  {topic:'Office Activities',en:'arrange',en_alt:['organize','set up'],vn:'sắp xếp',vn_alt:['tổ chức','bố trí','chuẩn bị','thu xếp'],ex:'She arranged a meeting with the team.'},
+  {topic:'Office Activities',en:'attend',en_alt:['join','participate'],vn:'tham dự',vn_alt:['tham gia','dự','có mặt tại'],ex:'I will attend the workshop tomorrow.'},
+  {topic:'Office Activities',en:'meeting',en_alt:['session'],vn:'cuộc họp',vn_alt:['buổi họp','họp','phiên họp'],ex:'The meeting starts at 10 AM.'},
+  {topic:'Office Activities',en:'presentation',en_alt:['talk','pitch'],vn:'bài thuyết trình',vn_alt:['thuyết trình','bài trình bày','bài giới thiệu'],ex:'He gave a presentation on sales growth.'},
+  {topic:'Office Activities',en:'report',en_alt:[],vn:'báo cáo',vn_alt:['bản báo cáo','báo cáo công việc','bản tường trình'],ex:'Please submit the report by Friday.'},
+  {topic:'Office Activities',en:'schedule',en_alt:['timetable','plan'],vn:'lịch trình',vn_alt:['kế hoạch','lịch','thời gian biểu','thời khóa biểu'],ex:'The schedule was sent by email.'},
+  {topic:'Office Activities',en:'supervisor',en_alt:['manager','team lead'],vn:'người giám sát',vn_alt:['quản lý','giám sát viên','trưởng nhóm','cấp trên'],ex:'My supervisor checked my work.'},
+  {topic:'Office Activities',en:'task',en_alt:['job','assignment','work'],vn:'nhiệm vụ',vn_alt:['công việc','bài tập','đầu việc'],ex:'I have three tasks to finish today.'},
+  {topic:'Office Activities',en:'workload',en_alt:[],vn:'khối lượng công việc',vn_alt:['lượng công việc','áp lực công việc','khối lượng việc'],ex:'The workload is very heavy this week.'},
+  // Hotels & Accommodation
+  {topic:'Hotels & Accommodation',en:'accommodation',en_alt:['lodging','housing'],vn:'chỗ ở',vn_alt:['nơi ở','chỗ nghỉ','nơi lưu trú','chỗ lưu trú'],ex:'The hotel provides comfortable accommodation.'},
+  {topic:'Hotels & Accommodation',en:'check-in',en_alt:[],vn:'làm thủ tục nhận phòng',vn_alt:['nhận phòng','check-in','đăng ký phòng'],ex:'We checked in at 2 PM.'},
+  {topic:'Hotels & Accommodation',en:'check-out',en_alt:[],vn:'trả phòng',vn_alt:['thanh toán trả phòng','check-out','làm thủ tục trả phòng'],ex:'They checked out early this morning.'},
+  {topic:'Hotels & Accommodation',en:'double room',en_alt:[],vn:'phòng đôi',vn_alt:['phòng 2 người','phòng cho 2 người'],ex:'I booked a double room for two nights.'},
+  {topic:'Hotels & Accommodation',en:'guest',en_alt:['visitor'],vn:'khách',vn_alt:['khách lưu trú','du khách','vị khách'],ex:'The hotel had 200 guests last weekend.'},
+  {topic:'Hotels & Accommodation',en:'single room',en_alt:[],vn:'phòng đơn',vn_alt:['phòng 1 người','phòng cho 1 người'],ex:'He prefers a single room.'},
+  {topic:'Hotels & Accommodation',en:'suite',en_alt:['penthouse'],vn:'phòng hạng sang',vn_alt:['suite','phòng suite','phòng cao cấp'],ex:'They stayed in a luxury suite.'},
+  {topic:'Hotels & Accommodation',en:'vacancy',en_alt:['available room'],vn:'phòng trống',vn_alt:['phòng còn','chỗ trống','chỗ còn trống'],ex:'The hotel has no vacancies tonight.'},
+  {topic:'Hotels & Accommodation',en:'receptionist',en_alt:['front desk staff'],vn:'lễ tân',vn_alt:['nhân viên lễ tân','tiếp tân','nhân viên tiếp đón'],ex:'The receptionist welcomed us warmly.'},
+  // Dining & Restaurants
+  {topic:'Dining & Restaurants',en:'bill',en_alt:['check','tab'],vn:'hóa đơn',vn_alt:['tiền ăn','phiếu thanh toán','tiền tính'],ex:'Could you bring the bill, please?'},
+  {topic:'Dining & Restaurants',en:'buffet',en_alt:['self-service'],vn:'tiệc đứng',vn_alt:['buffet','tiệc buffet','ăn tự chọn','tiệc tự phục vụ'],ex:'The hotel offers a breakfast buffet.'},
+  {topic:'Dining & Restaurants',en:'cuisine',en_alt:['food','cooking'],vn:'ẩm thực',vn_alt:['món ăn','nền ẩm thực','phong cách nấu ăn'],ex:'Italian cuisine is very popular.'},
+  {topic:'Dining & Restaurants',en:'dish',en_alt:['meal','food'],vn:'món ăn',vn_alt:['món','đĩa ăn','thức ăn'],ex:'This restaurant serves traditional dishes.'},
+  {topic:'Dining & Restaurants',en:'menu',en_alt:[],vn:'thực đơn',vn_alt:['menu','danh sách món','bảng món ăn'],ex:'The waiter gave us the menu.'},
+  {topic:'Dining & Restaurants',en:'order',en_alt:[],vn:'gọi món',vn_alt:['đặt món','order','đặt đồ ăn'],ex:'I ordered a pizza.'},
+  {topic:'Dining & Restaurants',en:'service charge',en_alt:['service fee'],vn:'phí dịch vụ',vn_alt:['phụ phí dịch vụ','phí phục vụ'],ex:'A 10% service charge is included.'},
+  {topic:'Dining & Restaurants',en:'tip',en_alt:['gratuity'],vn:'tiền tip',vn_alt:['tiền bo','tiền thưởng','tiền thêm'],ex:'He left a tip for the waiter.'},
+  {topic:'Dining & Restaurants',en:'waiter',en_alt:['server','waitstaff'],vn:'bồi bàn',vn_alt:['phục vụ','nhân viên phục vụ','người phục vụ bàn'],ex:'The waiter is very friendly.'},
+  // Entertainment & Leisure
+  {topic:'Entertainment & Leisure',en:'cinema',en_alt:['movie theater','theater'],vn:'rạp chiếu phim',vn_alt:['rạp phim','rạp','phòng chiếu phim'],ex:'We went to the cinema last night.'},
+  {topic:'Entertainment & Leisure',en:'concert',en_alt:['show','gig'],vn:'buổi hòa nhạc',vn_alt:['concert','buổi nhạc','đêm nhạc','buổi biểu diễn âm nhạc'],ex:'She attended a live concert.'},
+  {topic:'Entertainment & Leisure',en:'exhibition',en_alt:['expo','show','display'],vn:'triển lãm',vn_alt:['buổi triển lãm','cuộc triển lãm','phòng triển lãm'],ex:'The art exhibition was impressive.'},
+  {topic:'Entertainment & Leisure',en:'leisure',en_alt:['recreation','free time'],vn:'giải trí',vn_alt:['thư giãn','nghỉ ngơi','hoạt động giải trí'],ex:'He enjoys leisure activities on weekends.'},
+  {topic:'Entertainment & Leisure',en:'museum',en_alt:[],vn:'bảo tàng',vn_alt:['viện bảo tàng','nhà bảo tàng'],ex:'The museum closes at 6 PM.'},
+  {topic:'Entertainment & Leisure',en:'performance',en_alt:['show','act'],vn:'buổi biểu diễn',vn_alt:['màn trình diễn','màn biểu diễn','tiết mục biểu diễn'],ex:'The performance lasted two hours.'},
+];
+
+let mode='en-vn',activeTopic='all',deck=[],idx=0,answered=false;
+let correctCount=0,wrongCount=0,skipCount=0;
+const topics=[...new Set(ALL_WORDS.map(w=>w.topic))];
+
+function normalize(s){return s.toLowerCase().trim().replace(/\s+/g,' ');}
+function acceptableMatch(input,card,cardMode){
+  const inp=normalize(input);
+  const pool=cardMode==='en-vn'
+    ?[card.vn,...(card.vn_alt||[])]
+    :[card.en,...(card.en_alt||[])];
+  return pool.map(a=>normalize(a)).includes(inp);
+}
+
+function buildTopicChips(){
+  const wrap=document.getElementById('topic-chips');
+  wrap.innerHTML='';
+  const a=document.createElement('button');
+  a.className='topic-chip active';a.textContent='Tất cả';
+  a.onclick=()=>setTopic('all',a);wrap.appendChild(a);
+  topics.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='topic-chip';b.textContent=t;
+    b.onclick=()=>setTopic(t,b);wrap.appendChild(b);
+  });
+}
+
+function setTopic(t,btn){
+  activeTopic=t;
+  document.querySelectorAll('.topic-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');restart();
+}
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-btn').forEach((b,i)=>{
+    b.classList.toggle('active',['en-vn','vn-en','random'][i]===m);
+  });restart();
+}
+
+function buildDeck(){
+  let pool=activeTopic==='all'?[...ALL_WORDS]:ALL_WORDS.filter(w=>w.topic===activeTopic);
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  deck=pool.map(w=>{let m=mode;if(m==='random')m=Math.random()<.5?'en-vn':'vn-en';return{...w,cardMode:m};});
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;
+}
+
+function renderCard(){
+  if(idx>=deck.length){showScore();return;}
+  const card=deck[idx];answered=false;
+  document.getElementById('flashcard').className='flashcard';
+  document.getElementById('card-topic').textContent=card.topic;
+  document.getElementById('card-counter').textContent=`${idx+1} / ${deck.length}`;
+  const wordEl=document.getElementById('card-word');
+  const inp=document.getElementById('answer-input');
+  if(card.cardMode==='en-vn'){
+    wordEl.textContent=card.en;wordEl.className='card-word';
+    inp.placeholder='Nhập nghĩa tiếng Việt...';
+  }else{
+    wordEl.textContent=card.vn;wordEl.className='card-word vn';
+    inp.placeholder='Nhập từ tiếng Anh...';
+  }
+  // Hide example only for VN→EN (example contains the English answer)
+  const exEl=document.getElementById('card-example');
+  exEl.textContent=card.ex;
+  exEl.style.visibility=card.cardMode==='vn-en'?'hidden':'visible';
+  document.getElementById('feedback').textContent='';
+  document.getElementById('feedback').className='feedback';
+  inp.value='';inp.className='';inp.disabled=false;
+  document.getElementById('btn-check').disabled=false;
+  updateProgress();updateStats();
+  setTimeout(()=>inp.focus(),80);
+}
+
+function checkAnswer(){
+  if(answered){nextCard();return;}
+  const inp=document.getElementById('answer-input');
+  const userAns=inp.value.trim();
+  if(!userAns)return;
+  const card=deck[idx];
+  const ok=acceptableMatch(userAns,card,card.cardMode);
+  answered=true;inp.disabled=true;document.getElementById('btn-check').disabled=true;
+  document.getElementById('card-example').style.visibility='visible';
+  const fc=document.getElementById('flashcard'),fb=document.getElementById('feedback');
+  if(ok){
+    fc.className='flashcard correct';inp.className='correct';
+    fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
+  }else{
+    const allAns=card.cardMode==='en-vn'
+      ?[card.vn,...(card.vn_alt||[])]
+      :[card.en,...(card.en_alt||[])];
+    fc.className='flashcard wrong';inp.className='wrong';
+    fb.textContent=`✗ Sai. Đáp án: "${allAns.join(' / ')}"`;fb.className='feedback wrong';wrongCount++;
+  }
+  updateStats();
+  setTimeout(()=>nextCard(),1600);
+}
+
+function nextCard(){idx++;renderCard();}
+function prevCard(){if(idx>0){idx--;renderCard();}}
+function skipCard(){
+  if(answered){nextCard();return;}
+  skipCount++;idx++;updateStats();renderCard();
+}
+function updateProgress(){
+  const pct=deck.length?Math.round((idx/deck.length)*100):0;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent=`Thẻ ${idx} / ${deck.length}`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+}
+function updateStats(){
+  document.getElementById('stat-correct').textContent=`${correctCount} đúng`;
+  document.getElementById('stat-wrong').textContent=`${wrongCount} sai`;
+}
+function showScore(){
+  document.getElementById('card-area').style.display='none';
+  document.querySelector('.input-area').style.display='none';
+  document.querySelector('.nav-area').style.display='none';
+  document.querySelector('.feedback').style.display='none';
+  document.querySelectorAll('.swipe-hint').forEach(e=>e.style.display='none');
+  const total=correctCount+wrongCount+skipCount;
+  const pct=total?Math.round((correctCount/total)*100):0;
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('sc-correct').textContent=correctCount+' đúng';
+  document.getElementById('sc-wrong').textContent=wrongCount+' sai';
+  document.getElementById('sc-skip').textContent=skipCount+' bỏ qua';
+  document.getElementById('score-panel').classList.add('show');
+  document.getElementById('progress-fill').style.width='100%';
+  document.getElementById('prog-text').textContent='Hoàn thành!';
+  document.getElementById('prog-pct').textContent='100%';
+}
+function restart(){
+  document.getElementById('card-area').style.display='';
+  document.querySelector('.input-area').style.display='';
+  document.querySelector('.nav-area').style.display='';
+  document.querySelector('.feedback').style.display='';
+  document.querySelectorAll('.swipe-hint').forEach(e=>e.style.display='');
+  document.getElementById('score-panel').classList.remove('show');
+  buildDeck();renderCard();
+}
+
+// Touch swipe on card
+let touchX=0;
+document.getElementById('flashcard').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;},{passive:true});
+document.getElementById('flashcard').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>60){dx<0?skipCard():prevCard();}
+},{passive:true});
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();if(!answered)checkAnswer();else nextCard();}
+  if(e.key==='ArrowRight'&&!document.getElementById('answer-input').matches(':focus'))skipCard();
+  if(e.key==='ArrowLeft'&&!document.getElementById('answer-input').matches(':focus'))prevCard();
+});
+
+buildTopicChips();restart();
+</script>
+</body>
+</html>
