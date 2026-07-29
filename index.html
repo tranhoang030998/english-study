@@ -5,280 +5,294 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>TOEIC Flashcards</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
-  --text:#e8eaf0; --muted:#7b82a0; --accent:#4f7cff; --accent2:#7c5cff;
-  --green:#22c55e; --green-bg:#052e16; --red:#ef4444; --red-bg:#2d0808;
-  --yellow:#f59e0b; --radius:14px; --card-radius:20px;
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3350;
+  --text:#e8eaf0;--muted:#7b82a0;--accent:#4f7cff;--accent2:#7c5cff;
+  --green:#22c55e;--green-bg:#052e16;--red:#ef4444;--red-bg:#2d0808;
+  --yellow:#f59e0b;--gold:#FFD700;--radius:14px;--card-radius:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
-body{
-  font-family:'Noto Sans',sans-serif;
-  background:var(--bg);color:var(--text);
-  min-height:100vh;display:flex;flex-direction:column;align-items:center;
-  padding-bottom:env(safe-area-inset-bottom,16px);
-}
+body{font-family:'Noto Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding-bottom:env(safe-area-inset-bottom,16px);}
+
+/* LOGIN SCREEN */
+#login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;width:100%;padding:24px;}
+.login-box{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:36px 28px;}
+.login-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;text-align:center;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px;}
+.login-logo-dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.login-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px;}
+.login-field{margin-bottom:14px;}
+.login-label{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;display:block;}
+.login-input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:15px;padding:12px 14px;outline:none;transition:border-color .2s;}
+.login-input:focus{border-color:var(--accent);}
+.login-btn{width:100%;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;margin-top:6px;transition:opacity .2s;touch-action:manipulation;}
+.login-btn:hover{opacity:.88;}
+.login-err{color:var(--red);font-size:12px;text-align:center;margin-top:10px;min-height:18px;font-family:'Space Grotesk',sans-serif;}
+
+/* MAIN APP */
+#app{display:none;flex-direction:column;align-items:center;width:100%;}
 
 /* HEADER */
-header{
-  width:100%;max-width:680px;
-  padding:20px 16px 0;
-  display:flex;align-items:center;justify-content:space-between;gap:8px;
-}
-.logo{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;
-  letter-spacing:-0.5px;color:var(--text);display:flex;align-items:center;gap:8px;
-}
-.logo-dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));}
-.stats-bar{display:flex;gap:12px;font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;}
+header{width:100%;max-width:680px;padding:16px 16px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;letter-spacing:-.5px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-badge{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.user-badge .streak{color:var(--yellow);}
+.btn-logout{font-size:11px;font-family:'Space Grotesk',sans-serif;font-weight:600;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;touch-action:manipulation;}
+.stats-bar{display:flex;gap:10px;font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;}
 .stat{display:flex;align-items:center;gap:4px;}
 .stat-dot{width:6px;height:6px;border-radius:50%;}
 .stat-dot.green{background:var(--green);}
 .stat-dot.red{background:var(--red);}
 
-/* CONTROLS */
-.controls{width:100%;max-width:680px;padding:14px 16px 0;display:flex;flex-direction:column;gap:10px;}
-.mode-toggle{
-  display:flex;background:var(--surface);
-  border:1px solid var(--border);border-radius:12px;padding:3px;gap:3px;
-}
-.mode-btn{
-  flex:1;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;
-  padding:8px 6px;border-radius:9px;border:none;cursor:pointer;
-  background:transparent;color:var(--muted);transition:all .2s;
-  letter-spacing:.01em;touch-action:manipulation;
-}
-.mode-btn.active{background:var(--accent);color:white;}
+/* MAIN NAV TABS */
+.main-nav{width:100%;max-width:680px;padding:12px 16px 0;display:flex;gap:6px;}
+.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;touch-action:manipulation;white-space:nowrap;}
+.tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+.tab-btn:active{opacity:.8;}
 
-/* TOPICS — horizontal scroll on mobile */
-.topics-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+/* CONTROLS */
+.controls{width:100%;max-width:680px;padding:10px 16px 0;display:flex;flex-direction:column;gap:8px;}
+.mode-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:3px;gap:3px;}
+.mode-btn{flex:1;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:7px 6px;border-radius:9px;border:none;cursor:pointer;background:transparent;color:var(--muted);transition:all .2s;touch-action:manipulation;}
+.mode-btn.active{background:var(--accent);color:white;}
+.topics-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
 .topics-scroll::-webkit-scrollbar{display:none;}
 .topics-wrap{display:flex;gap:6px;width:max-content;}
-.topic-chip{
-  font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;
-  padding:6px 13px;border-radius:20px;border:1px solid var(--border);
-  background:transparent;color:var(--muted);cursor:pointer;
-  transition:all .18s;white-space:nowrap;touch-action:manipulation;
-}
+.topic-chip{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;white-space:nowrap;touch-action:manipulation;}
 .topic-chip.active{background:var(--accent);border-color:var(--accent);color:white;}
 
 /* PROGRESS */
-.progress-wrap{width:100%;max-width:680px;padding:12px 16px 0;}
+.progress-wrap{width:100%;max-width:680px;padding:10px 16px 0;}
 .progress-track{height:4px;background:var(--surface2);border-radius:4px;overflow:hidden;}
 .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;transition:width .4s ease;}
-.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;margin-top:5px;}
+.progress-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;margin-top:4px;}
 
-/* CARD */
-.card-area{width:100%;max-width:680px;padding:14px 16px 0;}
-.flashcard{
-  width:100%;min-height:220px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--card-radius);padding:32px 24px 24px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;transition:border-color .25s,background .25s,box-shadow .25s;
-}
+/* FLASHCARD */
+.card-area{width:100%;max-width:680px;padding:12px 16px 0;}
+.flashcard{width:100%;min-height:210px;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:30px 22px 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:border-color .25s,background .25s,box-shadow .25s;}
 .flashcard.correct{border-color:var(--green);background:var(--green-bg);box-shadow:0 0 32px rgba(34,197,94,.12);}
 .flashcard.wrong{border-color:var(--red);background:var(--red-bg);box-shadow:0 0 32px rgba(239,68,68,.12);}
-
-.card-topic{
-  font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;
-  letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
-  margin-bottom:14px;padding:3px 10px;border:1px solid var(--border);border-radius:20px;
-}
-.card-word{
-  font-family:'Space Grotesk',sans-serif;font-weight:700;
-  font-size:clamp(26px,8vw,42px);
-  letter-spacing:-0.5px;text-align:center;color:var(--text);line-height:1.1;margin-bottom:10px;
-}
-.card-word.vn{font-size:clamp(20px,5.5vw,30px);letter-spacing:-.3px;}
+.card-topic{font-family:'Space Grotesk',sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;padding:3px 10px;border:1px solid var(--border);border-radius:20px;}
+.card-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(24px,7vw,40px);letter-spacing:-.5px;text-align:center;color:var(--text);line-height:1.1;margin-bottom:10px;}
+.card-word.vn{font-size:clamp(18px,5vw,28px);letter-spacing:-.3px;}
 .card-example{font-size:12px;color:var(--muted);text-align:center;font-style:italic;max-width:100%;line-height:1.6;}
-.card-counter{position:absolute;top:14px;right:16px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);}
-.result-icon{position:absolute;top:14px;left:16px;font-size:20px;display:none;}
+.card-counter{position:absolute;top:14px;right:14px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);}
+.result-icon{position:absolute;top:14px;left:14px;font-size:18px;display:none;}
 .flashcard.correct .result-icon.ok{display:block;}
 .flashcard.wrong .result-icon.fail{display:block;}
 
 /* INPUT */
-.input-area{width:100%;max-width:680px;padding:12px 16px 0;}
-.input-row{display:flex;gap:8px;align-items:stretch;}
-#answer-input{
-  flex:1;background:var(--surface);border:1.5px solid var(--border);
-  border-radius:var(--radius);color:var(--text);
-  font-family:'Noto Sans',sans-serif;font-size:16px;
-  padding:13px 16px;outline:none;transition:border-color .2s;
-  -webkit-appearance:none;
-}
+.input-area{width:100%;max-width:680px;padding:10px 16px 0;}
+.input-row{display:flex;gap:8px;}
+#answer-input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:16px;padding:12px 14px;outline:none;transition:border-color .2s;-webkit-appearance:none;}
 #answer-input:focus{border-color:var(--accent);}
 #answer-input.correct{border-color:var(--green);background:var(--green-bg);}
 #answer-input.wrong{border-color:var(--red);background:var(--red-bg);}
 #answer-input::placeholder{color:var(--muted);}
-
-.btn-check{
-  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
-  padding:13px 20px;background:var(--accent);color:white;
-  border:none;border-radius:var(--radius);cursor:pointer;
-  transition:opacity .2s,transform .1s;white-space:nowrap;touch-action:manipulation;
-  min-width:90px;
-}
+.btn-check{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 18px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;transition:opacity .2s,transform .1s;white-space:nowrap;touch-action:manipulation;min-width:88px;}
 .btn-check:active{transform:scale(.97);}
-.btn-check:disabled{opacity:.4;cursor:not-allowed;}
+.btn-check:disabled{opacity:.4;}
 
 /* FEEDBACK */
-.feedback{
-  width:100%;max-width:680px;padding:8px 16px 0;
-  min-height:26px;font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:500;
-}
+.feedback{width:100%;max-width:680px;padding:7px 16px 0;min-height:24px;font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:500;}
 .feedback.correct{color:var(--green);}
 .feedback.wrong{color:var(--red);}
 
 /* NAV */
-.nav-area{width:100%;max-width:680px;padding:10px 16px 0;display:flex;gap:8px;}
-.btn-nav{
-  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
-  padding:11px 18px;background:var(--surface);border:1px solid var(--border);
-  color:var(--text);border-radius:var(--radius);cursor:pointer;
-  transition:all .18s;touch-action:manipulation;flex:1;
-}
+.nav-area{width:100%;max-width:680px;padding:8px 16px 0;display:flex;gap:8px;}
+.btn-nav{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);cursor:pointer;transition:all .18s;touch-action:manipulation;flex:1;}
 .btn-nav:active{opacity:.75;}
-.btn-skip{color:var(--muted);}
+#btn-skip{color:var(--muted);}
+.swipe-hint{font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;text-align:center;padding:8px 16px 16px;}
 
-/* SWIPE HINT — mobile only */
-.swipe-hint{
-  font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;
-  text-align:center;padding:10px 16px 20px;
-}
-.swipe-hint.desktop{display:none;}
-
-/* SCORE */
-.score-panel{
-  width:100%;max-width:680px;margin:20px 16px 0;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--card-radius);padding:40px 24px;text-align:center;display:none;
-}
-.score-panel.show{display:block;}
-.score-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.5px;margin-bottom:6px;}
-.score-sub{color:var(--muted);font-size:13px;margin-bottom:24px;}
-.score-big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:64px;letter-spacing:-2px;line-height:1;color:var(--accent);margin-bottom:4px;}
-.score-detail{
-  display:flex;justify-content:center;flex-wrap:wrap;gap:16px 24px;
-  font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);
-  margin:14px 0 32px;
-}
-.score-detail span{display:flex;align-items:center;gap:6px;}
-.btn-restart{
-  font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;
-  padding:13px 32px;background:var(--accent);color:white;
-  border:none;border-radius:var(--radius);cursor:pointer;transition:opacity .2s;
-  width:100%;touch-action:manipulation;
-}
-.btn-restart:active{opacity:.8;}
-.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;touch-action:manipulation;}
-.tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
-.tab-btn:active{opacity:.8;}
 /* SUMMARY TAB */
-.sum-stats{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
-.sum-stat-box{flex:1;min-width:80px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 10px;text-align:center;}
-.sum-stat-box .val{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;line-height:1;}
-.sum-stat-box .lbl{font-size:11px;color:var(--muted);margin-top:4px;font-family:'Space Grotesk',sans-serif;}
-.sum-filter{display:flex;gap:6px;margin-bottom:12px;}
-.sum-filter-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:5px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
+.sum-panel{display:none;width:100%;max-width:680px;padding:0 16px 20px;}
+.sum-stats{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.sum-stat-box{flex:1;min-width:70px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 8px;text-align:center;}
+.sum-stat-box .val{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;line-height:1;}
+.sum-stat-box .lbl{font-size:10px;color:var(--muted);margin-top:3px;font-family:'Space Grotesk',sans-serif;}
+.sum-filter{display:flex;gap:6px;margin-bottom:10px;}
+.sum-filter-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:5px 12px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
 .sum-filter-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
-.sum-empty{text-align:center;color:var(--muted);font-size:14px;padding:40px 0;font-family:'Space Grotesk',sans-serif;}
-.sum-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto;padding-right:2px;}
-.sum-list::-webkit-scrollbar{width:4px;} .sum-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
-.sum-row{display:grid;grid-template-columns:28px 1fr 1fr 22px;gap:8px;align-items:center;padding:9px 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.sum-list{display:flex;flex-direction:column;gap:5px;max-height:380px;overflow-y:auto;}
+.sum-list::-webkit-scrollbar{width:3px;} .sum-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.sum-row{display:grid;grid-template-columns:26px 1fr 1fr 20px;gap:6px;align-items:center;padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
 .sum-row.ok{border-color:rgba(34,197,94,.3);background:rgba(5,46,22,.4);}
 .sum-row.fail{border-color:rgba(239,68,68,.3);background:rgba(45,8,8,.4);}
-.sum-num{font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;text-align:center;}
-.sum-word{font-size:13px;font-family:'Space Grotesk',sans-serif;font-weight:500;}
-.sum-word small{display:block;font-size:11px;color:var(--muted);font-weight:400;}
-.sum-ans{font-size:12px;color:var(--muted);}
-.sum-ans span{display:block;}
+.sum-num{font-size:10px;color:var(--muted);font-family:'Space Grotesk',sans-serif;text-align:center;}
+.sum-word{font-size:12px;font-family:'Space Grotesk',sans-serif;font-weight:500;}
+.sum-word small{display:block;font-size:10px;color:var(--muted);font-weight:400;}
+.sum-ans{font-size:11px;color:var(--muted);}
 .sum-ans .wrong-ans{color:var(--red);}
-.sum-ans .right-ans{color:var(--green);font-size:11px;}
-.sum-icon{font-size:14px;text-align:center;}
-.btn-retry-wrong{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:10px 0;background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:var(--radius);cursor:pointer;transition:all .18s;width:100%;margin-top:12px;touch-action:manipulation;}
-.btn-retry-wrong:hover{background:var(--red);color:white;}
-.btn-retry-wrong:disabled{opacity:.4;cursor:not-allowed;}
+.sum-ans .right-ans{color:var(--green);font-size:10px;}
+.sum-icon{font-size:13px;text-align:center;}
+.sum-empty{text-align:center;color:var(--muted);font-size:13px;padding:32px 0;font-family:'Space Grotesk',sans-serif;}
+.btn-retry-wrong{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:10px 0;background:var(--red-bg);border:1px solid var(--red);color:var(--red);border-radius:var(--radius);cursor:pointer;width:100%;margin-top:10px;touch-action:manipulation;}
+.btn-retry-wrong:disabled{opacity:.4;}
 
+/* RANKING TAB */
+.rank-panel{display:none;width:100%;max-width:680px;padding:0 16px 20px;}
+.rank-period{display:flex;gap:6px;margin-bottom:14px;}
+.rank-period-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:6px 16px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
+.rank-period-btn.active{background:var(--gold);border-color:var(--gold);color:#1a1200;}
+.rank-table{display:flex;flex-direction:column;gap:6px;}
+.rank-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;transition:all .2s;}
+.rank-row.me{border-color:var(--accent);background:rgba(79,124,255,.08);}
+.rank-row.rank-1{border-color:var(--gold);}
+.rank-row.rank-2{border-color:#C0C0C0;}
+.rank-row.rank-3{border-color:#CD7F32;}
+.rank-num{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;width:28px;text-align:center;flex-shrink:0;}
+.rank-num.r1{color:var(--gold);}
+.rank-num.r2{color:#C0C0C0;}
+.rank-num.r3{color:#CD7F32;}
+.rank-info{flex:1;}
+.rank-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;}
+.rank-name .you-badge{font-size:10px;font-weight:600;background:var(--accent);color:white;padding:1px 6px;border-radius:6px;margin-left:5px;}
+.rank-streak{font-size:11px;color:var(--yellow);margin-top:1px;}
+.rank-stats{text-align:right;flex-shrink:0;}
+.rank-correct{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--green);}
+.rank-pct{font-size:11px;color:var(--muted);}
+.rank-empty{text-align:center;color:var(--muted);font-size:13px;padding:32px 0;font-family:'Space Grotesk',sans-serif;}
+.rank-loading{text-align:center;color:var(--muted);font-size:13px;padding:24px 0;font-family:'Space Grotesk',sans-serif;}
+.rank-section-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;}
 
-/* RESPONSIVE — desktop tweaks */
+/* ADMIN PANEL */
+.admin-panel{display:none;width:100%;max-width:680px;padding:0 16px 20px;}
+.admin-section{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 8px;}
+.admin-form{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.admin-input{flex:1;min-width:120px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:14px;padding:10px 12px;outline:none;transition:border-color .2s;}
+.admin-input:focus{border-color:var(--accent);}
+.admin-btn{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;touch-action:manipulation;white-space:nowrap;}
+.admin-btn.danger{background:var(--red-bg);border:1px solid var(--red);color:var(--red);}
+.admin-msg{font-size:12px;font-family:'Space Grotesk',sans-serif;margin-bottom:10px;min-height:18px;}
+.admin-msg.ok{color:var(--green);}
+.admin-msg.err{color:var(--red);}
+.admin-user-list{display:flex;flex-direction:column;gap:6px;}
+.admin-user-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;}
+.admin-user-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;flex:1;}
+.admin-user-info{font-size:11px;color:var(--muted);}
+.admin-user-del{font-size:12px;background:transparent;border:none;color:var(--red);cursor:pointer;padding:4px 8px;border-radius:6px;font-family:'Space Grotesk',sans-serif;font-weight:600;}
+
+/* SCORE PANEL */
+.score-panel{width:100%;max-width:680px;margin:16px 16px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:36px 20px;text-align:center;display:none;}
+.score-panel.show{display:block;}
+.score-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;letter-spacing:-.5px;margin-bottom:6px;}
+.score-big{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:58px;letter-spacing:-2px;line-height:1;color:var(--accent);margin-bottom:4px;}
+.score-detail{display:flex;justify-content:center;flex-wrap:wrap;gap:14px 20px;font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);margin:12px 0 28px;}
+.score-detail span{display:flex;align-items:center;gap:5px;}
+.btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
+.btn-restart:active{opacity:.8;}
+.score-save-msg{font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;min-height:18px;}
+
 @media(min-width:600px){
-  header{padding:24px 24px 0;}
-  .controls{padding:16px 24px 0;flex-direction:row;flex-wrap:wrap;align-items:flex-start;}
-  .mode-toggle{flex-shrink:0;}
-  .topics-scroll{flex:1;overflow-x:auto;}
-  .topics-wrap{width:auto;flex-wrap:wrap;}
-  .progress-wrap,.card-area,.input-area,.feedback,.nav-area{padding-left:24px;padding-right:24px;}
-  .flashcard{min-height:250px;padding:38px 40px 30px;}
+  header{padding:20px 24px 0;}
+  .controls,.main-nav,.progress-wrap,.card-area,.input-area,.feedback,.nav-area{padding-left:24px;padding-right:24px;}
+  .sum-panel,.rank-panel,.admin-panel{padding-left:24px;padding-right:24px;}
+  .flashcard{min-height:230px;}
   .btn-nav{flex:0 0 auto;}
-  .btn-skip{margin-left:auto;flex:0 0 auto;}
+  #btn-skip{margin-left:auto;flex:0 0 auto;}
   .swipe-hint{display:none;}
-  .swipe-hint.desktop{display:block;font-size:11.5px;}
-  .score-panel{margin-left:24px;margin-right:24px;}
 }
 </style>
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo"><div class="login-logo-dot"></div>TOEIC Flashcards</div>
+    <div class="login-sub">Đăng nhập để học và xem bảng xếp hạng</div>
+    <div class="login-field">
+      <label class="login-label">Tên đăng nhập</label>
+      <input class="login-input" id="login-username" type="text" placeholder="username" autocomplete="off" autocapitalize="off">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Mã PIN (4 số)</label>
+      <input class="login-input" id="login-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Đăng nhập</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
 <header>
   <div class="logo"><div class="logo-dot"></div>TOEIC Flashcards</div>
-  <div class="stats-bar">
-    <div class="stat"><div class="stat-dot green"></div><span id="stat-correct">0 đúng</span></div>
-    <div class="stat"><div class="stat-dot red"></div><span id="stat-wrong">0 sai</span></div>
+  <div class="header-right">
+    <div class="user-badge" id="user-badge">
+      <span id="user-name-display"></span>
+      <span class="streak" id="streak-display"></span>
+    </div>
+    <button class="btn-logout" onclick="doLogout()">Đăng xuất</button>
   </div>
 </header>
 
-<div class="controls">
-  <div class="mode-toggle">
-    <button class="mode-btn active" onclick="setMode('en-vn')">EN → VN</button>
-    <button class="mode-btn" onclick="setMode('vn-en')">VN → EN</button>
-    <button class="mode-btn" onclick="setMode('random')">🔀 Mix</button>
+<div class="main-nav" id="main-nav">
+  <button class="tab-btn active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
+  <button class="tab-btn" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
+  <button class="tab-btn" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
+  <button class="tab-btn" id="admin-tab-btn" style="display:none" onclick="switchMainTab('admin',this)">⚙️ Admin</button>
+</div>
+
+<!-- PRACTICE TAB -->
+<div id="practice-panel">
+  <div class="controls">
+    <div class="mode-toggle">
+      <button class="mode-btn active" onclick="setMode('en-vn')">EN → VN</button>
+      <button class="mode-btn" onclick="setMode('vn-en')">VN → EN</button>
+      <button class="mode-btn" onclick="setMode('random')">🔀 Mix</button>
+    </div>
+    <div class="topics-scroll"><div class="topics-wrap" id="topic-chips"></div></div>
   </div>
-  <div class="topics-scroll"><div class="topics-wrap" id="topic-chips"></div></div>
-</div>
-
-<div style="width:100%;max-width:680px;padding:12px 16px 0;display:flex;gap:6px;" id="main-tabs">
-  <button class="tab-btn active" onclick="switchMainTab(0,this)">📝 Luyện tập</button>
-  <button class="tab-btn" onclick="switchMainTab(1,this)">📊 Kết quả</button>
-</div>
-<div class="progress-wrap">
-  <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
-  <div class="progress-label"><span id="prog-text">Thẻ 0 / 0</span><span id="prog-pct">0%</span></div>
-</div>
-
-<div class="card-area" id="card-area">
-  <div class="flashcard" id="flashcard">
-    <span class="result-icon ok">✅</span>
-    <span class="result-icon fail">❌</span>
-    <div class="card-counter" id="card-counter">1 / 10</div>
-    <div class="card-topic" id="card-topic">Business & Office</div>
-    <div class="card-word" id="card-word">agenda</div>
-    <div class="card-example" id="card-example">The manager sent out the meeting agenda yesterday.</div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    <div class="progress-label"><span id="prog-text">Thẻ 0 / 0</span><span id="prog-pct">0%</span></div>
   </div>
-</div>
-
-<div class="input-area">
-  <div class="input-row">
-    <input type="text" id="answer-input" placeholder="Nhập nghĩa tiếng Việt..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
-    <button class="btn-check" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
+  <div class="card-area">
+    <div class="flashcard" id="flashcard">
+      <span class="result-icon ok">✅</span>
+      <span class="result-icon fail">❌</span>
+      <div class="card-counter" id="card-counter">1 / 10</div>
+      <div class="card-topic" id="card-topic"></div>
+      <div class="card-word" id="card-word"></div>
+      <div class="card-example" id="card-example"></div>
+    </div>
   </div>
+  <div class="input-area">
+    <div class="input-row">
+      <input type="text" id="answer-input" placeholder="Nhập nghĩa tiếng Việt..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      <button class="btn-check" id="btn-check" onclick="checkAnswer()">Kiểm tra</button>
+    </div>
+  </div>
+  <div class="feedback" id="feedback"></div>
+  <div class="nav-area">
+    <button class="btn-nav" onclick="prevCard()">← Trước</button>
+    <button class="btn-nav" id="btn-skip" onclick="skipCard()">Bỏ qua →</button>
+  </div>
+  <div class="swipe-hint">Vuốt trái/phải · Nhấn Enter để kiểm tra</div>
 </div>
 
-<div class="feedback" id="feedback"></div>
-
-<div class="nav-area">
-  <button class="btn-nav" onclick="prevCard()">← Trước</button>
-  <button id="btn-skip" class="btn-nav btn-skip" onclick="skipCard()">Bỏ qua →</button>
+<!-- SCORE PANEL (after completing a round) -->
+<div class="score-panel" id="score-panel">
+  <div class="score-title">🎉 Hoàn thành!</div>
+  <div class="score-big" id="score-pct">0%</div>
+  <div class="score-detail">
+    <span><span style="color:var(--green)">✓</span><span id="sc-correct">0 đúng</span></span>
+    <span><span style="color:var(--red)">✗</span><span id="sc-wrong">0 sai</span></span>
+    <span><span style="color:var(--muted)">⏩</span><span id="sc-skip">0 bỏ qua</span></span>
+  </div>
+  <button class="btn-restart" onclick="restart()">Làm lại</button>
+  <div class="score-save-msg" id="score-save-msg"></div>
 </div>
 
-<div class="swipe-hint">Vuốt trái/phải để bỏ qua · Nhấn Kiểm tra để chấm</div>
-
-<div id="summary-panel" style="display:none;width:100%;max-width:680px;padding:0 16px 20px;">
+<!-- SUMMARY TAB -->
+<div class="sum-panel" id="sum-panel">
   <div class="sum-stats">
     <div class="sum-stat-box"><div class="val" id="s-total">0</div><div class="lbl">Đã làm</div></div>
     <div class="sum-stat-box"><div class="val" style="color:var(--green)" id="s-correct">0</div><div class="lbl">Đúng</div></div>
@@ -293,19 +307,33 @@ header{
   <div class="sum-list" id="sum-list"></div>
   <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()" disabled>🔁 Ôn lại từ sai</button>
 </div>
-<div class="swipe-hint desktop">Nhấn <b>Enter</b> để kiểm tra &nbsp;·&nbsp; <b>→</b> bỏ qua &nbsp;·&nbsp; <b>←</b> quay lại</div>
 
-<div class="score-panel" id="score-panel">
-  <div class="score-title">🎉 Hoàn thành!</div>
-  <div class="score-sub">Kết quả lần này</div>
-  <div class="score-big" id="score-pct">0%</div>
-  <div class="score-detail">
-    <span><span style="color:var(--green)">✓</span><span id="sc-correct">0 đúng</span></span>
-    <span><span style="color:var(--red)">✗</span><span id="sc-wrong">0 sai</span></span>
-    <span><span style="color:var(--muted)">⏩</span><span id="sc-skip">0 bỏ qua</span></span>
+<!-- RANKING TAB -->
+<div class="rank-panel" id="rank-panel">
+  <div class="rank-period">
+    <button class="rank-period-btn active" onclick="setRankPeriod('week',this)">📅 Tuần này</button>
+    <button class="rank-period-btn" onclick="setRankPeriod('month',this)">🗓 Tháng này</button>
+    <button class="rank-period-btn" onclick="setRankPeriod('all',this)">🏅 Tổng</button>
   </div>
-  <button class="btn-restart" onclick="restart()">Làm lại</button>
+  <div class="rank-table" id="rank-table"><div class="rank-loading">Đang tải...</div></div>
 </div>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="admin-panel">
+  <div class="admin-section">Tạo tài khoản học viên</div>
+  <div class="admin-form">
+    <input class="admin-input" id="new-username" placeholder="Tên đăng nhập" autocapitalize="off">
+    <input class="admin-input" id="new-displayname" placeholder="Tên hiển thị">
+    <input class="admin-input" id="new-pin" placeholder="PIN (4 số)" type="password" inputmode="numeric" maxlength="4" style="max-width:100px;">
+    <button class="admin-btn" onclick="createUser()">Tạo</button>
+  </div>
+  <div class="admin-msg" id="admin-msg"></div>
+  <div class="admin-section">Danh sách học viên</div>
+  <div class="admin-user-list" id="admin-user-list"></div>
+</div>
+
+</div><!-- end #app -->
+
 
 <script>
 const ALL_WORDS=[
@@ -910,85 +938,149 @@ const ALL_WORDS=[
   {topic:'Shopping & Services',en:'shop',en_alt:['store','outlet','boutique'],vn:'cửa hàng',vn_alt:['cửa hàng','tiệm','quán'],ex:'They opened a new shop.'},
   {topic:'Shopping & Services',en:'supermarket',en_alt:['grocery store','hypermarket'],vn:'siêu thị',vn_alt:['siêu thị','chợ siêu thị'],ex:'I bought fruit at the supermarket.'},
 ];
+</script>
+<script type="module">
+// ── Firebase ────────────────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-let mode='en-vn',activeTopic='all',deck=[],idx=0,answered=false;
-let correctCount=0,wrongCount=0,skipCount=0;
-let history=[];
-let sumFilter='all';
+const firebaseConfig = {
+  apiKey: "AIzaSyB3nNmDjR-DzDNAowP86oF2IKhtuUvpc7U",
+  authDomain: "toeic-flashcard-4c6da.firebaseapp.com",
+  projectId: "toeic-flashcard-4c6da",
+  storageBucket: "toeic-flashcard-4c6da.firebasestorage.app",
+  messagingSenderId: "986833803151",
+  appId: "1:986833803151:web:b20dcaeb32ac32ebdc5dfa"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
 
-function switchMainTab(idx,btn){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  const practiceEls=['#card-area','.input-area','.nav-area','.feedback','.swipe-hint','.swipe-hint.desktop','.progress-wrap'];
-  const showPractice=idx===0;
-  practiceEls.forEach(sel=>{
-    document.querySelectorAll(sel).forEach(el=>el.style.display=showPractice?'':'none');
-  });
-  document.getElementById('summary-panel').style.display=showPractice?'none':'block';
-  if(!showPractice) renderSummary();
+// ── Auth ─────────────────────────────────────────────────────────
+let currentUser = null; // {username, displayName, isAdmin}
+
+async function doLogin() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const pin      = document.getElementById('login-pin').value.trim();
+  const errEl    = document.getElementById('login-err');
+  errEl.textContent = '';
+  if (!username || !pin) { errEl.textContent = 'Vui lòng nhập đầy đủ.'; return; }
+
+  try {
+    const ref  = doc(db, 'users', username);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) { errEl.textContent = 'Tài khoản không tồn tại.'; return; }
+    const data = snap.data();
+    if (data.pin !== pin) { errEl.textContent = 'Mã PIN không đúng.'; return; }
+
+    currentUser = { username, displayName: data.displayName || username, isAdmin: data.isAdmin || false };
+    localStorage.setItem('toeic_user', JSON.stringify(currentUser));
+
+    // Update streak
+    await updateStreak(username);
+    showApp();
+  } catch(e) {
+    errEl.textContent = 'Lỗi kết nối. Thử lại.';
+    console.error(e);
+  }
+}
+window.doLogin = doLogin;
+
+async function updateStreak(username) {
+  const ref  = doc(db, 'users', username);
+  const snap = await getDoc(ref);
+  const data = snap.data();
+  const today = new Date().toDateString();
+  const lastDay = data.lastStudyDay || '';
+  const yesterday = new Date(Date.now()-86400000).toDateString();
+
+  let streak = data.streak || 0;
+  if (lastDay === today) {
+    // same day, no change
+  } else if (lastDay === yesterday) {
+    streak += 1;
+  } else if (lastDay !== today) {
+    streak = 1;
+  }
+  await updateDoc(ref, { streak, lastStudyDay: today });
+  return streak;
 }
 
-function renderSummary(){
-  const ok=history.filter(h=>h.ok).length;
-  const fail=history.filter(h=>!h.ok).length;
-  const total=history.length;
-  document.getElementById('s-total').textContent=total;
-  document.getElementById('s-correct').textContent=ok;
-  document.getElementById('s-wrong').textContent=fail;
-  document.getElementById('s-pct').textContent=total?Math.round(ok/total*100)+'%':'0%';
-  document.getElementById('btn-retry-wrong').disabled=fail===0;
+function doLogout() {
+  localStorage.removeItem('toeic_user');
+  currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+window.doLogout = doLogout;
 
-  const filtered=sumFilter==='all'?history:history.filter(h=>sumFilter==='ok'?h.ok:!h.ok);
-  const list=document.getElementById('sum-list');
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  const appEl = document.getElementById('app');
+  appEl.style.display = 'flex';
 
-  if(filtered.length===0){
-    list.innerHTML='<div class="sum-empty">'+(history.length===0?'Chưa có từ nào được làm.<br>Quay lại tab Luyện tập để bắt đầu!':'Không có từ nào.')+'</div>';
-    return;
+  document.getElementById('user-name-display').textContent = currentUser.displayName;
+  if (currentUser.isAdmin) {
+    document.getElementById('admin-tab-btn').style.display = '';
+  }
+  loadUserStreak();
+  buildTopicChips();
+  restart();
+}
+
+async function loadUserStreak() {
+  const ref  = doc(db, 'users', currentUser.username);
+  const snap = await getDoc(ref);
+  const streak = snap.data()?.streak || 0;
+  document.getElementById('streak-display').textContent = streak > 0 ? `🔥${streak}` : '';
+}
+
+// Auto-login
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('toeic_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      showApp();
+      // Re-verify in background
+      getDoc(doc(db,'users',currentUser.username)).then(snap=>{
+        if(!snap.exists()){doLogout();}
+      });
+    } catch(e){ doLogout(); }
   }
 
-  list.innerHTML=filtered.map((h,i)=>{
-    const dispWord=h.cardMode==='en-vn'?h.en:h.vn;
-    const dispMeaning=h.cardMode==='en-vn'?h.vn:h.en;
-    const wrongPart=!h.ok?`<span class="wrong-ans">Bạn: "${h.userAnswer}"</span><span class="right-ans">Đúng: "${dispMeaning}"</span>`:`<span>${dispMeaning}</span>`;
-    return `<div class="sum-row ${h.ok?'ok':'fail'}">
-      <div class="sum-num">${history.indexOf(h)+1}</div>
-      <div class="sum-word">${dispWord}<small>${h.topic}</small></div>
-      <div class="sum-ans">${wrongPart}</div>
-      <div class="sum-icon">${h.ok?'✅':'❌'}</div>
-    </div>`;
-  }).join('');
-}
+  // Login on Enter
+  document.getElementById('login-pin').addEventListener('keydown', e => {
+    if(e.key==='Enter') doLogin();
+  });
+});
 
-function filterSum(f,btn){
-  sumFilter=f;
-  document.querySelectorAll('.sum-filter-btn').forEach(b=>b.classList.remove('active'));
+// ── Tab switching ─────────────────────────────────────────────────
+function switchMainTab(tab, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderSummary();
+  document.getElementById('practice-panel').style.display = tab==='practice' ? '' : 'none';
+  document.getElementById('score-panel').style.display    = 'none';
+  document.getElementById('sum-panel').style.display      = tab==='summary'  ? 'block' : 'none';
+  document.getElementById('rank-panel').style.display     = tab==='ranking'  ? 'block' : 'none';
+  document.getElementById('admin-panel').style.display    = tab==='admin'    ? 'block' : 'none';
+  if(tab==='summary') renderSummary();
+  if(tab==='ranking') loadRanking();
+  if(tab==='admin')   loadAdminUsers();
 }
+window.switchMainTab = switchMainTab;
 
-function retryWrong(){
-  const wrongCards=history.filter(h=>!h.ok);
-  if(!wrongCards.length)return;
-  // Switch back to practice tab
-  document.querySelectorAll('.tab-btn')[0].click();
-  // Build new deck from wrong cards only
-  deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
-  // shuffle
-  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
-  updateStats();renderCard();
-}
+// ── Flashcard logic ───────────────────────────────────────────────
+let mode='en-vn', activeTopic='all', deck=[], idx=0, answered=false;
+let correctCount=0, wrongCount=0, skipCount=0, history=[], sumFilter='all';
 
-const topics=[...new Set(ALL_WORDS.map(w=>w.topic))];
-
-function normalize(s){return s.toLowerCase().trim().replace(/\s+/g,' ');}
+function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
 function acceptableMatch(input,card,cardMode){
   const inp=normalize(input);
-  const pool=cardMode==='en-vn'
-    ?[card.vn,...(card.vn_alt||[])]
-    :[card.en,...(card.en_alt||[])];
+  const pool=cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
   return pool.map(a=>normalize(a)).includes(inp);
 }
+
+const topics=[...new Set(ALL_WORDS.map(w=>w.topic))].sort();
 
 function buildTopicChips(){
   const wrap=document.getElementById('topic-chips');
@@ -1008,18 +1100,21 @@ function setTopic(t,btn){
   document.querySelectorAll('.topic-chip').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');restart();
 }
+window.setTopic=setTopic;
+
 function setMode(m){
   mode=m;
   document.querySelectorAll('.mode-btn').forEach((b,i)=>{
     b.classList.toggle('active',['en-vn','vn-en','random'][i]===m);
   });restart();
 }
+window.setMode=setMode;
 
 function buildDeck(){
   let pool=activeTopic==='all'?[...ALL_WORDS]:ALL_WORDS.filter(w=>w.topic===activeTopic);
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   deck=pool.map(w=>{let m=mode;if(m==='random')m=Math.random()<.5?'en-vn':'vn-en';return{...w,cardMode:m};});
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
 }
 
 function renderCard(){
@@ -1038,7 +1133,6 @@ function renderCard(){
     wordEl.textContent=card.vn;wordEl.className='card-word vn';
     inp.placeholder='Nhập từ tiếng Anh...';
   }
-  // Hide example only for VN→EN (example contains the English answer)
   const exEl=document.getElementById('card-example');
   exEl.textContent=card.ex;
   exEl.style.visibility=card.cardMode==='vn-en'?'hidden':'visible';
@@ -1060,26 +1154,20 @@ function checkAnswer(){
   answered=true;inp.disabled=true;document.getElementById('btn-check').disabled=true;
   document.getElementById('card-example').style.visibility='visible';
   const fc=document.getElementById('flashcard'),fb=document.getElementById('feedback');
-  const displayAns=card.cardMode==='en-vn'?card.vn:card.en;
   history.push({en:card.en,vn:card.vn,topic:card.topic,cardMode:card.cardMode,userAnswer:userAns,ok});
   if(ok){
     fc.className='flashcard correct';inp.className='correct';
     fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
   }else{
-    const allAns=card.cardMode==='en-vn'
-      ?[card.vn,...(card.vn_alt||[])]
-      :[card.en,...(card.en_alt||[])];
+    const allAns=card.cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
     fc.className='flashcard wrong';inp.className='wrong';
     fb.textContent=`✗ Sai. Đáp án: "${allAns.join(' / ')}"`;fb.className='feedback wrong';wrongCount++;
   }
   updateStats();
-  if(ok){
-    setTimeout(()=>nextCard(),1400);
-  } else {
-    // Sai: không tự chuyển, đổi nút thành "Tiếp tục"
-    document.getElementById('btn-skip').textContent='Tiếp tục →';
-  }
+  if(ok){setTimeout(()=>nextCard(),1400);}
+  else{document.getElementById('btn-skip').textContent='Tiếp tục →';}
 }
+window.checkAnswer=checkAnswer;
 
 function nextCard(){idx++;renderCard();}
 function prevCard(){if(idx>0){idx--;renderCard();}}
@@ -1087,6 +1175,9 @@ function skipCard(){
   if(answered){nextCard();return;}
   skipCount++;idx++;updateStats();renderCard();
 }
+window.prevCard=prevCard;
+window.skipCard=skipCard;
+
 function updateProgress(){
   const pct=deck.length?Math.round((idx/deck.length)*100):0;
   document.getElementById('progress-fill').style.width=pct+'%';
@@ -1094,15 +1185,12 @@ function updateProgress(){
   document.getElementById('prog-pct').textContent=pct+'%';
 }
 function updateStats(){
-  document.getElementById('stat-correct').textContent=`${correctCount} đúng`;
-  document.getElementById('stat-wrong').textContent=`${wrongCount} sai`;
+  document.getElementById('stat-correct')&&(document.getElementById('stat-correct').textContent=`${correctCount} đúng`);
+  document.getElementById('stat-wrong')&&(document.getElementById('stat-wrong').textContent=`${wrongCount} sai`);
 }
-function showScore(){
-  document.getElementById('card-area').style.display='none';
-  document.querySelector('.input-area').style.display='none';
-  document.querySelector('.nav-area').style.display='none';
-  document.querySelector('.feedback').style.display='none';
-  document.querySelectorAll('.swipe-hint').forEach(e=>e.style.display='none');
+
+async function showScore(){
+  document.getElementById('practice-panel').style.display='none';
   const total=correctCount+wrongCount+skipCount;
   const pct=total?Math.round((correctCount/total)*100):0;
   document.getElementById('score-pct').textContent=pct+'%';
@@ -1112,34 +1200,296 @@ function showScore(){
   document.getElementById('score-panel').classList.add('show');
   document.getElementById('progress-fill').style.width='100%';
   document.getElementById('prog-text').textContent='Hoàn thành!';
-  document.getElementById('prog-pct').textContent='100%';
+
+  // Save session to Firestore
+  if(currentUser && (correctCount+wrongCount)>0){
+    document.getElementById('score-save-msg').textContent='Đang lưu kết quả...';
+    try{
+      await saveSession(correctCount, wrongCount, skipCount, pct);
+      document.getElementById('score-save-msg').textContent='✓ Đã lưu vào bảng xếp hạng!';
+      loadUserStreak();
+    }catch(e){
+      document.getElementById('score-save-msg').textContent='Lưu thất bại, kiểm tra mạng.';
+    }
+  }
 }
+
 function restart(){
-  document.getElementById('card-area').style.display='';
-  document.querySelector('.input-area').style.display='';
-  document.querySelector('.nav-area').style.display='';
-  document.querySelector('.feedback').style.display='';
-  document.querySelectorAll('.swipe-hint').forEach(e=>e.style.display='');
+  document.getElementById('practice-panel').style.display='';
   document.getElementById('score-panel').classList.remove('show');
   history=[];buildDeck();renderCard();
 }
+window.restart=restart;
 
-// Touch swipe on card
-let touchX=0;
-document.getElementById('flashcard').addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;},{passive:true});
-document.getElementById('flashcard').addEventListener('touchend',e=>{
-  const dx=e.changedTouches[0].clientX-touchX;
-  if(Math.abs(dx)>60){dx<0?skipCard():prevCard();}
-},{passive:true});
+// ── Save session to Firestore ─────────────────────────────────────
+async function saveSession(correct, wrong, skip, pct) {
+  const now   = new Date();
+  const week  = getWeekKey(now);
+  const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const username = currentUser.username;
 
-// Keyboard
+  // Save raw session
+  const sessionRef = doc(collection(db,'sessions'));
+  await setDoc(sessionRef, {
+    username, displayName: currentUser.displayName,
+    correct, wrong, skip, pct,
+    week, month, createdAt: serverTimestamp()
+  });
+
+  // Update weekly stats
+  const weekRef = doc(db,'ranking_week', `${week}_${username}`);
+  const weekSnap = await getDoc(weekRef);
+  if(weekSnap.exists()){
+    await updateDoc(weekRef,{
+      correct: increment(correct),
+      wrong:   increment(wrong),
+      sessions: increment(1),
+    });
+    const d = weekSnap.data();
+    const newCorrect = (d.correct||0)+correct;
+    const newTotal   = (d.correct||0)+(d.wrong||0)+correct+wrong;
+    await updateDoc(weekRef,{ pct: newTotal?Math.round(newCorrect/newTotal*100):0 });
+  } else {
+    await setDoc(weekRef,{
+      username, displayName: currentUser.displayName,
+      week, correct, wrong, skip, pct, sessions:1
+    });
+  }
+
+  // Update monthly stats
+  const monthRef = doc(db,'ranking_month', `${month}_${username}`);
+  const monthSnap = await getDoc(monthRef);
+  if(monthSnap.exists()){
+    await updateDoc(monthRef,{
+      correct: increment(correct),
+      wrong:   increment(wrong),
+      sessions: increment(1),
+    });
+    const d = monthSnap.data();
+    const newCorrect = (d.correct||0)+correct;
+    const newTotal   = (d.correct||0)+(d.wrong||0)+correct+wrong;
+    await updateDoc(monthRef,{ pct: newTotal?Math.round(newCorrect/newTotal*100):0 });
+  } else {
+    await setDoc(monthRef,{
+      username, displayName: currentUser.displayName,
+      month, correct, wrong, skip, pct, sessions:1
+    });
+  }
+
+  // Update all-time stats
+  const allRef = doc(db,'ranking_all', username);
+  const allSnap = await getDoc(allRef);
+  if(allSnap.exists()){
+    await updateDoc(allRef,{
+      correct: increment(correct),
+      wrong:   increment(wrong),
+      sessions: increment(1),
+    });
+    const d = allSnap.data();
+    const newCorrect = (d.correct||0)+correct;
+    const newTotal   = (d.correct||0)+(d.wrong||0)+correct+wrong;
+    await updateDoc(allRef,{ pct: newTotal?Math.round(newCorrect/newTotal*100):0 });
+  } else {
+    await setDoc(allRef,{
+      username, displayName: currentUser.displayName,
+      correct, wrong, skip, pct, sessions:1
+    });
+  }
+}
+
+function getWeekKey(date) {
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  d.setDate(d.getDate() - d.getDay() + 1); // Monday
+  return d.toISOString().slice(0,10);
+}
+
+// ── Ranking ───────────────────────────────────────────────────────
+let rankPeriod = 'week';
+function setRankPeriod(p,btn){
+  rankPeriod=p;
+  document.querySelectorAll('.rank-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadRanking();
+}
+window.setRankPeriod=setRankPeriod;
+
+async function loadRanking(){
+  const tableEl=document.getElementById('rank-table');
+  tableEl.innerHTML='<div class="rank-loading">Đang tải...</div>';
+  try{
+    let col, rows=[];
+    if(rankPeriod==='week'){
+      const week=getWeekKey(new Date());
+      const q=query(collection(db,'ranking_week'),where('week','==',week));
+      const snap=await getDocs(q);
+      snap.forEach(d=>rows.push(d.data()));
+    } else if(rankPeriod==='month'){
+      const now=new Date();
+      const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const q=query(collection(db,'ranking_month'),where('month','==',month));
+      const snap=await getDocs(q);
+      snap.forEach(d=>rows.push(d.data()));
+    } else {
+      const snap=await getDocs(collection(db,'ranking_all'));
+      snap.forEach(d=>rows.push(d.data()));
+    }
+
+    // Sort: correct DESC, then pct DESC
+    rows.sort((a,b)=>(b.correct-a.correct)||((b.pct||0)-(a.pct||0)));
+
+    if(rows.length===0){
+      tableEl.innerHTML='<div class="rank-empty">Chưa có dữ liệu tuần này.<br>Hãy luyện tập để lên bảng xếp hạng!</div>';
+      return;
+    }
+
+    // Get streaks
+    const userDocs = await Promise.all(rows.map(r=>getDoc(doc(db,'users',r.username))));
+    const streakMap = {};
+    userDocs.forEach((d,i)=>{ streakMap[rows[i].username]=d.data()?.streak||0; });
+
+    const periodLabel = rankPeriod==='week'?'Tuần này':rankPeriod==='month'?'Tháng này':'Tổng cộng';
+    tableEl.innerHTML = `<div class="rank-section-title">${periodLabel} — Xếp theo số từ đúng</div>` +
+      rows.map((r,i)=>{
+        const rank=i+1;
+        const isMe=r.username===currentUser.username;
+        const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+        const numClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+        const rowClass=`rank-row${isMe?' me':''}${rank<=3?` rank-${rank}`:''}`;
+        const streak=streakMap[r.username]||0;
+        return `<div class="${rowClass}">
+          <div class="rank-num ${numClass}">${medal||rank}</div>
+          <div class="rank-info">
+            <div class="rank-name">${r.displayName||r.username}${isMe?'<span class="you-badge">Bạn</span>':''}</div>
+            ${streak>0?`<div class="rank-streak">🔥 ${streak} ngày liên tiếp</div>`:''}
+          </div>
+          <div class="rank-stats">
+            <div class="rank-correct">${r.correct} đúng</div>
+            <div class="rank-pct">${r.pct||0}% · ${r.sessions||1} buổi</div>
+          </div>
+        </div>`;
+      }).join('');
+  } catch(e){
+    tableEl.innerHTML='<div class="rank-empty">Lỗi tải dữ liệu.</div>';
+    console.error(e);
+  }
+}
+
+// ── Summary ───────────────────────────────────────────────────────
+function renderSummary(){
+  const ok=history.filter(h=>h.ok).length;
+  const fail=history.filter(h=>!h.ok).length;
+  const total=history.length;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('s-correct').textContent=ok;
+  document.getElementById('s-wrong').textContent=fail;
+  document.getElementById('s-pct').textContent=total?Math.round(ok/total*100)+'%':'0%';
+  document.getElementById('btn-retry-wrong').disabled=fail===0;
+  const filtered=sumFilter==='all'?history:history.filter(h=>sumFilter==='ok'?h.ok:!h.ok);
+  const list=document.getElementById('sum-list');
+  if(filtered.length===0){
+    list.innerHTML=`<div class="sum-empty">${history.length===0?'Chưa có từ nào. Quay lại luyện tập!':'Không có từ nào.'}</div>`;
+    return;
+  }
+  list.innerHTML=filtered.map((h,i)=>{
+    const dispWord=h.cardMode==='en-vn'?h.en:h.vn;
+    const dispMeaning=h.cardMode==='en-vn'?h.vn:h.en;
+    const ansHtml=!h.ok
+      ?`<span class="wrong-ans">Bạn: "${h.userAnswer}"</span><span class="right-ans">Đúng: "${dispMeaning}"</span>`
+      :`<span>${dispMeaning}</span>`;
+    return `<div class="sum-row ${h.ok?'ok':'fail'}">
+      <div class="sum-num">${history.indexOf(h)+1}</div>
+      <div class="sum-word">${dispWord}<small>${h.topic}</small></div>
+      <div class="sum-ans">${ansHtml}</div>
+      <div class="sum-icon">${h.ok?'✅':'❌'}</div>
+    </div>`;
+  }).join('');
+}
+function filterSum(f,btn){
+  sumFilter=f;
+  document.querySelectorAll('.sum-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');renderSummary();
+}
+function retryWrong(){
+  const wrongCards=history.filter(h=>!h.ok);
+  if(!wrongCards.length)return;
+  switchMainTab('practice',document.querySelectorAll('.tab-btn')[0]);
+  deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
+  updateStats();renderCard();
+}
+window.filterSum=filterSum;
+window.retryWrong=retryWrong;
+
+// ── Admin ─────────────────────────────────────────────────────────
+async function createUser(){
+  const username    = document.getElementById('new-username').value.trim().toLowerCase();
+  const displayName = document.getElementById('new-displayname').value.trim();
+  const pin         = document.getElementById('new-pin').value.trim();
+  const msgEl       = document.getElementById('admin-msg');
+  msgEl.className='admin-msg';msgEl.textContent='';
+  if(!username||!displayName||!pin||pin.length!==4||!/^\d+$/.test(pin)){
+    msgEl.className='admin-msg err';msgEl.textContent='Điền đầy đủ: username, tên, PIN 4 số.';return;
+  }
+  try{
+    const ref=doc(db,'users',username);
+    const snap=await getDoc(ref);
+    if(snap.exists()){msgEl.className='admin-msg err';msgEl.textContent='Username đã tồn tại.';return;}
+    await setDoc(ref,{username,displayName,pin,isAdmin:false,streak:0,lastStudyDay:'',createdAt:serverTimestamp()});
+    msgEl.className='admin-msg ok';msgEl.textContent=`✓ Tạo xong: ${displayName} (${username})`;
+    document.getElementById('new-username').value='';
+    document.getElementById('new-displayname').value='';
+    document.getElementById('new-pin').value='';
+    loadAdminUsers();
+  }catch(e){msgEl.className='admin-msg err';msgEl.textContent='Lỗi: '+e.message;}
+}
+window.createUser=createUser;
+
+async function loadAdminUsers(){
+  const listEl=document.getElementById('admin-user-list');
+  listEl.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">Đang tải...</div>';
+  try{
+    const snap=await getDocs(collection(db,'users'));
+    const users=[];
+    snap.forEach(d=>{ if(!d.data().isAdmin) users.push({id:d.id,...d.data()}); });
+    if(users.length===0){listEl.innerHTML='<div style="color:var(--muted);font-size:13px">Chưa có học viên nào.</div>';return;}
+    listEl.innerHTML=users.map(u=>`
+      <div class="admin-user-row">
+        <div>
+          <div class="admin-user-name">${u.displayName}</div>
+          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0}</div>
+        </div>
+        <button class="admin-user-del" onclick="deleteUser('${u.id}','${u.displayName}')">Xóa</button>
+      </div>`).join('');
+  }catch(e){listEl.innerHTML='<div style="color:var(--red);font-size:13px">Lỗi tải danh sách.</div>';}
+}
+
+async function deleteUser(username, displayName){
+  if(!confirm(`Xóa tài khoản "${displayName}"?`))return;
+  try{
+    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(async({deleteDoc})=>{
+      await deleteDoc(doc(db,'users',username));
+    });
+    loadAdminUsers();
+  }catch(e){alert('Lỗi xóa: '+e.message);}
+}
+window.deleteUser=deleteUser;
+
+// ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
+  if(document.getElementById('login-screen').style.display!=='none')return;
   if(e.key==='Enter'){e.preventDefault();if(!answered)checkAnswer();else nextCard();}
   if(e.key==='ArrowRight'&&!document.getElementById('answer-input').matches(':focus'))skipCard();
   if(e.key==='ArrowLeft'&&!document.getElementById('answer-input').matches(':focus'))prevCard();
 });
+let touchX=0;
+document.getElementById('flashcard')?.addEventListener('touchstart',e=>{touchX=e.touches[0].clientX;},{passive:true});
+document.getElementById('flashcard')?.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>60){dx<0?skipCard():prevCard();}
+},{passive:true});
 
-buildTopicChips();restart();
 </script>
 </body>
 </html>
