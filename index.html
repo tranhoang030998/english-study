@@ -1250,6 +1250,7 @@ async function saveSession(correct, wrong, skip, pct) {
     await updateDoc(weekRef,{
       correct: increment(correct),
       wrong:   increment(wrong),
+      total:   increment(correct+wrong),
       sessions: increment(1),
     });
     const d = weekSnap.data();
@@ -1259,7 +1260,7 @@ async function saveSession(correct, wrong, skip, pct) {
   } else {
     await setDoc(weekRef,{
       username, displayName: currentUser.displayName,
-      week, correct, wrong, skip, pct, sessions:1
+      week, correct, wrong, skip, pct, total: correct+wrong, sessions:1
     });
   }
 
@@ -1270,6 +1271,7 @@ async function saveSession(correct, wrong, skip, pct) {
     await updateDoc(monthRef,{
       correct: increment(correct),
       wrong:   increment(wrong),
+      total:   increment(correct+wrong),
       sessions: increment(1),
     });
     const d = monthSnap.data();
@@ -1279,7 +1281,7 @@ async function saveSession(correct, wrong, skip, pct) {
   } else {
     await setDoc(monthRef,{
       username, displayName: currentUser.displayName,
-      month, correct, wrong, skip, pct, sessions:1
+      month, correct, wrong, skip, pct, total: correct+wrong, sessions:1
     });
   }
 
@@ -1290,6 +1292,7 @@ async function saveSession(correct, wrong, skip, pct) {
     await updateDoc(allRef,{
       correct: increment(correct),
       wrong:   increment(wrong),
+      total:   increment(correct+wrong),
       sessions: increment(1),
     });
     const d = allSnap.data();
@@ -1299,7 +1302,7 @@ async function saveSession(correct, wrong, skip, pct) {
   } else {
     await setDoc(allRef,{
       username, displayName: currentUser.displayName,
-      correct, wrong, skip, pct, sessions:1
+      correct, wrong, skip, pct, total: correct+wrong, sessions:1
     });
   }
 }
@@ -1405,8 +1408,8 @@ async function loadRanking(){
             ${streak>0?`<div class="rank-streak">🔥 ${streak} ngày liên tiếp</div>`:''}
           </div>
           <div class="rank-stats">
-            <div class="rank-correct">${r.correct} đúng</div>
-            <div class="rank-pct">${r.pct||0}% · ${r.sessions||1} buổi</div>
+            <div class="rank-correct">${r.correct} đúng / ${r.total||(r.correct+(r.wrong||0))} card</div>
+            <div class="rank-pct">${r.pct||0}%</div>
           </div>
         </div>`;
       }).join('');
