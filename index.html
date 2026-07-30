@@ -190,6 +190,17 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* CUSTOM CONFIRM MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:24px 20px;max-width:320px;width:100%;}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;margin-bottom:8px;}
+.modal-msg{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.modal-btns{display:flex;gap:8px;}
+.modal-btn{flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:11px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--border);touch-action:manipulation;}
+.modal-btn.cancel{background:transparent;color:var(--muted);}
+.modal-btn.confirm{background:var(--accent);color:white;border-color:var(--accent);}
+
 .score-save-msg{font-size:12px;color:var(--muted);font-family:'Space Grotesk',sans-serif;min-height:18px;}
 
 @media(min-width:600px){
@@ -335,9 +346,28 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
   <div class="admin-msg" id="admin-msg"></div>
   <div class="admin-section">Danh sách học viên</div>
   <div class="admin-user-list" id="admin-user-list"></div>
+
+  <div class="admin-section" style="margin-top:24px;">Quản lý xếp hạng</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="admin-btn danger" onclick="resetRanking('week')">Xóa BXH Tuần</button>
+    <button class="admin-btn danger" onclick="resetRanking('month')">Xóa BXH Tháng</button>
+    <button class="admin-btn danger" onclick="resetRanking('all')">Xóa BXH Tổng</button>
+    <button class="admin-btn danger" onclick="resetRanking('all_periods')" style="background:#2d0808;border-color:#7f1d1d;color:#fca5a5;">Xóa TẤT CẢ BXH</button>
+  </div>
+  <div class="admin-msg" id="rank-reset-msg"></div>
 </div>
 
 </div><!-- end #app -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Xác nhận</div>
+    <div class="modal-msg" id="modal-msg"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="modal-cancel">Hủy</button>
+      <button class="modal-btn confirm" id="modal-ok">Tiếp tục</button>
+    </div>
+  </div>
+</div>
 <div style="width:100%;max-width:680px;margin:0 auto;text-align:center;padding:20px 16px 32px;font-size:12px;color:#3a3d52;font-family:'Space Grotesk',sans-serif;">
   Design by Chồng của Mận Xinh Đẹp
 </div>
@@ -1067,11 +1097,18 @@ function switchMainTab(tab, btn) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 
-  // Auto-save session when leaving practice tab with enough answers
+  // Auto-save DELTA only when leaving practice tab
   const currentTab = document.getElementById('practice-panel').style.display !== 'none' ? 'practice' : 'other';
-  if(currentTab==='practice' && tab!=='practice' && (correctCount+wrongCount) >= 5 && currentUser){
-    const pct = Math.round(correctCount/(correctCount+wrongCount)*100);
-    saveSession(correctCount, wrongCount, skipCount, pct).catch(()=>{});
+  if(currentTab==='practice' && tab!=='practice' && currentUser){
+    const deltaC = correctCount - savedCorrect;
+    const deltaW = wrongCount - savedWrong;
+    if(deltaC + deltaW >= 5){
+      const pct = (deltaC+deltaW)>0 ? Math.round(deltaC/(deltaC+deltaW)*100) : 0;
+      saveSession(deltaC, deltaW, 0, pct).then(()=>{
+        savedCorrect = correctCount;
+        savedWrong   = wrongCount;
+      }).catch(()=>{});
+    }
   }
 
   // Show/hide panels WITHOUT resetting deck
@@ -1090,6 +1127,7 @@ window.switchMainTab = switchMainTab;
 // ── Flashcard logic ───────────────────────────────────────────────
 let mode='en-vn', activeTopic='all', deck=[], idx=0, answered=false;
 let correctCount=0, wrongCount=0, skipCount=0, history=[], sumFilter='all';
+let savedCorrect=0, savedWrong=0; // track what's already been saved to avoid double-counting
 
 function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
 function acceptableMatch(input,card,cardMode){
@@ -1113,18 +1151,52 @@ function buildTopicChips(){
   });
 }
 
+
+// Custom confirm modal (replaces native confirm() which is blocked on iOS)
+function showConfirm(title, msg, onOk){
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-msg').textContent   = msg;
+  const overlay = document.getElementById('confirm-modal');
+  overlay.classList.add('show');
+  const okBtn     = document.getElementById('modal-ok');
+  const cancelBtn = document.getElementById('modal-cancel');
+  function cleanup(){ overlay.classList.remove('show'); okBtn.onclick=null; cancelBtn.onclick=null; }
+  okBtn.onclick     = ()=>{ cleanup(); onOk(); };
+  cancelBtn.onclick = ()=>{ cleanup(); };
+}
 function setTopic(t,btn){
-  activeTopic=t;
-  document.querySelectorAll('.topic-chip').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');restart();
+  if(t===activeTopic) return;
+  const answered = correctCount + wrongCount + skipCount;
+  if(answered > 0){
+    showConfirm('Đổi chủ đề', 'Tiến độ hiện tại sẽ bị reset. Bạn muốn tiếp tục?', ()=>{
+      activeTopic=t;
+      document.querySelectorAll('.topic-chip').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');restart();
+    });
+  } else {
+    activeTopic=t;
+    document.querySelectorAll('.topic-chip').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');restart();
+  }
 }
 window.setTopic=setTopic;
 
 function setMode(m){
-  mode=m;
-  document.querySelectorAll('.mode-btn').forEach((b,i)=>{
-    b.classList.toggle('active',['en-vn','vn-en','random'][i]===m);
-  });restart();
+  if(m===mode) return;
+  const answered = correctCount + wrongCount + skipCount;
+  if(answered > 0){
+    showConfirm('Đổi chế độ', 'Tiến độ hiện tại sẽ bị reset. Bạn muốn tiếp tục?', ()=>{
+      mode=m;
+      document.querySelectorAll('.mode-btn').forEach((b,i)=>{
+        b.classList.toggle('active',['en-vn','vn-en','random'][i]===m);
+      });restart();
+    });
+  } else {
+    mode=m;
+    document.querySelectorAll('.mode-btn').forEach((b,i)=>{
+      b.classList.toggle('active',['en-vn','vn-en','random'][i]===m);
+    });restart();
+  }
 }
 window.setMode=setMode;
 
@@ -1132,7 +1204,7 @@ function buildDeck(){
   let pool=activeTopic==='all'?[...ALL_WORDS]:ALL_WORDS.filter(w=>w.topic===activeTopic);
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   deck=pool.map(w=>{let m=mode;if(m==='random')m=Math.random()<.5?'en-vn':'vn-en';return{...w,cardMode:m};});
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;
 }
 
 function renderCard(){
@@ -1208,10 +1280,17 @@ function updateProgress(){
 function updateStats(){
   document.getElementById('stat-correct')&&(document.getElementById('stat-correct').textContent=`${correctCount} đúng`);
   document.getElementById('stat-wrong')&&(document.getElementById('stat-wrong').textContent=`${wrongCount} sai`);
-  // Auto-save every 10 correct answers
-  if(currentUser && correctCount > 0 && correctCount % 10 === 0 && (correctCount+wrongCount) > 0){
-    const pct = Math.round(correctCount/(correctCount+wrongCount)*100);
-    saveSession(10, wrongCount % 10 || 0, 0, pct).catch(()=>{});
+  // Auto-save every 10 correct answers (delta only)
+  if(currentUser && correctCount > 0 && correctCount % 10 === 0){
+    const deltaC = correctCount - savedCorrect;
+    const deltaW = wrongCount  - savedWrong;
+    if(deltaC > 0){
+      const pct = (deltaC+deltaW)>0 ? Math.round(deltaC/(deltaC+deltaW)*100) : 0;
+      saveSession(deltaC, deltaW, 0, pct).then(()=>{
+        savedCorrect = correctCount;
+        savedWrong   = wrongCount;
+      }).catch(()=>{});
+    }
   }
 }
 
@@ -1233,6 +1312,7 @@ async function showScore(){
     try{
       await saveSession(correctCount, wrongCount, skipCount, pct);
       document.getElementById('score-save-msg').textContent='✓ Đã lưu vào bảng xếp hạng!';
+      savedCorrect = correctCount; savedWrong = wrongCount;
       loadUserStreak();
     }catch(e){
       document.getElementById('score-save-msg').textContent='Lưu thất bại, kiểm tra mạng.';
@@ -1486,7 +1566,7 @@ function retryWrong(){
   document.getElementById('score-panel').style.display='none';
   deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;
   updateStats();renderCard();
 }
 window.filterSum=filterSum;
@@ -1545,6 +1625,29 @@ async function deleteUser(username, displayName){
   }catch(e){alert('Lỗi xóa: '+e.message);}
 }
 window.deleteUser=deleteUser;
+
+async function doResetRanking(period){
+  const msgEl = document.getElementById('rank-reset-msg');
+  msgEl.className='admin-msg';msgEl.textContent='Đang xóa...';
+  try{
+    const {getDocs:gd2, deleteDoc:dd2, collection:col2} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+    const periods = period==='all_periods' ? ['ranking_week','ranking_month','ranking_all'] : [`ranking_${period}`];
+    let total=0;
+    for(const col of periods){
+      const snap = await gd2(col2(db, col));
+      for(const d of snap.docs){ await dd2(d.ref); total++; }
+    }
+    msgEl.className='admin-msg ok';msgEl.textContent=`✓ Đã xóa ${total} bản ghi.`;
+  }catch(e){
+    msgEl.className='admin-msg err';msgEl.textContent='Lỗi: '+e.message;
+  }
+}
+window.doResetRanking=doResetRanking;
+function resetRanking(period){
+  const labels={week:'tuần này',month:'tháng này',all:'tổng cộng',all_periods:'tất cả các kỳ'};
+  showConfirm('Xóa bảng xếp hạng', `Bạn chắc chắn muốn xóa BXH ${labels[period]}? Không thể hoàn tác.`, ()=>doResetRanking(period));
+}
+window.resetRanking=resetRanking;
 
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
