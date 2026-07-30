@@ -190,6 +190,30 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* COMBO */
+#combo-display{display:none;text-align:center;padding:6px 0 0;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--yellow);letter-spacing:.02em;}
+.combo-pop{animation:combo-bounce .35s cubic-bezier(.36,.07,.19,.97);}
+@keyframes combo-bounce{0%{transform:scale(1)}40%{transform:scale(1.35)}70%{transform:scale(.9)}100%{transform:scale(1)}}
+
+/* BADGE TOAST */
+#badge-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--surface);border:1px solid var(--gold);border-radius:var(--card-radius);padding:12px 18px;display:flex;align-items:center;gap:10px;z-index:1000;opacity:0;transition:all .4s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;max-width:320px;width:90%;}
+#badge-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.badge-toast-icon{font-size:28px;flex-shrink:0;}
+.badge-toast-text{flex:1;}
+.badge-toast-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:13px;color:var(--gold);margin-bottom:2px;}
+.badge-toast-name{font-size:12px;color:var(--muted);}
+
+/* BADGE GRID in Summary */
+.badges-section{margin-top:16px;}
+.badges-title{font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;}
+.badge-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;transition:all .2s;}
+.badge-item.earned{border-color:var(--gold);background:rgba(255,215,0,.06);}
+.badge-item.locked{opacity:.35;filter:grayscale(1);}
+.badge-icon{font-size:24px;display:block;margin-bottom:4px;}
+.badge-label{font-family:'Space Grotesk',sans-serif;font-size:10px;color:var(--muted);line-height:1.3;}
+.badge-item.earned .badge-label{color:var(--text);}
+
 /* SPEAKER BUTTON */
 .btn-speak{background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--muted);font-size:18px;line-height:1;transition:all .2s;touch-action:manipulation;vertical-align:middle;}
 .btn-speak:hover{color:var(--accent);background:var(--surface2);}
@@ -332,6 +356,10 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
   </div>
   <div class="sum-list" id="sum-list"></div>
   <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()" disabled>🔁 Ôn lại từ sai</button>
+  <div class="badges-section">
+    <div class="badges-title">Huy hiệu của bạn</div>
+    <div class="badge-grid" id="badge-grid"></div>
+  </div>
 </div>
 
 <!-- RANKING TAB -->
@@ -369,6 +397,13 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 </div>
 
 </div><!-- end #app -->
+<div id="badge-toast">
+  <div class="badge-toast-icon" id="badge-toast-icon">🏅</div>
+  <div class="badge-toast-text">
+    <div class="badge-toast-title">Huy hiệu mới!</div>
+    <div class="badge-toast-name" id="badge-toast-name"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
     <div class="modal-title" id="modal-title">Xác nhận</div>
@@ -1118,6 +1153,7 @@ function switchMainTab(tab, btn) {
       saveSession(deltaC, deltaW, 0, pct).then(()=>{
         savedCorrect = correctCount;
         savedWrong   = wrongCount;
+        checkAndAwardBadges({bestCombo: bestComboSession});
       }).catch(()=>{});
     }
   }
@@ -1129,7 +1165,7 @@ function switchMainTab(tab, btn) {
   document.getElementById('sum-panel').style.display      = tab==='summary'  ? 'block' : 'none';
   document.getElementById('rank-panel').style.display     = tab==='ranking'  ? 'block' : 'none';
   document.getElementById('admin-panel').style.display    = tab==='admin'    ? 'block' : 'none';
-  if(tab==='summary') renderSummary();
+  if(tab==='summary'){ renderSummary(); renderBadges(); }
   if(tab==='ranking') loadRanking();
   if(tab==='admin')   loadAdminUsers();
 }
@@ -1215,7 +1251,7 @@ function buildDeck(){
   let pool=activeTopic==='all'?[...ALL_WORDS]:ALL_WORDS.filter(w=>w.topic===activeTopic);
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   deck=pool.map(w=>{let m=mode;if(m==='random')m=Math.random()<.5?'en-vn':'vn-en';return{...w,cardMode:m};});
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();
 }
 
 function renderCard(){
@@ -1286,6 +1322,131 @@ function speakAfterAnswer(word){
   utter.rate  = 0.85;
   window.speechSynthesis.speak(utter);
 }
+
+// ── BADGE DEFINITIONS ─────────────────────────────────────────────
+const BADGES = [
+  {id:'first_correct',  icon:'🎯', name:'Bước đầu tiên',      desc:'Trả lời đúng từ đầu tiên',         check:(u)=>u.totalCorrect>=1},
+  {id:'combo5',         icon:'🔥', name:'Bốc lửa x5',         desc:'Đúng 5 từ liên tiếp',              check:(u)=>u.bestCombo>=5},
+  {id:'combo10',        icon:'⚡', name:'Sấm sét x10',        desc:'Đúng 10 từ liên tiếp',             check:(u)=>u.bestCombo>=10},
+  {id:'combo20',        icon:'💥', name:'Vô địch x20',        desc:'Đúng 20 từ liên tiếp',             check:(u)=>u.bestCombo>=20},
+  {id:'correct50',      icon:'📚', name:'Chăm chỉ',           desc:'Tổng cộng đúng 50 từ',             check:(u)=>u.totalCorrect>=50},
+  {id:'correct100',     icon:'💪', name:'Cần cù',             desc:'Tổng cộng đúng 100 từ',            check:(u)=>u.totalCorrect>=100},
+  {id:'correct500',     icon:'🏅', name:'Học sinh giỏi',      desc:'Tổng cộng đúng 500 từ',            check:(u)=>u.totalCorrect>=500},
+  {id:'correct1000',    icon:'🏆', name:'TOEIC Master',       desc:'Tổng cộng đúng 1000 từ',           check:(u)=>u.totalCorrect>=1000},
+  {id:'streak3',        icon:'🌱', name:'Khởi đầu tốt',       desc:'Streak 3 ngày liên tiếp',          check:(u)=>u.streak>=3},
+  {id:'streak7',        icon:'🔆', name:'Tuần lễ vàng',       desc:'Streak 7 ngày liên tiếp',          check:(u)=>u.streak>=7},
+  {id:'streak30',       icon:'👑', name:'Kiên trì vô địch',   desc:'Streak 30 ngày liên tiếp',         check:(u)=>u.streak>=30},
+  {id:'perfect_session',icon:'💯', name:'Hoàn hảo',           desc:'Đúng 100% trong 1 buổi (≥20 thẻ)', check:(u)=>u.hadPerfectSession},
+];
+
+// ── COMBO STATE ───────────────────────────────────────────────────
+let currentCombo = 0;
+let bestComboSession = 0;
+
+function updateCombo(correct){
+  if(correct){
+    currentCombo++;
+    if(currentCombo > bestComboSession) bestComboSession = currentCombo;
+    if(currentCombo >= 3){
+      const el = document.getElementById('combo-display');
+      el.style.display = 'block';
+      el.textContent = '🔥 Combo x' + currentCombo + '!';
+      el.classList.remove('combo-pop');
+      void el.offsetWidth; // reflow to restart animation
+      el.classList.add('combo-pop');
+    }
+  } else {
+    currentCombo = 0;
+    const el = document.getElementById('combo-display');
+    el.style.display = 'none';
+    el.textContent = '';
+  }
+}
+
+function resetCombo(){
+  currentCombo = 0;
+  const el = document.getElementById('combo-display');
+  if(el){ el.style.display='none'; el.textContent=''; }
+}
+
+// ── BADGE TOAST ───────────────────────────────────────────────────
+let toastQueue = [];
+let toastBusy  = false;
+
+function showBadgeToast(badge){
+  toastQueue.push(badge);
+  if(!toastBusy) processToastQueue();
+}
+
+function processToastQueue(){
+  if(!toastQueue.length){ toastBusy=false; return; }
+  toastBusy = true;
+  const badge = toastQueue.shift();
+  const toast  = document.getElementById('badge-toast');
+  document.getElementById('badge-toast-icon').textContent = badge.icon;
+  document.getElementById('badge-toast-name').textContent = badge.name + ' — ' + badge.desc;
+  toast.classList.add('show');
+  setTimeout(()=>{
+    toast.classList.remove('show');
+    setTimeout(processToastQueue, 400);
+  }, 3000);
+}
+
+// ── BADGE CHECK & SAVE ────────────────────────────────────────────
+async function checkAndAwardBadges(extraData={}){
+  if(!currentUser) return;
+  try{
+    const userRef  = doc(db,'users',currentUser.username);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data() || {};
+
+    // Gather all-time stats
+    const allRef  = doc(db,'ranking_all',currentUser.username);
+    const allSnap = await getDoc(allRef);
+    const allData = allSnap.exists() ? allSnap.data() : {};
+
+    const checkData = {
+      totalCorrect:      allData.correct || 0,
+      streak:            userData.streak  || 0,
+      bestCombo:         Math.max(userData.bestCombo||0, extraData.bestCombo||0),
+      hadPerfectSession: userData.hadPerfectSession || extraData.hadPerfectSession || false,
+    };
+
+    const earnedSoFar = userData.badges || [];
+    const newBadges   = [];
+
+    for(const badge of BADGES){
+      if(earnedSoFar.includes(badge.id)) continue; // already earned
+      if(badge.check(checkData)){
+        newBadges.push(badge.id);
+        showBadgeToast(badge);
+      }
+    }
+
+    if(newBadges.length > 0 || extraData.bestCombo > (userData.bestCombo||0) || extraData.hadPerfectSession){
+      await updateDoc(userRef, {
+        badges: [...earnedSoFar, ...newBadges],
+        bestCombo: checkData.bestCombo,
+        hadPerfectSession: checkData.hadPerfectSession,
+      });
+    }
+  } catch(e){ console.error('Badge check error:', e); }
+}
+
+// ── RENDER BADGES in Summary ──────────────────────────────────────
+async function renderBadges(){
+  const grid = document.getElementById('badge-grid');
+  if(!grid || !currentUser) return;
+  try{
+    const userSnap = await getDoc(doc(db,'users',currentUser.username));
+    const earned   = userSnap.data()?.badges || [];
+    grid.innerHTML  = BADGES.map(b=>`
+      <div class="badge-item ${earned.includes(b.id)?'earned':'locked'}" title="${b.desc}">
+        <span class="badge-icon">${b.icon}</span>
+        <span class="badge-label">${b.name}</span>
+      </div>`).join('');
+  } catch(e){ grid.innerHTML = '<div style="color:var(--muted);font-size:12px">Lỗi tải huy hiệu.</div>'; }
+}
 function checkAnswer(){
   if(answered){nextCard();return;}
   const inp=document.getElementById('answer-input');
@@ -1300,12 +1461,13 @@ function checkAnswer(){
   if(ok){
     fc.className='flashcard correct';inp.className='correct';
     fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
-    // In VN→EN mode, auto-read the English word after correct answer
     if(card.cardMode==='vn-en') speakAfterAnswer(card.en);
+    updateCombo(true);
   }else{
     const allAns=card.cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
     fc.className='flashcard wrong';inp.className='wrong';
     fb.textContent=`✗ Sai. Đáp án: "${allAns.join(' / ')}"`;fb.className='feedback wrong';wrongCount++;
+    updateCombo(false);
   }
   updateStats();
   if(ok){setTimeout(()=>nextCard(),1400);}
@@ -1340,6 +1502,7 @@ function updateStats(){
       saveSession(deltaC, deltaW, 0, pct).then(()=>{
         savedCorrect = correctCount;
         savedWrong   = wrongCount;
+        checkAndAwardBadges({bestCombo: bestComboSession});
       }).catch(()=>{});
     }
   }
@@ -1364,6 +1527,9 @@ async function showScore(){
       await saveSession(correctCount, wrongCount, skipCount, pct);
       document.getElementById('score-save-msg').textContent='✓ Đã lưu vào bảng xếp hạng!';
       savedCorrect = correctCount; savedWrong = wrongCount;
+      // Check badges with session data
+      const isPerfect = wrongCount===0 && (correctCount+wrongCount)>=20;
+      checkAndAwardBadges({bestCombo: bestComboSession, hadPerfectSession: isPerfect});
       loadUserStreak();
     }catch(e){
       document.getElementById('score-save-msg').textContent='Lưu thất bại, kiểm tra mạng.';
@@ -1617,7 +1783,7 @@ function retryWrong(){
   document.getElementById('score-panel').style.display='none';
   deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();
   updateStats();renderCard();
 }
 window.filterSum=filterSum;
