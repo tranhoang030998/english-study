@@ -190,6 +190,16 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* ONLINE INDICATOR */
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;animation:pulse-online 2s ease-in-out infinite;}
+@keyframes pulse-online{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
+.admin-online-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;}
+.admin-online-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;flex:1;}
+.admin-online-time{font-size:11px;color:var(--muted);}
+.admin-online-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:6px;font-family:'Space Grotesk',sans-serif;}
+.badge-online{background:rgba(34,197,94,.15);color:var(--green);}
+.badge-away{background:rgba(245,158,11,.1);color:var(--yellow);}
+
 /* FUN WRONG STREAK TOAST */
 #fun-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.7);
   background:var(--surface);border:2px solid var(--red);border-radius:var(--card-radius);
@@ -452,6 +462,9 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   <div class="admin-msg" id="admin-msg"></div>
   <div class="admin-section">Danh sách học viên</div>
   <div class="admin-user-list" id="admin-user-list"></div>
+
+  <div class="admin-section" style="margin-top:24px;">Đang online <span id="online-count" style="color:var(--green);font-size:12px;"></span></div>
+  <div id="admin-online-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
 
   <div class="admin-section" style="margin-top:24px;">Thông báo cập nhật app</div>
   <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6;">Khi bạn upload phiên bản mới lên GitHub, bấm nút này để thông báo tất cả học viên đang dùng app đăng nhập lại.</p>
@@ -1231,6 +1244,7 @@ async function doLogin() {
     await updateStreak(username);
     showApp();
     startUpdateListener();
+    startHeartbeat();
   } catch(e) {
     errEl.textContent = 'Lỗi kết nối. Thử lại.';
     console.error(e);
@@ -1259,6 +1273,7 @@ async function updateStreak(username) {
 }
 
 function doLogout() {
+  stopHeartbeat();
   localStorage.removeItem('toeic_user');
   currentUser = null;
   document.getElementById('login-screen').style.display = 'flex';
@@ -1299,6 +1314,7 @@ window.addEventListener('load', () => {
       currentUser = JSON.parse(saved);
       showApp();
       startUpdateListener();
+      startHeartbeat();
       // Re-verify in background
       getDoc(doc(db,'users',currentUser.username)).then(snap=>{
         if(!snap.exists()){doLogout();}
@@ -1346,6 +1362,7 @@ function switchTop(section, btn){
     const ap=document.getElementById('admin-panel');
     ap.style.display='block';ap.style.marginLeft='auto';ap.style.marginRight='auto';
     loadAdminUsers();
+    loadOnlineUsers();
   }
 }
 window.switchTop=switchTop;
@@ -2617,6 +2634,94 @@ window.closeFunToast = closeFunToast;
 function checkWrongStreak(){
   const match = FUN_MESSAGES.find(m => m.at === wrongStreak);
   if(match) showFunToast(match.emoji, match.msg);
+}
+
+// ── HEARTBEAT & ONLINE STATUS ─────────────────────────────────────
+let heartbeatInterval = null;
+const ONLINE_THRESHOLD  = 2 * 60 * 1000;  // 2 min = online
+const AWAY_THRESHOLD    = 5 * 60 * 1000;  // 5 min = away (still show)
+const HEARTBEAT_INTERVAL = 30 * 1000;     // every 30s
+
+async function sendHeartbeat(){
+  if(!currentUser) return;
+  try{
+    await updateDoc(doc(db,'users',currentUser.username),{
+      lastSeen: serverTimestamp(),
+      lastTab:  currentTop || 'flashcard',
+    });
+  }catch(e){ /* silent fail */ }
+}
+
+function startHeartbeat(){
+  stopHeartbeat();
+  sendHeartbeat(); // immediate
+  heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+  // Also send on tab focus
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='visible') sendHeartbeat();
+  });
+}
+
+function stopHeartbeat(){
+  if(heartbeatInterval){ clearInterval(heartbeatInterval); heartbeatInterval=null; }
+}
+
+async function loadOnlineUsers(){
+  const listEl = document.getElementById('admin-online-list');
+  const countEl = document.getElementById('online-count');
+  if(!listEl) return;
+  listEl.innerHTML = '<div style="color:var(--muted);font-size:12px;">Đang tải...</div>';
+  try{
+    const snap = await getDocs(collection(db,'users'));
+    const now  = Date.now();
+    const users = [];
+    snap.forEach(d=>{
+      const u = d.data();
+      if(u.isAdmin) return;
+      const lastSeen = u.lastSeen?.toMillis?.() || 0;
+      const diff = now - lastSeen;
+      const isOnline = diff < ONLINE_THRESHOLD;
+      const isAway   = diff < AWAY_THRESHOLD;
+      if(isOnline || isAway){
+        users.push({ name: u.displayName||u.username, lastSeen, diff, isOnline, tab: u.lastTab||'flashcard' });
+      }
+    });
+    users.sort((a,b)=>b.lastSeen-a.lastSeen);
+
+    const onlineCount = users.filter(u=>u.isOnline).length;
+    if(countEl) countEl.textContent = onlineCount > 0 ? `(${onlineCount} người)` : '';
+
+    if(users.length===0){
+      listEl.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0;">Không có ai online.</div>';
+      return;
+    }
+
+    const TAB_LABELS = {flashcard:'📚 Flashcard',grammar:'✍️ Ngữ pháp',minitest:'🎯 Mini Test',dashboard:'📈 Dashboard'};
+
+    listEl.innerHTML = users.map(u=>{
+      const mins = Math.floor(u.diff/60000);
+      const secs = Math.floor((u.diff%60000)/1000);
+      const timeStr = u.diff < 60000 ? `${secs}s trước` : `${mins} phút trước`;
+      const badgeClass = u.isOnline ? 'badge-online' : 'badge-away';
+      const badgeText  = u.isOnline ? '🟢 Online' : '🟡 Vừa rời';
+      const tabLabel   = TAB_LABELS[u.tab] || u.tab;
+      return `<div class="admin-online-row">
+        <div>
+          <div class="admin-online-name">${u.name}</div>
+          <div class="admin-online-time">${tabLabel} · ${timeStr}</div>
+        </div>
+        <span class="admin-online-badge ${badgeClass}">${badgeText}</span>
+      </div>`;
+    }).join('');
+
+    // Auto-refresh every 30s while admin panel is open
+    setTimeout(()=>{
+      if(document.getElementById('admin-panel')?.style.display==='block') loadOnlineUsers();
+    }, 30000);
+
+  }catch(e){
+    if(listEl) listEl.innerHTML='<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
+  }
 }
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
