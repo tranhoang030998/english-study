@@ -190,6 +190,20 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* FUN WRONG STREAK TOAST */
+#fun-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.7);
+  background:var(--surface);border:2px solid var(--red);border-radius:var(--card-radius);
+  padding:20px 24px;z-index:9998;opacity:0;pointer-events:none;
+  transition:all .3s cubic-bezier(.175,.885,.32,1.275);
+  text-align:center;min-width:240px;max-width:300px;box-shadow:0 0 40px rgba(239,68,68,.2);}
+#fun-toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+#fun-toast .fun-emoji{font-size:36px;margin-bottom:8px;}
+#fun-toast .fun-msg{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;line-height:1.4;color:var(--text);}
+#fun-toast .fun-close{margin-top:14px;font-family:'Space Grotesk',sans-serif;font-size:12px;
+  color:var(--muted);cursor:pointer;padding:6px 16px;border:1px solid var(--border);
+  border-radius:8px;background:transparent;touch-action:manipulation;}
+#fun-toast .fun-close:active{opacity:.7;}
+
 .sub-tab{
   font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;
   padding:12px 14px 10px;border-radius:0 !important;border:none !important;
@@ -439,6 +453,11 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   <div class="admin-section">Danh sách học viên</div>
   <div class="admin-user-list" id="admin-user-list"></div>
 
+  <div class="admin-section" style="margin-top:24px;">Thông báo cập nhật app</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6;">Khi bạn upload phiên bản mới lên GitHub, bấm nút này để thông báo tất cả học viên đang dùng app đăng nhập lại.</p>
+  <button class="admin-btn" style="background:var(--accent);margin-bottom:6px;" onclick="pushForceUpdate()">🔄 Thông báo cập nhật app</button>
+  <div class="admin-msg" id="force-update-msg"></div>
+
   <div class="admin-section" style="margin-top:24px;">Quản lý xếp hạng</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <button class="admin-btn danger" onclick="resetRanking('week')">Xóa BXH Tuần</button>
@@ -491,6 +510,10 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
       <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;" id="mt-cat">GRAMMAR</div>
       <div style="font-size:15px;line-height:1.7;margin-bottom:20px;" id="mt-sentence">Loading...</div>
       <div id="mt-options" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="mt-explanation" style="display:none;margin-top:14px;padding:10px 12px;background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted);line-height:1.6;"></div>
+    </div>
+    <div id="mt-next-wrap" style="display:none;">
+      <button class="btn-restart" onclick="mtNextCard()" style="margin-bottom:8px;">Tiếp tục →</button>
     </div>
   </div>
   <div id="minitest-result" style="display:none;text-align:center;padding:20px 0;">
@@ -530,6 +553,24 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
     <div class="badge-toast-name" id="badge-toast-name"></div>
   </div>
 </div>
+<!-- FUN WRONG STREAK TOAST -->
+<div id="fun-toast">
+  <div class="fun-emoji" id="fun-emoji">😤</div>
+  <div class="fun-msg" id="fun-msg">Gà!</div>
+  <button class="fun-close" onclick="closeFunToast()">OK rồi, tôi hiểu 😅</button>
+</div>
+
+<!-- FORCE UPDATE NOTIFICATION -->
+<div id="update-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--accent);border-radius:var(--card-radius);padding:28px 24px;max-width:340px;width:100%;text-align:center;">
+    <div style="font-size:36px;margin-bottom:12px;">🔄</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:17px;margin-bottom:8px;">App vừa được cập nhật!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Phiên bản mới đã sẵn sàng.<br>Vui lòng đăng nhập lại để dùng phiên bản mới nhất.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="update-countdown">Tự động đăng xuất sau 10 giây...</div>
+    <button onclick="forceLogout()" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;">Đăng xuất ngay</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal-box">
     <div class="modal-title" id="modal-title">Xác nhận</div>
@@ -1152,7 +1193,7 @@ const ALL_WORDS=[
 <script type="module">
 // ── Firebase ────────────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, increment, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, increment, serverTimestamp, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB3nNmDjR-DzDNAowP86oF2IKhtuUvpc7U",
@@ -1184,10 +1225,12 @@ async function doLogin() {
 
     currentUser = { username, displayName: data.displayName || username, isAdmin: data.isAdmin || false };
     localStorage.setItem('toeic_user', JSON.stringify(currentUser));
+    localStorage.setItem('toeic_login_at', Date.now().toString());
 
     // Update streak
     await updateStreak(username);
     showApp();
+    startUpdateListener();
   } catch(e) {
     errEl.textContent = 'Lỗi kết nối. Thử lại.';
     console.error(e);
@@ -1255,6 +1298,7 @@ window.addEventListener('load', () => {
     try {
       currentUser = JSON.parse(saved);
       showApp();
+      startUpdateListener();
       // Re-verify in background
       getDoc(doc(db,'users',currentUser.username)).then(snap=>{
         if(!snap.exists()){doLogout();}
@@ -1348,6 +1392,7 @@ window.switchMainTab=switchMainTab;
 let mode='en-vn', activeTopic='all', deck=[], idx=0, answered=false;
 let correctCount=0, wrongCount=0, skipCount=0, history=[], sumFilter='all';
 let savedCorrect=0, savedWrong=0; // track what's already been saved to avoid double-counting
+let wrongStreak=0; // consecutive wrong answers
 
 function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
 function acceptableMatch(input,card,cardMode){
@@ -1430,7 +1475,7 @@ function buildDeck(){
   let pool=activeTopic==='all'?[...ALL_WORDS]:ALL_WORDS.filter(w=>w.topic===activeTopic);
   for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
   deck=pool.map(w=>{let m=mode;if(m==='random')m=Math.random()<.5?'en-vn':'vn-en';return{...w,cardMode:m};});
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();wrongStreak=0;
 }
 
 function renderCard(){
@@ -1650,11 +1695,14 @@ function checkAnswer(){
     fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
     if(card.cardMode==='vn-en') speakAfterAnswer(card.en);
     updateCombo(true);
+    wrongStreak=0; // reset wrong streak on correct
   }else{
     const allAns=card.cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
     fc.className='flashcard wrong';inp.className='wrong';
     fb.textContent=`✗ Sai. Đáp án: "${allAns.join(' / ')}"`;fb.className='feedback wrong';wrongCount++;
     updateCombo(false);
+    wrongStreak++;
+    checkWrongStreak();
   }
   updateStats();
   document.getElementById('btn-skip').textContent='Tiếp tục →';
@@ -1974,7 +2022,7 @@ function retryWrong(){
   document.getElementById('score-panel').style.display='none';
   deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
-  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();wrongStreak=0;
   updateStats();renderCard();
 }
 window.filterSum=filterSum;
@@ -2336,6 +2384,9 @@ function renderMTCard(){
   document.getElementById('mt-progress-bar').style.width=pct+'%';
   document.getElementById('mt-cat').textContent=q.cat.toUpperCase();
   document.getElementById('mt-sentence').textContent=q.s;
+  document.getElementById('mt-explanation').style.display='none';
+  document.getElementById('mt-next-wrap').style.display='none';
+  document.getElementById('mt-card').style.borderColor='';
   const opts=document.getElementById('mt-options');
   opts.innerHTML=q.o.map((opt,i)=>`
     <button class="opt-btn" onclick="selectMTOpt(${i})">${opt}</button>
@@ -2350,9 +2401,22 @@ function selectMTOpt(i){
   btns[i].classList.add(correct?'selected-correct':'selected-wrong');
   if(!correct) btns[q.a].classList.add('show-correct');
   if(correct) mtScore++;
-  setTimeout(()=>{mtIdx++;renderMTCard();},800);
+  // Show explanation
+  const expEl=document.getElementById('mt-explanation');
+  expEl.textContent='💡 '+q.e;
+  expEl.style.display='block';
+  // Update card border color
+  document.getElementById('mt-card').style.borderColor=correct?'var(--green)':'var(--red)';
+  // Show next button
+  document.getElementById('mt-next-wrap').style.display='block';
+}
+function mtNextCard(){
+  document.getElementById('mt-next-wrap').style.display='none';
+  document.getElementById('mt-card').style.borderColor='';
+  mtIdx++;renderMTCard();
 }
 window.selectMTOpt=selectMTOpt;
+window.mtNextCard=mtNextCard;
 
 function showMTResult(){
   clearInterval(mtTimer);
@@ -2473,6 +2537,87 @@ async function loadDashboard(){
   }
 }
 
+
+// ── FORCE UPDATE / RELOAD NOTIFICATION ────────────────────────────
+let updateListener = null;
+
+function startUpdateListener(){
+  if(updateListener) updateListener(); // unsubscribe previous
+  const configRef = doc(db, 'config', 'app');
+  updateListener = onSnapshot(configRef, (snap) => {
+    if(!snap.exists() || !currentUser) return;
+    const forceAt = snap.data()?.forceLogoutAt?.toMillis?.() || 0;
+    const loginAt = parseInt(localStorage.getItem('toeic_login_at') || '0');
+    if(forceAt > loginAt){
+      showUpdateNotification();
+    }
+  });
+}
+
+function showUpdateNotification(){
+  const overlay = document.getElementById('update-overlay');
+  overlay.style.display = 'flex';
+  let secs = 10;
+  const ti = setInterval(()=>{
+    secs--;
+    const el = document.getElementById('update-countdown');
+    if(el) el.textContent = `Tự động đăng xuất sau ${secs} giây...`;
+    if(secs <= 0){ clearInterval(ti); forceLogout(); }
+  }, 1000);
+}
+
+function forceLogout(){
+  if(updateListener){ updateListener(); updateListener=null; }
+  localStorage.removeItem('toeic_user');
+  localStorage.removeItem('toeic_login_at');
+  currentUser = null;
+  document.getElementById('update-overlay').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+}
+window.forceLogout=forceLogout;
+
+async function pushForceUpdate(){
+  showConfirm('Thông báo cập nhật', 'Tất cả học viên đang online sẽ nhận thông báo và bị đăng xuất để load phiên bản mới. Tiếp tục?', async ()=>{
+    try{
+      const msgEl=document.getElementById('force-update-msg');
+      msgEl.className='admin-msg';msgEl.textContent='Đang gửi...';
+      await setDoc(doc(db,'config','app'),{forceLogoutAt: serverTimestamp()},{merge:true});
+      msgEl.className='admin-msg ok';msgEl.textContent='✓ Đã gửi thông báo! Học viên sẽ được nhắc đăng nhập lại.';
+    }catch(e){
+      document.getElementById('force-update-msg').className='admin-msg err';
+      document.getElementById('force-update-msg').textContent='Lỗi: '+e.message;
+    }
+  });
+}
+window.pushForceUpdate=pushForceUpdate;
+
+// ── FUN WRONG STREAK MESSAGES ─────────────────────────────────────
+const FUN_MESSAGES = [
+  { at:3, emoji:'🐔', msg:'Gà, sai gì dữ dẫy haizzz :D' },
+  { at:5, emoji:'😤', msg:'Giỡn mặt hả???' },
+  { at:8, emoji:'💀', msg:'Thua, đánh ăn đấm, ôn lại đi' },
+];
+let funToastTimer = null;
+
+function showFunToast(emoji, msg){
+  clearTimeout(funToastTimer);
+  document.getElementById('fun-emoji').textContent = emoji;
+  document.getElementById('fun-msg').textContent   = msg;
+  const toast = document.getElementById('fun-toast');
+  toast.classList.add('show');
+  funToastTimer = setTimeout(()=>toast.classList.remove('show'), 4000);
+}
+function closeFunToast(){
+  clearTimeout(funToastTimer);
+  document.getElementById('fun-toast').classList.remove('show');
+}
+window.closeFunToast = closeFunToast;
+
+function checkWrongStreak(){
+  const match = FUN_MESSAGES.find(m => m.at === wrongStreak);
+  if(match) showFunToast(match.emoji, match.msg);
+}
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(document.getElementById('login-screen').style.display!=='none')return;
