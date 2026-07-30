@@ -50,8 +50,9 @@ header{width:100%;max-width:680px;padding:16px 16px 0;display:flex;align-items:c
 .stat-dot.red{background:var(--red);}
 
 /* MAIN NAV TABS */
-.main-nav{width:100%;max-width:680px;padding:12px 16px 0;display:flex;gap:6px;}
-.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;touch-action:manipulation;white-space:nowrap;}
+.main-nav{width:100%;max-width:680px;padding:12px 16px 0;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+.main-nav::-webkit-scrollbar{display:none;}
+.tab-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;touch-action:manipulation;white-space:nowrap;flex-shrink:0;}
 .tab-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
 .tab-btn:active{opacity:.8;}
 
@@ -137,7 +138,9 @@ header{width:100%;max-width:680px;padding:16px 16px 0;display:flex;align-items:c
 
 /* RANKING TAB */
 .rank-panel{display:none;width:100%;max-width:680px;padding:0 16px 20px;}
-.rank-period{display:flex;gap:6px;margin-bottom:14px;}
+.rank-period{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+.rank-period::-webkit-scrollbar{display:none;}
+.rank-period-btn{flex-shrink:0;}
 .rank-period-btn{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;padding:6px 16px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .18s;}
 .rank-period-btn.active{background:var(--gold);border-color:var(--gold);color:#1a1200;}
 .rank-table{display:flex;flex-direction:column;gap:6px;}
@@ -314,6 +317,7 @@ header{width:100%;max-width:680px;padding:16px 16px 0;display:flex;align-items:c
     <button class="rank-period-btn active" onclick="setRankPeriod('week',this)">📅 Tuần này</button>
     <button class="rank-period-btn" onclick="setRankPeriod('month',this)">🗓 Tháng này</button>
     <button class="rank-period-btn" onclick="setRankPeriod('all',this)">🏅 Tổng</button>
+    <button class="rank-period-btn" onclick="setRankPeriod('streak',this)">🔥 Streak</button>
   </div>
   <div class="rank-table" id="rank-table"><div class="rank-loading">Đang tải...</div></div>
 </div>
@@ -333,6 +337,9 @@ header{width:100%;max-width:680px;padding:16px 16px 0;display:flex;align-items:c
 </div>
 
 </div><!-- end #app -->
+<div style="width:100%;text-align:center;padding:20px 16px 32px;font-size:12px;color:#3a3d52;font-family:'Space Grotesk',sans-serif;">
+  Design by Chồng của Mận Xinh Đẹp
+</div>
 
 
 <script>
@@ -1318,6 +1325,40 @@ async function loadRanking(){
   const tableEl=document.getElementById('rank-table');
   tableEl.innerHTML='<div class="rank-loading">Đang tải...</div>';
   try{
+    // Handle streak tab separately
+    if(rankPeriod==='streak'){
+      const snap=await getDocs(collection(db,'users'));
+      const streakRows=[];
+      snap.forEach(d=>{
+        const u=d.data();
+        if(!u.isAdmin) streakRows.push({username:u.username,displayName:u.displayName||u.username,streak:u.streak||0,lastStudyDay:u.lastStudyDay||''});
+      });
+      streakRows.sort((a,b)=>b.streak-a.streak);
+      if(streakRows.length===0){tableEl.innerHTML='<div class="rank-empty">Chưa có dữ liệu streak.</div>';return;}
+      tableEl.innerHTML='<div class="rank-section-title">Streak - So ngay hoc lien tiep</div>'+
+        streakRows.map((r,i)=>{
+          const rank=i+1;
+          const isMe=r.username===currentUser.username;
+          const medal=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+          const numClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+          const rowClass=`rank-row${isMe?' me':''}${rank<=3?` rank-${rank}`:''}`;
+          const today=new Date().toDateString();
+          const yesterday=new Date(Date.now()-86400000).toDateString();
+          const active=r.lastStudyDay===today||r.lastStudyDay===yesterday;
+          return `<div class="${rowClass}">
+            <div class="rank-num ${numClass}">${medal||rank}</div>
+            <div class="rank-info">
+              <div class="rank-name">${r.displayName}${isMe?'<span class="you-badge">Bạn</span>':''}</div>
+              <div class="rank-streak" style="color:${active?'var(--yellow)':'var(--muted)'}">${r.streak>0?r.streak+' ngày liên tiếp':'Chưa có streak'}</div>
+            </div>
+            <div class="rank-stats">
+              <div class="rank-correct" style="font-size:22px">${r.streak>0?'🔥'.repeat(Math.min(r.streak,5)):'-'}</div>
+            </div>
+          </div>`;
+        }).join('');
+      return;
+    }
+
     let col, rows=[];
     if(rankPeriod==='week'){
       const week=getWeekKey(new Date());
@@ -1369,6 +1410,7 @@ async function loadRanking(){
           </div>
         </div>`;
       }).join('');
+
   } catch(e){
     tableEl.innerHTML='<div class="rank-empty">Lỗi tải dữ liệu.</div>';
     console.error(e);
