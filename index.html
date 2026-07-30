@@ -190,13 +190,31 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+.sub-tab{
+  font-family:'Space Grotesk',sans-serif;font-size:12.5px;font-weight:600;
+  padding:12px 14px 10px;border-radius:0 !important;border:none !important;
+  border-bottom:2.5px solid transparent !important;
+  background:transparent !important;color:var(--muted) !important;
+  cursor:pointer;transition:all .2s;touch-action:manipulation;white-space:nowrap;flex-shrink:0;
+}
+.sub-tab:hover{color:var(--text) !important;}
+.sub-tab.active{color:var(--accent) !important;border-bottom-color:var(--accent) !important;font-weight:700 !important;}
+
 /* TOP LEVEL TABS */
+#top-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px !important;}
 #top-nav::-webkit-scrollbar{display:none;}
-.top-tab{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;padding:9px 18px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;touch-action:manipulation;white-space:nowrap;flex-shrink:0;letter-spacing:.01em;}
-.top-tab.active{background:var(--accent);border-color:var(--accent);color:white;}
+.top-tab{
+  font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;
+  padding:14px 16px 12px;border-radius:0;border:none;border-bottom:2.5px solid transparent;
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;
+  touch-action:manipulation;white-space:nowrap;flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+}
+.top-tab:hover{color:var(--text);}
+.top-tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
 .top-tab:active{opacity:.8;}
-#top-nav::-webkit-scrollbar{display:none;}
 #flashcard-subnav::-webkit-scrollbar{display:none;}
+#flashcard-subnav{border-bottom:1px solid var(--border);}
 
 /* GRAMMAR & MINI TEST OPTION BUTTONS */
 .opt-btn{width:100%;text-align:left;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);font-family:'Noto Sans',sans-serif;font-size:13.5px;color:var(--text);cursor:pointer;transition:all .18s;touch-action:manipulation;}
@@ -306,7 +324,7 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 </header>
 
 <!-- TOP LEVEL NAV -->
-<div id="top-nav" style="width:100%;max-width:680px;margin:0 auto;padding:12px 16px 0;display:flex;gap:8px;overflow-x:auto;">
+<div id="top-nav" style="width:100%;max-width:100%;display:flex;gap:0;overflow-x:auto;">
   <button class="top-tab active" onclick="switchTop('flashcard',this)">📚 Flashcard</button>
   <button class="top-tab" onclick="switchTop('grammar',this)">✍️ Ngữ pháp</button>
   <button class="top-tab" onclick="switchTop('minitest',this)">🎯 Mini Test</button>
@@ -314,15 +332,15 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
   <button class="top-tab" id="admin-tab-btn" style="display:none" onclick="switchTop('admin',this)">⚙️ Admin</button>
 </div>
 <!-- FLASHCARD SUB NAV -->
-<div id="flashcard-subnav" style="width:100%;max-width:680px;margin:0 auto;padding:8px 16px 0;display:flex;gap:6px;overflow-x:auto;">
-  <button class="tab-btn active" onclick="switchMainTab('practice',this)">Luyện tập</button>
-  <button class="tab-btn" onclick="switchMainTab('summary',this)">Kết quả</button>
-  <button class="tab-btn" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
+<div id="flashcard-subnav" style="width:100%;max-width:100%;padding:0 16px;display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);">
+  <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">Luyện tập</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">Kết quả</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
 </div>
 
 <!-- PRACTICE TAB -->
 <div id="practice-panel">
-  <div class="controls">
+  <div class="controls" style="margin-top:4px;">
     <div class="mode-toggle">
       <button class="mode-btn active" onclick="setMode('en-vn')">EN → VN</button>
       <button class="mode-btn" onclick="setMode('vn-en')">VN → EN</button>
@@ -434,7 +452,7 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 <!-- GRAMMAR DRILL PANEL -->
 <div id="grammar-panel" style="display:none;width:100%;max-width:680px;margin:0 auto;padding:0 16px 24px;">
   <div id="grammar-content">
-    <div id="grammar-filter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-top:12px;overflow-x:auto;">
+    <div id="grammar-filter" style="padding-top:8px;" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-top:12px;overflow-x:auto;">
       <button class="topic-chip active" onclick="setGrammarCat('all',this)">Tất cả</button>
     </div>
     <div class="progress-wrap" style="padding:0 0 10px;">
@@ -2365,12 +2383,19 @@ async function loadDashboard(){
     const allData=allSnap.exists()?allSnap.data():{correct:0,wrong:0,pct:0};
 
     // Get last 14 sessions
+    // No orderBy to avoid composite index requirement — sort client-side
     const sessSnap=await getDocs(
-      query(collection(db,'sessions'),where('username','==',currentUser.username),orderBy('createdAt','desc'),limit(14))
+      query(collection(db,'sessions'),where('username','==',currentUser.username),limit(50))
     );
     const sessions=[];
     sessSnap.forEach(d=>sessions.push(d.data()));
-    sessions.reverse();
+    // Sort by createdAt client-side, take last 14
+    sessions.sort((a,b)=>{
+      const ta=a.createdAt?.toMillis?.()||0;
+      const tb=b.createdAt?.toMillis?.()||0;
+      return ta-tb;
+    });
+    sessions.splice(0, Math.max(0, sessions.length-14));
 
     // Build 7-day chart data
     const dayMap={};
