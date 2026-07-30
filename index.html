@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>TOEIC Flashcards</title>
+<title>TOEIC KING</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -190,6 +190,14 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* TOP LEVEL TABS */
+#top-nav::-webkit-scrollbar{display:none;}
+.top-tab{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:700;padding:9px 18px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;touch-action:manipulation;white-space:nowrap;flex-shrink:0;letter-spacing:.01em;}
+.top-tab.active{background:var(--accent);border-color:var(--accent);color:white;}
+.top-tab:active{opacity:.8;}
+#top-nav::-webkit-scrollbar{display:none;}
+#flashcard-subnav::-webkit-scrollbar{display:none;}
+
 /* GRAMMAR & MINI TEST OPTION BUTTONS */
 .opt-btn{width:100%;text-align:left;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);font-family:'Noto Sans',sans-serif;font-size:13.5px;color:var(--text);cursor:pointer;transition:all .18s;touch-action:manipulation;}
 .opt-btn:hover{border-color:var(--accent);background:rgba(79,124,255,.08);}
@@ -269,8 +277,8 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-logo"><div class="login-logo-dot"></div>TOEIC Flashcards</div>
-    <div class="login-sub">Đăng nhập để học và xem bảng xếp hạng</div>
+    <div class="login-logo"><div class="login-logo-dot"></div>TOEIC KING</div>
+    <div class="login-sub">Luyện TOEIC mỗi ngày · Lên đỉnh bảng xếp hạng</div>
     <div class="login-field">
       <label class="login-label">Tên đăng nhập</label>
       <input class="login-input" id="login-username" type="text" placeholder="username" autocomplete="off" autocapitalize="off">
@@ -287,7 +295,7 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 <!-- MAIN APP -->
 <div id="app">
 <header>
-  <div class="logo"><div class="logo-dot"></div>TOEIC Flashcards</div>
+  <div class="logo"><div class="logo-dot"></div>TOEIC KING</div>
   <div class="header-right">
     <div class="user-badge" id="user-badge">
       <span id="user-name-display"></span>
@@ -297,14 +305,19 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
   </div>
 </header>
 
-<div class="main-nav" id="main-nav">
-  <button class="tab-btn active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
-  <button class="tab-btn" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
+<!-- TOP LEVEL NAV -->
+<div id="top-nav" style="width:100%;max-width:680px;margin:0 auto;padding:12px 16px 0;display:flex;gap:8px;overflow-x:auto;">
+  <button class="top-tab active" onclick="switchTop('flashcard',this)">📚 Flashcard</button>
+  <button class="top-tab" onclick="switchTop('grammar',this)">✍️ Ngữ pháp</button>
+  <button class="top-tab" onclick="switchTop('minitest',this)">🎯 Mini Test</button>
+  <button class="top-tab" onclick="switchTop('dashboard',this)">📈 Dashboard</button>
+  <button class="top-tab" id="admin-tab-btn" style="display:none" onclick="switchTop('admin',this)">⚙️ Admin</button>
+</div>
+<!-- FLASHCARD SUB NAV -->
+<div id="flashcard-subnav" style="width:100%;max-width:680px;margin:0 auto;padding:8px 16px 0;display:flex;gap:6px;overflow-x:auto;">
+  <button class="tab-btn active" onclick="switchMainTab('practice',this)">Luyện tập</button>
+  <button class="tab-btn" onclick="switchMainTab('summary',this)">Kết quả</button>
   <button class="tab-btn" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
-  <button class="tab-btn" onclick="switchMainTab('grammar',this)">✍️ Ngữ pháp</button>
-  <button class="tab-btn" onclick="switchMainTab('minitest',this)">🎯 Mini Test</button>
-  <button class="tab-btn" onclick="switchMainTab('dashboard',this)">📈 Dashboard</button>
-  <button class="tab-btn" id="admin-tab-btn" style="display:none" onclick="switchMainTab('admin',this)">⚙️ Admin</button>
 </div>
 
 <!-- PRACTICE TAB -->
@@ -1197,9 +1210,13 @@ function showApp() {
   appEl.style.display = 'flex';
 
   document.getElementById('user-name-display').textContent = currentUser.displayName;
-  if (currentUser.isAdmin) {
-    document.getElementById('admin-tab-btn').style.display = '';
+  if(currentUser.isAdmin){
+    document.getElementById('admin-tab-btn').style.display='';
   }
+  // Set initial data-tab on sub-nav buttons
+  document.querySelectorAll('#flashcard-subnav .tab-btn').forEach((b,i)=>{
+    b.setAttribute('data-tab',['practice','summary','ranking'][i]);
+  });
   loadUserStreak();
   buildTopicChips();
   restart();
@@ -1233,39 +1250,66 @@ window.addEventListener('load', () => {
 });
 
 // ── Tab switching ─────────────────────────────────────────────────
-function switchMainTab(tab, btn) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
 
-  // Auto-save DELTA only when leaving practice tab
-  const currentTab = document.getElementById('practice-panel').style.display !== 'none' ? 'practice' : 'other';
-  if(currentTab==='practice' && tab!=='practice' && currentUser){
-    const deltaC = correctCount - savedCorrect;
-    const deltaW = wrongCount - savedWrong;
-    if(deltaC + deltaW >= 5){
-      const pct = (deltaC+deltaW)>0 ? Math.round(deltaC/(deltaC+deltaW)*100) : 0;
-      saveSession(deltaC, deltaW, 0, pct).then(()=>{
-        savedCorrect = correctCount;
-        savedWrong   = wrongCount;
-        checkAndAwardBadges({bestCombo: bestComboSession});
+// ── TOP LEVEL TAB SWITCH ──────────────────────────────────────────
+const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel',
+                  'grammar-panel','minitest-panel','dashboard-panel','admin-panel'];
+let currentTop='flashcard';
+
+function switchTop(section, btn){
+  currentTop=section;
+  document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ALL_PANELS.forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display='none'; });
+  const subNav=document.getElementById('flashcard-subnav');
+  if(subNav) subNav.style.display=section==='flashcard'?'flex':'none';
+  if(section==='flashcard'){
+    const activeSubBtn=document.querySelector('#flashcard-subnav .tab-btn.active');
+    const activeTab=activeSubBtn?.getAttribute('data-tab')||'practice';
+    showFlashcardTab(activeTab);
+  } else if(section==='grammar'){
+    document.getElementById('grammar-panel').style.display='block';
+    initGrammarFilters();
+    if(!grammarDeck.length){buildGrammarDeck();renderGrammarCard();}
+  } else if(section==='minitest'){
+    document.getElementById('minitest-panel').style.display='block';
+  } else if(section==='dashboard'){
+    document.getElementById('dashboard-panel').style.display='block';
+    loadDashboard();
+  } else if(section==='admin'){
+    document.getElementById('admin-panel').style.display='block';
+    loadAdminUsers();
+  }
+}
+window.switchTop=switchTop;
+
+function showFlashcardTab(tab){
+  document.getElementById('practice-panel').style.display=tab==='practice'?'':'none';
+  if(tab!=='practice') document.getElementById('score-panel').style.display='none';
+  document.getElementById('sum-panel').style.display=tab==='summary'?'block':'none';
+  document.getElementById('rank-panel').style.display=tab==='ranking'?'block':'none';
+  if(tab==='summary'){renderSummary();renderBadges();}
+  if(tab==='ranking') loadRanking();
+}
+
+function switchMainTab(tab, btn){
+  document.querySelectorAll('#flashcard-subnav .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  btn.setAttribute('data-tab', tab);
+  const currentlyPractice=document.getElementById('practice-panel').style.display!=='none';
+  if(currentlyPractice && tab!=='practice' && currentUser){
+    const deltaC=correctCount-savedCorrect, deltaW=wrongCount-savedWrong;
+    if(deltaC+deltaW>=5){
+      const pct=(deltaC+deltaW)>0?Math.round(deltaC/(deltaC+deltaW)*100):0;
+      saveSession(deltaC,deltaW,0,pct).then(()=>{
+        savedCorrect=correctCount;savedWrong=wrongCount;
+        checkAndAwardBadges({bestCombo:bestComboSession});
       }).catch(()=>{});
     }
   }
-
-  // Show/hide panels WITHOUT resetting deck
-  const allPanels=['practice-panel','sum-panel','rank-panel','admin-panel','grammar-panel','minitest-panel','dashboard-panel'];
-  allPanels.forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display='none'; });
-  if(tab!=='practice') document.getElementById('score-panel').style.display='none';
-  const show={'practice':'practice-panel','summary':'sum-panel','ranking':'rank-panel','admin':'admin-panel','grammar':'grammar-panel','minitest':'minitest-panel','dashboard':'dashboard-panel'};
-  if(show[tab]){ const el=document.getElementById(show[tab]); if(el) el.style.display='block'; }
-  if(tab==='practice') document.getElementById('practice-panel').style.display='';
-  if(tab==='summary'){ renderSummary(); renderBadges(); }
-  if(tab==='ranking') loadRanking();
-  if(tab==='admin')   loadAdminUsers();
-  if(tab==='grammar'){ initGrammarFilters(); if(!grammarDeck.length){buildGrammarDeck();renderGrammarCard();} }
-  if(tab==='dashboard') loadDashboard();
+  showFlashcardTab(tab);
 }
-window.switchMainTab = switchMainTab;
+window.switchMainTab=switchMainTab;
 
 // ── Flashcard logic ───────────────────────────────────────────────
 let mode='en-vn', activeTopic='all', deck=[], idx=0, answered=false;
