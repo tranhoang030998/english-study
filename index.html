@@ -1738,6 +1738,7 @@ async function loadRanking(){
             <div class="rank-correct">${r.correct} đúng / ${r.total||(r.correct+(r.wrong||0))} thẻ</div>
             <div class="rank-pct">${r.pct||0}%</div>
           </div>
+          ${currentUser?.isAdmin?`<button onclick="deleteUserRanking('${r.username}','${r.displayName||r.username}','${rankPeriod}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:2px 4px;flex-shrink:0;" title="Xóa BXH">🗑️</button>`:''}
         </div>`;
       }).join('');
 
@@ -1854,6 +1855,25 @@ async function deleteUser(username, displayName){
   }catch(e){alert('Lỗi xóa: '+e.message);}
 }
 window.deleteUser=deleteUser;
+
+async function deleteUserRanking(username, displayName, period){
+  showConfirm('Xóa BXH', `Xóa điểm xếp hạng của "${displayName}"?`, async ()=>{
+    try{
+      const {deleteDoc:dd} = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      const cols = period==='all'
+        ? ['ranking_week','ranking_month','ranking_all']
+        : [`ranking_${period}`];
+      for(const col of cols){
+        const snap = await getDocs(collection(db, col));
+        for(const d of snap.docs){
+          if(d.data().username === username) await dd(d.ref);
+        }
+      }
+      loadRanking(); // refresh
+    } catch(e){ alert('Lỗi: '+e.message); }
+  });
+}
+window.deleteUserRanking=deleteUserRanking;
 
 async function resetUserRanking(username, displayName){
   showConfirm('Xóa BXH', `Xóa toàn bộ điểm xếp hạng của "${displayName}"? Không thể hoàn tác.`, async ()=>{
