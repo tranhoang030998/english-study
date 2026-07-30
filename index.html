@@ -190,6 +190,24 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* GRAMMAR & MINI TEST OPTION BUTTONS */
+.opt-btn{width:100%;text-align:left;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);font-family:'Noto Sans',sans-serif;font-size:13.5px;color:var(--text);cursor:pointer;transition:all .18s;touch-action:manipulation;}
+.opt-btn:hover{border-color:var(--accent);background:rgba(79,124,255,.08);}
+.opt-btn.selected-correct{border-color:var(--green);background:var(--green-bg);color:var(--green);}
+.opt-btn.selected-wrong{border-color:var(--red);background:var(--red-bg);color:var(--red);}
+.opt-btn.show-correct{border-color:var(--green);background:var(--green-bg);}
+.opt-btn:disabled{cursor:not-allowed;}
+/* DASHBOARD CHART */
+.dash-bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;}
+.dash-bar{width:100%;border-radius:4px 4px 0 0;background:var(--accent);min-height:2px;transition:height .4s ease;}
+.dash-bar-label{font-size:9px;color:var(--muted);font-family:'Space Grotesk',sans-serif;white-space:nowrap;}
+.dash-bar-val{font-size:9px;font-weight:600;font-family:'Space Grotesk',sans-serif;color:var(--text);}
+/* TOPIC ACCURACY */
+.topic-acc-row{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.topic-acc-label{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;margin-bottom:5px;display:flex;justify-content:space-between;}
+.topic-acc-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.topic-acc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s ease;}
+
 /* COMBO */
 #combo-display{display:none;text-align:center;padding:6px 0 0;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:var(--yellow);letter-spacing:.02em;}
 .combo-pop{animation:combo-bounce .35s cubic-bezier(.36,.07,.19,.97);}
@@ -283,6 +301,9 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
   <button class="tab-btn active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
   <button class="tab-btn" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
   <button class="tab-btn" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
+  <button class="tab-btn" onclick="switchMainTab('grammar',this)">✍️ Ngữ pháp</button>
+  <button class="tab-btn" onclick="switchMainTab('minitest',this)">🎯 Mini Test</button>
+  <button class="tab-btn" onclick="switchMainTab('dashboard',this)">📈 Dashboard</button>
   <button class="tab-btn" id="admin-tab-btn" style="display:none" onclick="switchMainTab('admin',this)">⚙️ Admin</button>
 </div>
 
@@ -394,6 +415,79 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
     <button class="admin-btn danger" onclick="resetRanking('all_periods')" style="background:#2d0808;border-color:#7f1d1d;color:#fca5a5;">Xóa TẤT CẢ BXH</button>
   </div>
   <div class="admin-msg" id="rank-reset-msg"></div>
+</div>
+
+
+<!-- GRAMMAR DRILL PANEL -->
+<div id="grammar-panel" style="display:none;width:100%;max-width:680px;margin:0 auto;padding:0 16px 24px;">
+  <div id="grammar-content">
+    <div id="grammar-filter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding-top:12px;overflow-x:auto;">
+      <button class="topic-chip active" onclick="setGrammarCat('all',this)">Tất cả</button>
+    </div>
+    <div class="progress-wrap" style="padding:0 0 10px;">
+      <div class="progress-track"><div class="progress-fill" id="grammar-progress" style="width:0%"></div></div>
+      <div class="progress-label"><span id="grammar-prog-text">Câu 0 / 0</span><span id="grammar-score-display">0 đúng</span></div>
+    </div>
+    <div id="grammar-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:24px 20px;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;" id="grammar-cat-badge">WORD FORM</div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:20px;font-family:'Noto Sans',sans-serif;" id="grammar-sentence">Loading...</div>
+      <div id="grammar-options" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div id="grammar-explanation" style="display:none;margin-top:14px;padding:10px 12px;background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted);line-height:1.6;"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-nav" onclick="grammarPrev()">← Trước</button>
+      <button class="btn-nav" id="grammar-next-btn" onclick="grammarNext()" style="margin-left:auto;color:var(--muted);">Bỏ qua →</button>
+    </div>
+  </div>
+</div>
+
+<!-- MINI TEST PANEL -->
+<div id="minitest-panel" style="display:none;width:100%;max-width:680px;margin:0 auto;padding:0 16px 24px;">
+  <div id="minitest-start" style="text-align:center;padding:32px 0;">
+    <div style="font-size:40px;margin-bottom:12px;">🎯</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;margin-bottom:8px;">Mini Test</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.7;">20 câu ngữ pháp · 20 phút<br>Kết quả quy đổi điểm TOEIC Part 5</div>
+    <button class="btn-restart" style="max-width:280px;margin:0 auto;" onclick="startMiniTest()">Bắt đầu thi →</button>
+  </div>
+  <div id="minitest-quiz" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 8px;">
+      <div style="font-family:'Space Grotesk',sans-serif;font-size:13px;color:var(--muted);" id="mt-progress">Câu 1 / 20</div>
+      <div id="mt-timer" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;color:var(--green);">20:00</div>
+    </div>
+    <div class="progress-track" style="margin-bottom:14px;"><div class="progress-fill" id="mt-progress-bar" style="width:0%"></div></div>
+    <div id="mt-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:24px 20px;margin-bottom:12px;">
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;" id="mt-cat">GRAMMAR</div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:20px;" id="mt-sentence">Loading...</div>
+      <div id="mt-options" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+  <div id="minitest-result" style="display:none;text-align:center;padding:20px 0;">
+    <div style="font-size:40px;margin-bottom:8px;" id="mt-result-emoji">🎉</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;margin-bottom:4px;">Kết quả</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:64px;letter-spacing:-2px;color:var(--accent);line-height:1;" id="mt-score-big">0/20</div>
+    <div style="color:var(--muted);font-size:13px;margin:8px 0 4px;" id="mt-toeic-est">Ước tính TOEIC Part 5: ~0 điểm</div>
+    <div style="color:var(--muted);font-size:12px;margin-bottom:24px;" id="mt-accuracy">Độ chính xác: 0%</div>
+    <button class="btn-restart" style="max-width:280px;margin:0 auto;" onclick="resetMiniTest()">Làm lại</button>
+  </div>
+</div>
+
+<!-- DASHBOARD PANEL -->
+<div id="dashboard-panel" style="display:none;width:100%;max-width:680px;margin:0 auto;padding:0 16px 24px;">
+  <div id="dashboard-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:13px;">Đang tải...</div>
+  <div id="dashboard-content" style="display:none;">
+    <!-- Stats row -->
+    <div class="sum-stats" style="margin-top:12px;" id="dash-stats-row"></div>
+    <!-- Weekly chart -->
+    <div style="margin-bottom:16px;">
+      <div class="badges-title">7 ngày gần nhất</div>
+      <div id="dash-chart" style="display:flex;align-items:flex-end;gap:6px;height:100px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 12px 0;"></div>
+    </div>
+    <!-- Topic accuracy -->
+    <div>
+      <div class="badges-title">Độ chính xác theo chủ đề</div>
+      <div id="dash-topics" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </div>
 </div>
 
 </div><!-- end #app -->
@@ -1159,15 +1253,17 @@ function switchMainTab(tab, btn) {
   }
 
   // Show/hide panels WITHOUT resetting deck
-  document.getElementById('practice-panel').style.display = tab==='practice' ? '' : 'none';
-  // Don't hide score-panel automatically — keep it if it was showing
-  if(tab !== 'practice') document.getElementById('score-panel').style.display = 'none';
-  document.getElementById('sum-panel').style.display      = tab==='summary'  ? 'block' : 'none';
-  document.getElementById('rank-panel').style.display     = tab==='ranking'  ? 'block' : 'none';
-  document.getElementById('admin-panel').style.display    = tab==='admin'    ? 'block' : 'none';
+  const allPanels=['practice-panel','sum-panel','rank-panel','admin-panel','grammar-panel','minitest-panel','dashboard-panel'];
+  allPanels.forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display='none'; });
+  if(tab!=='practice') document.getElementById('score-panel').style.display='none';
+  const show={'practice':'practice-panel','summary':'sum-panel','ranking':'rank-panel','admin':'admin-panel','grammar':'grammar-panel','minitest':'minitest-panel','dashboard':'dashboard-panel'};
+  if(show[tab]){ const el=document.getElementById(show[tab]); if(el) el.style.display='block'; }
+  if(tab==='practice') document.getElementById('practice-panel').style.display='';
   if(tab==='summary'){ renderSummary(); renderBadges(); }
   if(tab==='ranking') loadRanking();
   if(tab==='admin')   loadAdminUsers();
+  if(tab==='grammar'){ initGrammarFilters(); if(!grammarDeck.length){buildGrammarDeck();renderGrammarCard();} }
+  if(tab==='dashboard') loadDashboard();
 }
 window.switchMainTab = switchMainTab;
 
@@ -1180,7 +1276,13 @@ function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
 function acceptableMatch(input,card,cardMode){
   const inp=normalize(input);
   const pool=cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
-  return pool.map(a=>normalize(a)).includes(inp);
+  // Split each answer by "/" — e.g. "gọi món/đơn hàng" also accepts "gọi món" or "đơn hàng"
+  const expanded=new Set();
+  pool.forEach(a=>{
+    expanded.add(normalize(a));
+    String(a).split('/').forEach(part=>expanded.add(normalize(part.trim())));
+  });
+  return expanded.has(inp);
 }
 
 const topics=[...new Set(ALL_WORDS.map(w=>w.topic))].sort();
@@ -1477,8 +1579,15 @@ function checkAnswer(){
     updateCombo(false);
   }
   updateStats();
-  if(ok){setTimeout(()=>nextCard(),1400);}
-  else{document.getElementById('btn-skip').textContent='Tiếp tục →';}
+  const skipBtn=document.getElementById('btn-skip');
+  skipBtn.textContent='Tiếp tục →';
+  if(ok){
+    let t=1200, ti=setInterval(()=>{
+      t-=100;
+      skipBtn.textContent=`Tiếp tục (${Math.ceil(t/1000)}s) →`;
+      if(t<=0){clearInterval(ti);skipBtn.textContent='Tiếp tục →';nextCard();}
+    },100);
+  }
 }
 window.checkAnswer=checkAnswer;
 
@@ -1940,6 +2049,352 @@ function resetRanking(period){
   showConfirm('Xóa bảng xếp hạng', `Bạn chắc chắn muốn xóa BXH ${labels[period]}? Không thể hoàn tác.`, ()=>doResetRanking(period));
 }
 window.resetRanking=resetRanking;
+
+
+// ══════════════════════════════════════════════════════
+//  GRAMMAR DATA
+// ══════════════════════════════════════════════════════
+const GRAMMAR_Q=[
+// ── WORD FORM (20) ──────────────────────────────────────────────
+{id:'wf01',cat:'Word Form',s:'The company\'s financial _____ showed strong growth last quarter.',o:['A) perform','B) performance','C) performer','D) performed'],a:1,e:'"Performance" (n) is needed as the subject after "The company\'s financial".'},
+{id:'wf02',cat:'Word Form',s:'All employees must attend the _____ training session this Friday.',o:['A) mandate','B) mandatory','C) mandated','D) mandatorily'],a:1,e:'"Mandatory" (adj) modifies the noun "training session".'},
+{id:'wf03',cat:'Word Form',s:'The new system was implemented _____ across all departments.',o:['A) efficient','B) efficiency','C) efficiencies','D) efficiently'],a:3,e:'"Efficiently" (adv) modifies the verb "implemented".'},
+{id:'wf04',cat:'Word Form',s:'We appreciate your _____ in the annual conference.',o:['A) participate','B) participatory','C) participation','D) participant'],a:2,e:'"Participation" (n) follows the possessive "your".'},
+{id:'wf05',cat:'Word Form',s:'The _____ of the new product exceeded all expectations.',o:['A) launch','B) launched','C) launching','D) launches'],a:0,e:'"Launch" (n) is the subject of the sentence.'},
+{id:'wf06',cat:'Word Form',s:'Her _____ of the proposal surprised everyone on the board.',o:['A) reject','B) rejecting','C) rejection','D) rejected'],a:2,e:'"Rejection" (n) follows the possessive "her".'},
+{id:'wf07',cat:'Word Form',s:'The director gave a very _____ speech at the annual meeting.',o:['A) inspire','B) inspiration','C) inspirational','D) inspirationally'],a:2,e:'"Inspirational" (adj) modifies the noun "speech".'},
+{id:'wf08',cat:'Word Form',s:'Please handle all customer complaints with _____ and care.',o:['A) patient','B) patiently','C) patience','D) impatient'],a:2,e:'"Patience" (n) is needed after "with" in this noun phrase.'},
+{id:'wf09',cat:'Word Form',s:'The sales team worked _____ to meet the quarterly target.',o:['A) tireless','B) tirelessly','C) tirelessness','D) tired'],a:1,e:'"Tirelessly" (adv) modifies the verb "worked".'},
+{id:'wf10',cat:'Word Form',s:'The _____ of the new office building will begin next spring.',o:['A) construct','B) constructive','C) construction','D) constructed'],a:2,e:'"Construction" (n) is the subject of the sentence.'},
+{id:'wf11',cat:'Word Form',s:'Mr. Park is _____ for overseeing the marketing department.',o:['A) responsible','B) responsibility','C) responsibly','D) respond'],a:0,e:'"Responsible" (adj) follows "is" and pairs with "for".'},
+{id:'wf12',cat:'Word Form',s:'The new policy will _____ take effect from January 1st.',o:['A) official','B) officially','C) officiate','D) officials'],a:1,e:'"Officially" (adv) modifies the verb phrase "take effect".'},
+{id:'wf13',cat:'Word Form',s:'The training program improved employee _____ significantly.',o:['A) produce','B) productive','C) productivity','D) productively'],a:2,e:'"Productivity" (n) is the object of "improved".'},
+{id:'wf14',cat:'Word Form',s:'The results of the survey were quite _____.',o:['A) encourage','B) encouraged','C) encouraging','D) encouragement'],a:2,e:'"Encouraging" (adj) describes the subject "results". Present participle used as adjective.'},
+{id:'wf15',cat:'Word Form',s:'The company made a _____ to reduce its carbon footprint.',o:['A) commit','B) commitment','C) committed','D) committing'],a:1,e:'"Commitment" (n) follows the article "a".'},
+{id:'wf16',cat:'Word Form',s:'She was _____ recognized for her outstanding contribution.',o:['A) public','B) publicize','C) publicly','D) publication'],a:2,e:'"Publicly" (adv) modifies "recognized".'},
+{id:'wf17',cat:'Word Form',s:'The board is seeking a _____ candidate for the CEO position.',o:['A) quality','B) qualify','C) qualified','D) qualification'],a:2,e:'"Qualified" (adj) modifies the noun "candidate".'},
+{id:'wf18',cat:'Word Form',s:'The _____ between the two companies lasted for over a decade.',o:['A) partner','B) partnering','C) partnership','D) partnered'],a:2,e:'"Partnership" (n) is the subject of the sentence.'},
+{id:'wf19',cat:'Word Form',s:'The manager spoke _____ about the upcoming layoffs.',o:['A) honest','B) honesty','C) dishonest','D) honestly'],a:3,e:'"Honestly" (adv) modifies the verb "spoke".'},
+{id:'wf20',cat:'Word Form',s:'Staff will receive a _____ bonus at the end of the fiscal year.',o:['A) performance','B) perform','C) performed','D) performer'],a:0,e:'"Performance" (n) used as a modifier/adjective before "bonus".'},
+// ── VERB TENSE (10) ─────────────────────────────────────────────
+{id:'vt01',cat:'Verb Tense',s:'By the time the CEO arrived, the board _____ the decision already.',o:['A) made','B) has made','C) had made','D) was making'],a:2,e:'Past perfect (had + V3) is used for an action completed before another past event.'},
+{id:'vt02',cat:'Verb Tense',s:'The company _____ a new branch in Ho Chi Minh City next year.',o:['A) opens','B) opened','C) will open','D) open'],a:2,e:'Future simple (will + V) for a planned future action.'},
+{id:'vt03',cat:'Verb Tense',s:'She _____ for this company since she graduated from university.',o:['A) worked','B) works','C) has worked','D) had worked'],a:2,e:'Present perfect (has + V3) for an action starting in the past and continuing to now.'},
+{id:'vt04',cat:'Verb Tense',s:'The report was being _____ when the power went out.',o:['A) print','B) printed','C) printing','D) prints'],a:1,e:'Past continuous passive: "was being + V3".'},
+{id:'vt05',cat:'Verb Tense',s:'If we reduce costs now, we _____ higher profits next quarter.',o:['A) see','B) saw','C) will see','D) have seen'],a:2,e:'First conditional: If + present simple → will + V.'},
+{id:'vt06',cat:'Verb Tense',s:'The annual conference _____ every year in Singapore.',o:['A) held','B) is held','C) has held','D) was held'],a:1,e:'Present simple passive (is + V3) for a recurring event.'},
+{id:'vt07',cat:'Verb Tense',s:'We _____ the client for three hours before reaching an agreement.',o:['A) negotiate','B) were negotiating','C) had been negotiating','D) will negotiate'],a:2,e:'Past perfect continuous (had been + Ving) for an action in progress before a past point.'},
+{id:'vt08',cat:'Verb Tense',s:'The team _____ on the project when the manager called.',o:['A) worked','B) was working','C) has worked','D) works'],a:1,e:'Past continuous (was + Ving) for an action in progress at a specific past time.'},
+{id:'vt09',cat:'Verb Tense',s:'The new regulations _____ effect from the first of next month.',o:['A) takes','B) took','C) will take','D) take'],a:2,e:'Future simple (will + V) for a scheduled future event.'},
+{id:'vt10',cat:'Verb Tense',s:'By 2030, the company _____ its revenue by 50 percent.',o:['A) doubles','B) doubled','C) will have doubled','D) has doubled'],a:2,e:'Future perfect (will have + V3) for an action completed before a future time.'},
+// ── PASSIVE VOICE (10) ──────────────────────────────────────────
+{id:'pv01',cat:'Passive Voice',s:'The annual budget _____ by the board of directors last Monday.',o:['A) approved','B) was approved','C) has approved','D) is approving'],a:1,e:'Past simple passive (was + V3) for a completed past action.'},
+{id:'pv02',cat:'Passive Voice',s:'All applications _____ online before the deadline.',o:['A) must submit','B) must be submitted','C) must be submitting','D) must have submitted'],a:1,e:'Modal passive (must be + V3) for obligation in passive form.'},
+{id:'pv03',cat:'Passive Voice',s:'The new office building _____ currently by a local firm.',o:['A) designs','B) is being designed','C) has designed','D) designed'],a:1,e:'Present continuous passive (is being + V3) for an ongoing action.'},
+{id:'pv04',cat:'Passive Voice',s:'Employees _____ to report any safety concerns immediately.',o:['A) encourage','B) are encouraged','C) have encouraged','D) encouraging'],a:1,e:'Present simple passive (are + V3) for a general rule.'},
+{id:'pv05',cat:'Passive Voice',s:'The damaged goods _____ to the supplier for a full refund.',o:['A) returned','B) were returned','C) returning','D) had returning'],a:1,e:'Past simple passive (were + V3).'},
+{id:'pv06',cat:'Passive Voice',s:'New safety procedures _____ after last year\'s incident.',o:['A) introduce','B) have been introduced','C) introduced','D) are introducing'],a:1,e:'Present perfect passive (have been + V3) — the procedures were introduced and are still in effect.'},
+{id:'pv07',cat:'Passive Voice',s:'The merger _____ by the time we receive shareholder approval.',o:['A) will complete','B) will have been completed','C) completes','D) completed'],a:1,e:'Future perfect passive (will have been + V3) for a future completion.'},
+{id:'pv08',cat:'Passive Voice',s:'The documents need _____ before they can be sent out.',o:['A) sign','B) signed','C) to be signed','D) signing'],a:2,e:'"Need + to be + V3" is the correct passive infinitive structure.'},
+{id:'pv09',cat:'Passive Voice',s:'Our products _____ to over 30 countries worldwide.',o:['A) export','B) are exported','C) exporting','D) have exporting'],a:1,e:'Present simple passive (are + V3) for a general fact.'},
+{id:'pv10',cat:'Passive Voice',s:'The conference room _____ while repairs are underway.',o:['A) cannot use','B) cannot be used','C) not used','D) does not use'],a:1,e:'Modal passive (cannot be + V3) for prohibition.'},
+// ── PREPOSITIONS (10) ────────────────────────────────────────────
+{id:'pr01',cat:'Prepositions',s:'She is responsible _____ managing the entire project team.',o:['A) of','B) for','C) with','D) about'],a:1,e:'"Responsible for" is the correct collocation.'},
+{id:'pr02',cat:'Prepositions',s:'The meeting has been rescheduled _____ next Thursday.',o:['A) in','B) on','C) at','D) to'],a:3,e:'"Rescheduled to" — when changing a time, use "to".'},
+{id:'pr03',cat:'Prepositions',s:'Please refer _____ the attached file for further information.',o:['A) at','B) with','C) to','D) in'],a:2,e:'"Refer to" is the correct phrasal verb.'},
+{id:'pr04',cat:'Prepositions',s:'The store will be closed _____ renovation until further notice.',o:['A) for','B) due to','C) because','D) despite'],a:1,e:'"Due to" introduces a noun phrase as the reason.'},
+{id:'pr05',cat:'Prepositions',s:'We are looking forward _____ hearing from you soon.',o:['A) to','B) for','C) at','D) of'],a:0,e:'"Look forward to + Ving" — "to" here is a preposition, not part of an infinitive.'},
+{id:'pr06',cat:'Prepositions',s:'The CEO will be _____ vacation from June 10 to 20.',o:['A) in','B) at','C) on','D) for'],a:2,e:'"On vacation" is the correct collocation.'},
+{id:'pr07',cat:'Prepositions',s:'The invoice must be paid _____ 30 days of receipt.',o:['A) in','B) within','C) after','D) on'],a:1,e:'"Within 30 days" means before 30 days have passed.'},
+{id:'pr08',cat:'Prepositions',s:'The company has been operating _____ over 50 years.',o:['A) since','B) for','C) during','D) from'],a:1,e:'"For" is used with a duration of time.'},
+{id:'pr09',cat:'Prepositions',s:'All staff should comply _____ the new dress code policy.',o:['A) to','B) at','C) for','D) with'],a:3,e:'"Comply with" is the correct collocation.'},
+{id:'pr10',cat:'Prepositions',s:'The product was developed _____ response to customer demand.',o:['A) as','B) in','C) at','D) with'],a:1,e:'"In response to" is a fixed prepositional phrase.'},
+// ── CONJUNCTIONS (10) ────────────────────────────────────────────
+{id:'cj01',cat:'Conjunctions',s:'_____ the budget was limited, the team completed the project on time.',o:['A) However','B) Despite','C) Although','D) Even so'],a:2,e:'"Although" introduces a contrast clause with subject + verb.'},
+{id:'cj02',cat:'Conjunctions',s:'We will proceed with the launch _____ all requirements are met.',o:['A) only if','B) in spite of','C) so that','D) even though'],a:0,e:'"Only if" means "under the condition that".'},
+{id:'cj03',cat:'Conjunctions',s:'The company expanded rapidly, _____ it faced financial difficulties.',o:['A) and','B) yet','C) so','D) for'],a:1,e:'"Yet" shows unexpected contrast — it expanded but also faced difficulties.'},
+{id:'cj04',cat:'Conjunctions',s:'Please notify us _____ you will be absent from the training.',o:['A) so that','B) because','C) if','D) although'],a:2,e:'"If" introduces a conditional clause.'},
+{id:'cj05',cat:'Conjunctions',s:'The store will stay open late _____ customers can finish shopping.',o:['A) even though','B) so that','C) provided that','D) as long as'],a:1,e:'"So that" expresses purpose — the store stays open for that reason.'},
+{id:'cj06',cat:'Conjunctions',s:'_____ being new to the job, she performed exceptionally well.',o:['A) Although','B) Despite','C) However','D) Even though'],a:1,e:'"Despite" is followed by a noun/gerund phrase, not a clause.'},
+{id:'cj07',cat:'Conjunctions',s:'The project was approved _____ the initial budget concerns.',o:['A) because of','B) despite','C) although','D) so'],a:1,e:'"Despite" + noun phrase to show contrast.'},
+{id:'cj08',cat:'Conjunctions',s:'You must submit your application _____ you wish to be considered.',o:['A) otherwise','B) in case','C) if','D) as though'],a:2,e:'"If" introduces the condition required.'},
+{id:'cj09',cat:'Conjunctions',s:'She studied hard for the exam; _____, she passed with distinction.',o:['A) however','B) therefore','C) although','D) despite'],a:1,e:'"Therefore" shows a result/consequence. Used between two independent clauses with a semicolon.'},
+{id:'cj10',cat:'Conjunctions',s:'The factory operates 24 hours a day _____ demand remains high.',o:['A) so that','B) as long as','C) in order to','D) despite'],a:1,e:'"As long as" means "provided that" or "under the condition that".'},
+// ── PRONOUNS & DETERMINERS (5) ───────────────────────────────────
+{id:'pd01',cat:'Pronouns',s:'_____ employee is expected to complete the training by Friday.',o:['A) All','B) Every','C) Many','D) Several'],a:1,e:'"Every" takes a singular noun and singular verb.'},
+{id:'pd02',cat:'Pronouns',s:'The clients expressed _____ satisfaction with our services.',o:['A) they','B) their','C) them','D) themselves'],a:1,e:'"Their" is a possessive adjective modifying "satisfaction".'},
+{id:'pd03',cat:'Pronouns',s:'The two proposals are similar, but _____ has unique advantages.',o:['A) all','B) each','C) every','D) much'],a:1,e:'"Each" refers to two or more items individually.'},
+{id:'pd04',cat:'Pronouns',s:'Please send the report to Mr. Tran or _____ assistant.',o:['A) him','B) he','C) his','D) himself'],a:2,e:'"His" is the possessive adjective referring to Mr. Tran.'},
+{id:'pd05',cat:'Pronouns',s:'The management team completed the restructuring _____ without any outside help.',o:['A) them','B) their','C) themselves','D) they'],a:2,e:'"Themselves" is the reflexive pronoun for emphasis.'},
+// ── COMPARISON (5) ───────────────────────────────────────────────
+{id:'cp01',cat:'Comparison',s:'Our new model is far _____ than the previous version.',o:['A) reliable','B) more reliable','C) most reliable','D) reliably'],a:1,e:'Comparative form: "more + adjective + than" for adjectives with 3+ syllables.'},
+{id:'cp02',cat:'Comparison',s:'This quarter\'s results are _____ we had expected.',o:['A) better than','B) the best than','C) well than','D) more good than'],a:0,e:'"Better than" is the comparative of "good".'},
+{id:'cp03',cat:'Comparison',s:'The _____ you invest early, the more you will gain in the long run.',o:['A) many','B) more','C) most','D) much'],a:1,e:'"The more... the more..." is a fixed comparative structure.'},
+{id:'cp04',cat:'Comparison',s:'Our customer service is _____ in the industry.',o:['A) better','B) good','C) best','D) the best'],a:3,e:'"The best" (superlative) is used when comparing with all others in a group.'},
+{id:'cp05',cat:'Comparison',s:'The second branch is twice _____ the first one.',o:['A) as large as','B) larger than','C) the largest','D) large than'],a:0,e:'"Twice as large as" is the correct structure for multiplier comparisons.'},
+// ── MODAL VERBS (10) ─────────────────────────────────────────────
+{id:'mv01',cat:'Modal Verbs',s:'Employees _____ carry their ID badges at all times.',o:['A) can','B) must','C) might','D) would'],a:1,e:'"Must" expresses strong obligation or requirement.'},
+{id:'mv02',cat:'Modal Verbs',s:'You _____ bring your passport to the interview tomorrow.',o:['A) might','B) could','C) should','D) shall'],a:2,e:'"Should" expresses advice or recommendation.'},
+{id:'mv03',cat:'Modal Verbs',s:'The shipment _____ arrive by Friday at the latest.',o:['A) ought to','B) will','C) shall','D) can'],a:0,e:'"Ought to" expresses expectation or mild obligation, similar to "should".'},
+{id:'mv04',cat:'Modal Verbs',s:'We _____ call you back as soon as a decision has been made.',o:['A) must','B) shall','C) will','D) ought'],a:2,e:'"Will" expresses a promise or future intention.'},
+{id:'mv05',cat:'Modal Verbs',s:'_____ you please send me the updated contract by email?',o:['A) Would','B) Must','C) Shall','D) Should'],a:0,e:'"Would you please..." is a polite request form.'},
+{id:'mv06',cat:'Modal Verbs',s:'The candidate _____ have submitted her application last week.',o:['A) must','B) should','C) would','D) could'],a:1,e:'"Should have + V3" expresses criticism of a past action that didn\'t happen.'},
+{id:'mv07',cat:'Modal Verbs',s:'You _____ leave early today as all your tasks are done.',o:['A) must','B) might','C) may','D) shall'],a:2,e:'"May" gives permission in a formal context.'},
+{id:'mv08',cat:'Modal Verbs',s:'The merger _____ be announced before the end of this month.',o:['A) should','B) might','C) will','D) must'],a:1,e:'"Might" expresses possibility — it\'s uncertain.'},
+{id:'mv09',cat:'Modal Verbs',s:'Staff _____ not use company equipment for personal purposes.',o:['A) should','B) may','C) would','D) can'],a:0,e:'"Should not" expresses a rule or policy employees are expected to follow.'},
+{id:'mv10',cat:'Modal Verbs',s:'The new regulation _____ have a significant impact on our business.',o:['A) ought','B) could','C) should','D) shall'],a:1,e:'"Could" expresses possibility or potential.'},
+];
+
+
+// ══════════════════════════════════════════════════════
+//  GRAMMAR DRILL
+// ══════════════════════════════════════════════════════
+let grammarDeck=[], grammarIdx=0, grammarCorrect=0, grammarAnswered=false, grammarCat='all';
+
+const GRAMMAR_CATS=[...new Set(GRAMMAR_Q.map(q=>q.cat))];
+
+function initGrammarFilters(){
+  const wrap=document.getElementById('grammar-filter');
+  if(!wrap||wrap.children.length>1) return;
+  GRAMMAR_CATS.forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='topic-chip';b.textContent=cat;
+    b.onclick=()=>setGrammarCat(cat,b);
+    wrap.appendChild(b);
+  });
+}
+
+function setGrammarCat(cat,btn){
+  grammarCat=cat;
+  document.querySelectorAll('#grammar-filter .topic-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildGrammarDeck();renderGrammarCard();
+}
+window.setGrammarCat=setGrammarCat;
+
+function buildGrammarDeck(){
+  let pool = grammarCat==='all' ? [...GRAMMAR_Q] : GRAMMAR_Q.filter(q=>q.cat===grammarCat);
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+  grammarDeck=pool; grammarIdx=0; grammarCorrect=0;
+}
+
+function renderGrammarCard(){
+  if(grammarIdx>=grammarDeck.length){
+    // cycle back
+    buildGrammarDeck(); return;
+  }
+  const q=grammarDeck[grammarIdx]; grammarAnswered=false;
+  document.getElementById('grammar-next-btn').textContent='Bỏ qua →';
+  document.getElementById('grammar-cat-badge').textContent=q.cat.toUpperCase();
+  document.getElementById('grammar-sentence').textContent=q.s;
+  document.getElementById('grammar-explanation').style.display='none';
+  document.getElementById('grammar-card').style.borderColor='';
+
+  const opts=document.getElementById('grammar-options');
+  opts.innerHTML=q.o.map((opt,i)=>`
+    <button class="opt-btn" onclick="selectGrammarOpt(${i})">${opt}</button>
+  `).join('');
+
+  const pct=grammarDeck.length?Math.round((grammarIdx/grammarDeck.length)*100):0;
+  document.getElementById('grammar-progress').style.width=pct+'%';
+  document.getElementById('grammar-prog-text').textContent=`Câu ${grammarIdx+1} / ${grammarDeck.length}`;
+  document.getElementById('grammar-score-display').textContent=grammarCorrect+' đúng';
+}
+
+function selectGrammarOpt(i){
+  if(grammarAnswered) return;
+  grammarAnswered=true;
+  const q=grammarDeck[grammarIdx];
+  const btns=document.querySelectorAll('#grammar-options .opt-btn');
+  btns.forEach(b=>b.disabled=true);
+  const correct=(i===q.a);
+  btns[i].classList.add(correct?'selected-correct':'selected-wrong');
+  if(!correct) btns[q.a].classList.add('show-correct');
+  document.getElementById('grammar-card').style.borderColor=correct?'var(--green)':'var(--red)';
+  const expEl=document.getElementById('grammar-explanation');
+  expEl.textContent='💡 '+q.e;
+  expEl.style.display='block';
+  if(correct){grammarCorrect++;document.getElementById('grammar-score-display').textContent=grammarCorrect+' đúng';}
+  document.getElementById('grammar-next-btn').textContent='Tiếp tục →';
+}
+window.selectGrammarOpt=selectGrammarOpt;
+
+function grammarNext(){
+  grammarIdx++;renderGrammarCard();
+}
+function grammarPrev(){
+  if(grammarIdx>0){grammarIdx--;renderGrammarCard();}
+}
+window.grammarNext=grammarNext;
+window.grammarPrev=grammarPrev;
+
+// ══════════════════════════════════════════════════════
+//  MINI TEST
+// ══════════════════════════════════════════════════════
+let mtDeck=[], mtIdx=0, mtScore=0, mtTimer=null, mtTimeLeft=1200;
+
+function startMiniTest(){
+  // Pick 20 random grammar questions
+  const shuffled=[...GRAMMAR_Q].sort(()=>Math.random()-.5);
+  mtDeck=shuffled.slice(0,20);
+  mtIdx=0; mtScore=0; mtTimeLeft=1200;
+  document.getElementById('minitest-start').style.display='none';
+  document.getElementById('minitest-result').style.display='none';
+  document.getElementById('minitest-quiz').style.display='block';
+  renderMTCard();
+  startMTTimer();
+}
+window.startMiniTest=startMiniTest;
+
+function startMTTimer(){
+  clearInterval(mtTimer);
+  mtTimer=setInterval(()=>{
+    mtTimeLeft--;
+    const m=Math.floor(mtTimeLeft/60), s=mtTimeLeft%60;
+    const el=document.getElementById('mt-timer');
+    el.textContent=`${m}:${String(s).padStart(2,'0')}`;
+    el.style.color=mtTimeLeft<=60?'var(--red)':mtTimeLeft<=180?'var(--yellow)':'var(--green)';
+    if(mtTimeLeft<=0){clearInterval(mtTimer);showMTResult();}
+  },1000);
+}
+
+function renderMTCard(){
+  if(mtIdx>=mtDeck.length){clearInterval(mtTimer);showMTResult();return;}
+  const q=mtDeck[mtIdx];
+  const pct=Math.round((mtIdx/mtDeck.length)*100);
+  document.getElementById('mt-progress').textContent=`Câu ${mtIdx+1} / ${mtDeck.length}`;
+  document.getElementById('mt-progress-bar').style.width=pct+'%';
+  document.getElementById('mt-cat').textContent=q.cat.toUpperCase();
+  document.getElementById('mt-sentence').textContent=q.s;
+  const opts=document.getElementById('mt-options');
+  opts.innerHTML=q.o.map((opt,i)=>`
+    <button class="opt-btn" onclick="selectMTOpt(${i})">${opt}</button>
+  `).join('');
+}
+
+function selectMTOpt(i){
+  const q=mtDeck[mtIdx];
+  const btns=document.querySelectorAll('#mt-options .opt-btn');
+  btns.forEach(b=>b.disabled=true);
+  const correct=(i===q.a);
+  btns[i].classList.add(correct?'selected-correct':'selected-wrong');
+  if(!correct) btns[q.a].classList.add('show-correct');
+  if(correct) mtScore++;
+  setTimeout(()=>{mtIdx++;renderMTCard();},800);
+}
+window.selectMTOpt=selectMTOpt;
+
+function showMTResult(){
+  clearInterval(mtTimer);
+  document.getElementById('minitest-quiz').style.display='none';
+  document.getElementById('minitest-result').style.display='block';
+  const pct=Math.round((mtScore/20)*100);
+  // Rough TOEIC Part 5 score estimate (out of ~100 pts for Part 5)
+  const toeicEst=Math.round((mtScore/20)*100);
+  document.getElementById('mt-score-big').textContent=`${mtScore}/20`;
+  document.getElementById('mt-accuracy').textContent=`Độ chính xác: ${pct}%`;
+  document.getElementById('mt-toeic-est').textContent=`Ước tính TOEIC Part 5: ~${toeicEst} điểm`;
+  const emoji=pct>=90?'🏆':pct>=70?'🎉':pct>=50?'💪':'📚';
+  document.getElementById('mt-result-emoji').textContent=emoji;
+}
+
+function resetMiniTest(){
+  clearInterval(mtTimer);
+  document.getElementById('minitest-quiz').style.display='none';
+  document.getElementById('minitest-result').style.display='none';
+  document.getElementById('minitest-start').style.display='block';
+}
+window.resetMiniTest=resetMiniTest;
+
+// ══════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════
+async function loadDashboard(){
+  const loadEl=document.getElementById('dashboard-loading');
+  const contEl=document.getElementById('dashboard-content');
+  loadEl.style.display='block'; contEl.style.display='none';
+  try{
+    if(!currentUser){loadEl.textContent='Vui lòng đăng nhập.';return;}
+
+    // Get all-time stats
+    const allSnap=await getDoc(doc(db,'ranking_all',currentUser.username));
+    const allData=allSnap.exists()?allSnap.data():{correct:0,wrong:0,pct:0};
+
+    // Get last 14 sessions
+    const sessSnap=await getDocs(
+      query(collection(db,'sessions'),where('username','==',currentUser.username),orderBy('createdAt','desc'),limit(14))
+    );
+    const sessions=[];
+    sessSnap.forEach(d=>sessions.push(d.data()));
+    sessions.reverse();
+
+    // Build 7-day chart data
+    const dayMap={};
+    for(let i=6;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i);
+      const key=d.toISOString().slice(0,10);
+      dayMap[key]={correct:0,label:d.toLocaleDateString('vi-VN',{weekday:'short'})};
+    }
+    sessions.forEach(s=>{
+      if(s.createdAt){
+        const key=new Date(s.createdAt.toDate()).toISOString().slice(0,10);
+        if(dayMap[key]) dayMap[key].correct+=s.correct||0;
+      }
+    });
+
+    // User streak & badges
+    const userSnap=await getDoc(doc(db,'users',currentUser.username));
+    const userData=userSnap.data()||{};
+
+    // Render stats row
+    const streak=userData.streak||0;
+    const badges=(userData.badges||[]).length;
+    document.getElementById('dash-stats-row').innerHTML=`
+      <div class="sum-stat-box"><div class="val" style="color:var(--green)">${allData.correct||0}</div><div class="lbl">Tổng đúng</div></div>
+      <div class="sum-stat-box"><div class="val" style="color:var(--accent)">${allData.pct||0}%</div><div class="lbl">Tỉ lệ</div></div>
+      <div class="sum-stat-box"><div class="val" style="color:var(--yellow)">🔥${streak}</div><div class="lbl">Streak</div></div>
+      <div class="sum-stat-box"><div class="val" style="color:var(--gold)">🏅${badges}</div><div class="lbl">Huy hiệu</div></div>
+    `;
+
+    // Render 7-day chart
+    const days=Object.values(dayMap);
+    const maxVal=Math.max(...days.map(d=>d.correct),1);
+    document.getElementById('dash-chart').innerHTML=days.map(d=>`
+      <div class="dash-bar-col">
+        <div class="dash-bar-val">${d.correct||''}</div>
+        <div class="dash-bar" style="height:${Math.max((d.correct/maxVal)*72,d.correct>0?4:1)}px;opacity:${d.correct>0?1:.25}"></div>
+        <div class="dash-bar-label">${d.label}</div>
+      </div>`).join('');
+
+    // Topic accuracy from ranking data — use session history if available, else show placeholder
+    const topicMap={};
+    sessions.forEach(s=>{/* sessions don't have topic breakdown — use current history */});
+    // Use current session history for topic accuracy
+    const topicAcc={};
+    history.forEach(h=>{
+      if(!topicAcc[h.topic]) topicAcc[h.topic]={c:0,t:0};
+      topicAcc[h.topic].t++;
+      if(h.ok) topicAcc[h.topic].c++;
+    });
+    const topicEntries=Object.entries(topicAcc).sort((a,b)=>b[1].t-a[1].t).slice(0,8);
+    if(topicEntries.length>0){
+      document.getElementById('dash-topics').innerHTML=topicEntries.map(([t,v])=>{
+        const pct=Math.round((v.c/v.t)*100);
+        return `<div class="topic-acc-row">
+          <div class="topic-acc-label"><span>${t}</span><span style="color:${pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'}">${pct}% (${v.c}/${v.t})</span></div>
+          <div class="topic-acc-bar"><div class="topic-acc-fill" style="width:${pct}%;background:${pct>=80?'var(--green)':pct>=50?'var(--yellow)':'var(--red)'}"></div></div>
+        </div>`;
+      }).join('');
+    } else {
+      document.getElementById('dash-topics').innerHTML='<div style="color:var(--muted);font-size:13px;">Chưa có dữ liệu. Hãy luyện tập để xem phân tích theo chủ đề!</div>';
+    }
+
+    loadEl.style.display='none'; contEl.style.display='block';
+  } catch(e){
+    loadEl.textContent='Lỗi tải dashboard: '+e.message;
+    console.error(e);
+  }
+}
 
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
