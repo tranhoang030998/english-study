@@ -578,7 +578,7 @@ const ALL_WORDS=[
   {topic:'Legal & Government',en:'judge',pos:'noun',en_alt:[],vn:'thẩm phán',vn_alt:['thẩm phán','quan tòa'],ex:'The judge announced the decision.'},
   {topic:'Legal & Government',en:'law',pos:'noun',en_alt:['legislation','act','regulation'],vn:'luật',vn_alt:['luật','luật pháp','bộ luật'],ex:'Everyone must obey the law.'},
   {topic:'Legal & Government',en:'license',pos:'noun',en_alt:['permit','authorization','certificate'],vn:'giấy phép',vn_alt:['giấy phép','bằng lái','giấy chứng nhận'],ex:'You need a license to drive a car.'},
-  {topic:'Legal & Government',en:'regulation',pos:'noun',en_alt:['rule','law','requirement'],vn:'quy định',vn_alt:['quy định','điều lệ','luật lệ'],ex:'The company follows government regulations.'},
+  {topic:'Legal & Government',en:'regulation',pos:'noun',en_alt:['rule','law','requirement'],vn:'quy định',vn_alt:['quy định','điều lệ','luật lệ','nội quy','quy tắc','quy chế'],ex:'The company follows government regulations.'},
   {topic:'Legal & Government',en:'signature',pos:'noun',en_alt:['sign','endorsement'],vn:'chữ ký',vn_alt:['chữ ký','chữ ký tên'],ex:'Please put your signature here.'},
   {topic:'Legal & Government',en:'visa',pos:'noun',en_alt:[],vn:'thị thực',vn_alt:[],ex:'She applied for a student visa.'},
   {topic:'Technology & IT',en:'application',pos:'noun',en_alt:['app','program','software'],vn:'ứng dụng',vn_alt:['ứng dụng','phần mềm ứng dụng','app'],ex:'I downloaded a new mobile application.'},
@@ -1026,7 +1026,7 @@ const ALL_WORDS=[
 <script type="module">
 // ── Firebase ────────────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, orderBy, limit, increment, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB3nNmDjR-DzDNAowP86oF2IKhtuUvpc7U",
@@ -1400,36 +1400,43 @@ async function checkAndAwardBadges(extraData={}){
     const userSnap = await getDoc(userRef);
     const userData = userSnap.data() || {};
 
-    // Gather all-time stats
-    const allRef  = doc(db,'ranking_all',currentUser.username);
-    const allSnap = await getDoc(allRef);
-    const allData = allSnap.exists() ? allSnap.data() : {};
+    // Use in-session stats + cumulative from ranking_all
+    // totalCorrect: use correctCount (current session) + what's already in ranking_all
+    let allTimeCorrect = correctCount; // minimum: current session
+    try{
+      const allSnap = await getDoc(doc(db,'ranking_all',currentUser.username));
+      if(allSnap.exists()) allTimeCorrect = allSnap.data().correct || correctCount;
+    } catch(e){}
+
+    const newBestCombo = Math.max(userData.bestCombo||0, extraData.bestCombo||0, bestComboSession);
+    const isPerfect    = userData.hadPerfectSession || extraData.hadPerfectSession || false;
 
     const checkData = {
-      totalCorrect:      allData.correct || 0,
-      streak:            userData.streak  || 0,
-      bestCombo:         Math.max(userData.bestCombo||0, extraData.bestCombo||0),
-      hadPerfectSession: userData.hadPerfectSession || extraData.hadPerfectSession || false,
+      totalCorrect:      allTimeCorrect,
+      streak:            userData.streak || 0,
+      bestCombo:         newBestCombo,
+      hadPerfectSession: isPerfect,
     };
 
-    const earnedSoFar = userData.badges || [];
+    const earnedSoFar = Array.isArray(userData.badges) ? userData.badges : [];
     const newBadges   = [];
 
     for(const badge of BADGES){
-      if(earnedSoFar.includes(badge.id)) continue; // already earned
+      if(earnedSoFar.includes(badge.id)) continue;
       if(badge.check(checkData)){
         newBadges.push(badge.id);
         showBadgeToast(badge);
       }
     }
 
-    if(newBadges.length > 0 || extraData.bestCombo > (userData.bestCombo||0) || extraData.hadPerfectSession){
-      await updateDoc(userRef, {
-        badges: [...earnedSoFar, ...newBadges],
-        bestCombo: checkData.bestCombo,
-        hadPerfectSession: checkData.hadPerfectSession,
-      });
-    }
+    // Always update bestCombo and hadPerfectSession; add new badges with arrayUnion
+    const updatePayload = {
+      bestCombo: newBestCombo,
+      hadPerfectSession: isPerfect,
+    };
+    if(newBadges.length > 0) updatePayload.badges = arrayUnion(...newBadges);
+    
+    await updateDoc(userRef, updatePayload);
   } catch(e){ console.error('Badge check error:', e); }
 }
 
@@ -1493,6 +1500,10 @@ function updateProgress(){
 function updateStats(){
   document.getElementById('stat-correct')&&(document.getElementById('stat-correct').textContent=`${correctCount} đúng`);
   document.getElementById('stat-wrong')&&(document.getElementById('stat-wrong').textContent=`${wrongCount} sai`);
+  // Realtime badge check for key milestones
+  if(currentUser && (correctCount===1 || bestComboSession===5 || bestComboSession===10 || bestComboSession===20)){
+    checkAndAwardBadges({bestCombo:bestComboSession});
+  }
   // Auto-save every 10 correct answers (delta only)
   if(currentUser && correctCount > 0 && correctCount % 10 === 0){
     const deltaC = correctCount - savedCorrect;
