@@ -1286,16 +1286,20 @@ function switchTop(section, btn){
     const activeTab=activeSubBtn?.getAttribute('data-tab')||'practice';
     showFlashcardTab(activeTab);
   } else if(section==='grammar'){
-    document.getElementById('grammar-panel').style.display='block';
+    const gp=document.getElementById('grammar-panel');
+    gp.style.display='block';gp.style.marginLeft='auto';gp.style.marginRight='auto';
     initGrammarFilters();
     if(!grammarDeck.length){buildGrammarDeck();renderGrammarCard();}
   } else if(section==='minitest'){
-    document.getElementById('minitest-panel').style.display='block';
+    const mp=document.getElementById('minitest-panel');
+    mp.style.display='block';mp.style.marginLeft='auto';mp.style.marginRight='auto';
   } else if(section==='dashboard'){
-    document.getElementById('dashboard-panel').style.display='block';
+    const dp=document.getElementById('dashboard-panel');
+    dp.style.display='block';dp.style.marginLeft='auto';dp.style.marginRight='auto';
     loadDashboard();
   } else if(section==='admin'){
-    document.getElementById('admin-panel').style.display='block';
+    const ap=document.getElementById('admin-panel');
+    ap.style.display='block';ap.style.marginLeft='auto';ap.style.marginRight='auto';
     loadAdminUsers();
   }
 }
@@ -1304,8 +1308,18 @@ window.switchTop=switchTop;
 function showFlashcardTab(tab){
   document.getElementById('practice-panel').style.display=tab==='practice'?'':'none';
   if(tab!=='practice') document.getElementById('score-panel').style.display='none';
-  document.getElementById('sum-panel').style.display=tab==='summary'?'block':'none';
-  document.getElementById('rank-panel').style.display=tab==='ranking'?'block':'none';
+  // Set explicit centering via margin auto when showing panels
+  const sumEl=document.getElementById('sum-panel');
+  const rankEl=document.getElementById('rank-panel');
+  sumEl.style.display=tab==='summary'?'block':'none';
+  rankEl.style.display=tab==='ranking'?'block':'none';
+  if(tab==='summary'||tab==='ranking'){
+    // Force center alignment
+    [sumEl,rankEl].forEach(el=>{
+      el.style.marginLeft='auto';
+      el.style.marginRight='auto';
+    });
+  }
   if(tab==='summary'){renderSummary();renderBadges();}
   if(tab==='ranking') loadRanking();
 }
