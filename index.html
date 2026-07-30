@@ -1834,10 +1834,11 @@ async function loadAdminUsers(){
     if(users.length===0){listEl.innerHTML='<div style="color:var(--muted);font-size:13px">Chưa có học viên nào.</div>';return;}
     listEl.innerHTML=users.map(u=>`
       <div class="admin-user-row">
-        <div>
+        <div style="flex:1">
           <div class="admin-user-name">${u.displayName}</div>
-          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0}</div>
+          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0} ngày</div>
         </div>
+        <button class="admin-user-del" style="color:var(--yellow);border-color:var(--yellow)" onclick="resetStreak('${u.id}','${u.displayName}')">Reset streak</button>
         <button class="admin-user-del" onclick="deleteUser('${u.id}','${u.displayName}')">Xóa</button>
       </div>`).join('');
   }catch(e){listEl.innerHTML='<div style="color:var(--red);font-size:13px">Lỗi tải danh sách.</div>';}
@@ -1853,6 +1854,23 @@ async function deleteUser(username, displayName){
   }catch(e){alert('Lỗi xóa: '+e.message);}
 }
 window.deleteUser=deleteUser;
+
+async function resetStreak(username, displayName){
+  showConfirm('Reset Streak', `Xóa streak của "${displayName}"? Streak sẽ về 0.`, async ()=>{
+    try{
+      await updateDoc(doc(db,'users',username),{streak:0, lastStudyDay:''});
+      const msgEl=document.getElementById('admin-msg');
+      msgEl.className='admin-msg ok';
+      msgEl.textContent=`✓ Đã reset streak của ${displayName}.`;
+      loadAdminUsers();
+    } catch(e){
+      const msgEl=document.getElementById('admin-msg');
+      msgEl.className='admin-msg err';
+      msgEl.textContent='Lỗi: '+e.message;
+    }
+  });
+}
+window.resetStreak=resetStreak;
 
 async function doResetRanking(period){
   const msgEl = document.getElementById('rank-reset-msg');
