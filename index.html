@@ -190,6 +190,14 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* SPEAKER BUTTON */
+.btn-speak{background:transparent;border:none;cursor:pointer;padding:4px 6px;border-radius:8px;color:var(--muted);font-size:18px;line-height:1;transition:all .2s;touch-action:manipulation;vertical-align:middle;}
+.btn-speak:hover{color:var(--accent);background:var(--surface2);}
+.btn-speak:active{transform:scale(.9);}
+.btn-speak.speaking{color:var(--accent);animation:pulse-speak .6s ease-in-out infinite alternate;}
+@keyframes pulse-speak{from{opacity:.5;}to{opacity:1;}}
+.card-word-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+
 /* CUSTOM CONFIRM MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;padding:20px;}
 .modal-overlay.show{display:flex;}
@@ -274,7 +282,10 @@ header{width:100%;max-width:680px;margin:0 auto;padding:16px 16px 0;display:flex
       <span class="result-icon fail">❌</span>
       <div class="card-counter" id="card-counter">1 / 10</div>
       <div class="card-topic" id="card-topic"></div>
-      <div class="card-word" id="card-word"></div>
+      <div class="card-word-row">
+        <div class="card-word" id="card-word"></div>
+        <button class="btn-speak" id="btn-speak" onclick="speakWord()" style="display:none;" title="Nghe phát âm">🔊</button>
+      </div>
       <div id="card-pos" style="display:none;font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:2px 10px;margin-bottom:8px;letter-spacing:0.04em;"></div>
       <div class="card-example" id="card-example"></div>
     </div>
@@ -1216,16 +1227,22 @@ function renderCard(){
   document.getElementById('card-counter').textContent=`${idx+1} / ${deck.length}`;
   const wordEl=document.getElementById('card-word');
   const inp=document.getElementById('answer-input');
-  const posEl = document.getElementById('card-pos');
+  const posEl    = document.getElementById('card-pos');
+  const speakBtn = document.getElementById('btn-speak');
   if(card.cardMode==='en-vn'){
     wordEl.textContent=card.en;wordEl.className='card-word';
     inp.placeholder='Nhập nghĩa tiếng Việt...';
     posEl.textContent=card.pos||'';posEl.style.display=card.pos?'inline-block':'none';
+    speakBtn.style.display='inline-flex';
   }else{
     wordEl.textContent=card.vn;wordEl.className='card-word vn';
     inp.placeholder='Nhập từ tiếng Anh...';
     posEl.style.display='none';
+    speakBtn.style.display='none';
   }
+  // Stop any ongoing speech when new card loads
+  window.speechSynthesis && window.speechSynthesis.cancel();
+  speakBtn.classList.remove('speaking');
   const exEl=document.getElementById('card-example');
   exEl.textContent=card.ex;
   exEl.style.visibility=card.cardMode==='vn-en'?'hidden':'visible';
@@ -1237,6 +1254,38 @@ function renderCard(){
   setTimeout(()=>inp.focus(),80);
 }
 
+
+// Text-to-speech
+function speakWord(){
+  if(!window.speechSynthesis) return;
+  const card = deck[idx];
+  if(!card) return;
+  const word = card.cardMode==='en-vn' ? card.en : card.en; // always read EN
+  const btn  = document.getElementById('btn-speak');
+
+  window.speechSynthesis.cancel();
+
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang  = 'en-US';
+  utter.rate  = 0.85;  // slightly slower for clarity
+  utter.pitch = 1;
+
+  utter.onstart = ()=> btn.classList.add('speaking');
+  utter.onend   = ()=> btn.classList.remove('speaking');
+  utter.onerror = ()=> btn.classList.remove('speaking');
+
+  window.speechSynthesis.speak(utter);
+}
+window.speakWord = speakWord;
+
+// Also reveal English pronunciation in VN→EN mode after answering
+function speakAfterAnswer(word){
+  if(!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang  = 'en-US';
+  utter.rate  = 0.85;
+  window.speechSynthesis.speak(utter);
+}
 function checkAnswer(){
   if(answered){nextCard();return;}
   const inp=document.getElementById('answer-input');
@@ -1251,6 +1300,8 @@ function checkAnswer(){
   if(ok){
     fc.className='flashcard correct';inp.className='correct';
     fb.textContent='✓ Chính xác!';fb.className='feedback correct';correctCount++;
+    // In VN→EN mode, auto-read the English word after correct answer
+    if(card.cardMode==='vn-en') speakAfterAnswer(card.en);
   }else{
     const allAns=card.cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
     fc.className='flashcard wrong';inp.className='wrong';
