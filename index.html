@@ -351,6 +351,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   <div class="progress-wrap">
     <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
     <div class="progress-label"><span id="prog-text">Thẻ 0 / 0</span><span id="prog-pct">0%</span></div>
+  <div id="combo-display"></div>
   </div>
   <div class="card-area">
     <div class="flashcard" id="flashcard">
@@ -1527,17 +1528,18 @@ function updateCombo(correct){
     if(currentCombo > bestComboSession) bestComboSession = currentCombo;
     if(currentCombo >= 3){
       const el = document.getElementById('combo-display');
-      el.style.display = 'block';
-      el.textContent = '🔥 Combo x' + currentCombo + '!';
-      el.classList.remove('combo-pop');
-      void el.offsetWidth; // reflow to restart animation
-      el.classList.add('combo-pop');
+      if(el){
+        el.style.display = 'block';
+        el.textContent = '🔥 Combo x' + currentCombo + '!';
+        el.classList.remove('combo-pop');
+        void el.offsetWidth;
+        el.classList.add('combo-pop');
+      }
     }
   } else {
     currentCombo = 0;
     const el = document.getElementById('combo-display');
-    el.style.display = 'none';
-    el.textContent = '';
+    if(el){ el.style.display = 'none'; el.textContent = ''; }
   }
 }
 
@@ -1655,15 +1657,7 @@ function checkAnswer(){
     updateCombo(false);
   }
   updateStats();
-  const skipBtn=document.getElementById('btn-skip');
-  skipBtn.textContent='Tiếp tục →';
-  if(ok){
-    let t=1200, ti=setInterval(()=>{
-      t-=100;
-      skipBtn.textContent=`Tiếp tục (${Math.ceil(t/1000)}s) →`;
-      if(t<=0){clearInterval(ti);skipBtn.textContent='Tiếp tục →';nextCard();}
-    },100);
-  }
+  document.getElementById('btn-skip').textContent='Tiếp tục →';
 }
 window.checkAnswer=checkAnswer;
 
