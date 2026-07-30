@@ -1839,6 +1839,7 @@ async function loadAdminUsers(){
           <div class="admin-user-name">${u.displayName}</div>
           <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0} ngày</div>
         </div>
+        <button class="admin-user-del" style="color:var(--yellow);border-color:var(--yellow)" onclick="resetStreak('${u.id}','${u.displayName}')">Reset streak</button>
         <button class="admin-user-del" style="color:var(--accent);border-color:var(--accent)" onclick="resetUserRanking('${u.id}','${u.displayName}')">Xóa BXH</button>
         <button class="admin-user-del" onclick="deleteUser('${u.id}','${u.displayName}')">Xóa tài khoản</button>
       </div>`).join('');
@@ -1846,13 +1847,14 @@ async function loadAdminUsers(){
 }
 
 async function deleteUser(username, displayName){
-  if(!confirm(`Xóa tài khoản "${displayName}"?`))return;
+  showConfirm('Xóa tài khoản', `Xóa tài khoản của "${displayName}"? Không thể hoàn tác.`, async ()=>{
   try{
     await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(async({deleteDoc})=>{
       await deleteDoc(doc(db,'users',username));
     });
     loadAdminUsers();
   }catch(e){alert('Lỗi xóa: '+e.message);}
+  }); // end showConfirm
 }
 window.deleteUser=deleteUser;
 
@@ -1874,6 +1876,23 @@ async function deleteUserRanking(username, displayName, period){
   });
 }
 window.deleteUserRanking=deleteUserRanking;
+
+async function resetStreak(username, displayName){
+  showConfirm('Reset Streak', `Xóa streak của "${displayName}"? Streak sẽ về 0.`, async ()=>{
+    try{
+      await updateDoc(doc(db,'users',username),{streak:0, lastStudyDay:''});
+      const msgEl=document.getElementById('admin-msg');
+      msgEl.className='admin-msg ok';
+      msgEl.textContent=`✓ Đã reset streak của ${displayName}.`;
+      loadAdminUsers();
+    }catch(e){
+      const msgEl=document.getElementById('admin-msg');
+      msgEl.className='admin-msg err';
+      msgEl.textContent='Lỗi: '+e.message;
+    }
+  });
+}
+window.resetStreak=resetStreak;
 
 async function resetUserRanking(username, displayName){
   showConfirm('Xóa BXH', `Xóa toàn bộ điểm xếp hạng của "${displayName}"? Không thể hoàn tác.`, async ()=>{
