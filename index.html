@@ -549,7 +549,9 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
     <!-- Weekly chart -->
     <div style="margin-bottom:16px;">
       <div class="badges-title">7 ngày gần nhất</div>
-      <div id="dash-chart" style="display:flex;align-items:flex-end;gap:6px;height:100px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 12px 0;overflow:visible;position:relative;"></div>
+      <div style="padding-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div id="dash-chart" style="display:flex;align-items:flex-end;gap:6px;height:80px;padding:0 12px 0;"></div>
+    </div>
     </div>
     <!-- Topic accuracy -->
     <div>
@@ -2545,8 +2547,8 @@ async function loadDashboard(){
     const maxVal=Math.max(...days.map(d=>d.correct),1);
     document.getElementById('dash-chart').innerHTML=days.map(d=>`
       <div class="dash-bar-col">
-        <div class="dash-bar-val">${d.correct||''}</div>
-        <div class="dash-bar" style="height:${Math.max((d.correct/maxVal)*72,d.correct>0?4:1)}px;opacity:${d.correct>0?1:.25}"></div>
+        <div class="dash-bar-val" style="min-height:16px;">${d.correct||''}</div>
+        <div class="dash-bar" style="height:${Math.max((d.correct/maxVal)*60,d.correct>0?3:1)}px;opacity:${d.correct>0?1:.25}"></div>
         <div class="dash-bar-label">${d.label}</div>
       </div>`).join('');
 
@@ -2617,17 +2619,17 @@ async function loadClassDashboard(){
           +'</div>'
         +'</div>'
         +'<div style="text-align:right;">'
-          +'<div style="font-size:13px;font-weight:700;color:var(--green);">'+(s.correct||0)+' dung</div>'
+          +'<div style="font-size:13px;font-weight:700;color:var(--green);">'+(s.correct||0)+' đúng</div>'
           +'<div style="font-size:11px;color:var(--muted);">'+pct+'% · '+streak+' streak</div>'
         +'</div>'
         +'</div>';
     }).join('');
 
-    sec.innerHTML = '<div class="badges-title" style="margin-top:20px;">Tong hop lop hoc</div>'
+    sec.innerHTML = '<div class="badges-title" style="margin-top:20px;">Tổng hợp lớp học</div>'
       +'<div class="sum-stats" style="margin-bottom:12px;">'
         +'<div class="sum-stat-box"><div class="val" style="color:var(--green)">'+totalCorrect+'</div><div class="lbl">Tong dung</div></div>'
-        +'<div class="sum-stat-box"><div class="val" style="color:var(--accent)">'+classAvg+'%</div><div class="lbl">TB lop</div></div>'
-        +'<div class="sum-stat-box"><div class="val" style="color:var(--gold)">'+students.length+'</div><div class="lbl">Hoc vien</div></div>'
+        +'<div class="sum-stat-box"><div class="val" style="color:var(--accent)">'+classAvg+'%</div><div class="lbl">TB lớp</div></div>'
+        +'<div class="sum-stat-box"><div class="val" style="color:var(--gold)">'+students.length+'</div><div class="lbl">Học viên</div></div>'
       +'</div>'
       +rows;
   }catch(e){
