@@ -2096,17 +2096,23 @@ async function loadAdminUsers(){
     const users=[];
     snap.forEach(d=>{ if(!d.data().isAdmin) users.push({id:d.id,...d.data()}); });
     if(users.length===0){listEl.innerHTML='<div style="color:var(--muted);font-size:13px">Chưa có học viên nào.</div>';return;}
-    listEl.innerHTML=users.map(u=>`
-      <div class="admin-user-row">
+    listEl.innerHTML=users.map(u=>{
+      const ls=u.lastSeen?.toMillis?.();
+      let onlineStr='Chưa online';
+      if(ls){
+        const d=Date.now()-ls, mins=Math.floor(d/60000), hrs=Math.floor(mins/60), days=Math.floor(hrs/24);
+        onlineStr=days>0?'Online '+days+' ngày trước':hrs>0?'Online '+hrs+' giờ trước':mins>0?'Online '+mins+' phút trước':'Online vừa xong';
+      }
+      return `<div class="admin-user-row">
         <div style="flex:1">
           <div class="admin-user-name">${u.displayName}</div>
-          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px;">📅 Hôm nay: ${fmtSecs(u.todayOnlineSecs)} · 📊 Tổng: ${fmtSecs(u.totalOnlineSecs)}</div>
+          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0} · ${onlineStr}</div>
         </div>
         <button class="admin-user-del" style="color:var(--yellow);border-color:var(--yellow)" onclick="resetStreak('${u.id}','${u.displayName}')">Reset streak</button>
         <button class="admin-user-del" style="color:var(--accent);border-color:var(--accent)" onclick="resetUserRanking('${u.id}','${u.displayName}')">Xóa BXH</button>
         <button class="admin-user-del" onclick="deleteUser('${u.id}','${u.displayName}')">Xóa tài khoản</button>
-      </div>`).join('');
+      </div>`;
+    }).join('');;
   }catch(e){listEl.innerHTML='<div style="color:var(--red);font-size:13px">Lỗi tải danh sách.</div>';}
 }
 
