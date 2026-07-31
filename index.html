@@ -433,6 +433,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   </div>
   <div class="sum-list" id="sum-list"></div>
   <button class="btn-retry-wrong" id="btn-retry-wrong" onclick="retryWrong()" disabled>🔁 Ôn lại từ sai</button>
+  <button class="btn-retry-wrong" id="btn-retry-correct" onclick="retryCorrect()" disabled style="margin-top:8px;background:var(--green-bg);border-color:var(--green);color:var(--green);">🔄 Ôn lại tất cả từ đã học</button>
   <div class="badges-section">
     <div class="badges-title">Huy hiệu của bạn</div>
     <div class="badge-grid" id="badge-grid"></div>
@@ -2002,6 +2003,7 @@ function renderSummary(){
   document.getElementById('s-wrong').textContent=fail;
   document.getElementById('s-pct').textContent=total?Math.round(ok/total*100)+'%':'0%';
   document.getElementById('btn-retry-wrong').disabled=fail===0;
+  document.getElementById('btn-retry-correct').disabled=(ok+fail)===0;
   const filtered=sumFilter==='all'?history:history.filter(h=>sumFilter==='ok'?h.ok:!h.ok);
   const list=document.getElementById('sum-list');
   if(filtered.length===0){
@@ -2027,6 +2029,23 @@ function filterSum(f,btn){
   document.querySelectorAll('.sum-filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');renderSummary();
 }
+function retryCorrect(){
+  const correctCards=[...history]; // all answered cards (both correct and wrong)
+  if(!correctCards.length)return;
+  document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.top-tab')[0].classList.add('active');
+  document.querySelectorAll('#flashcard-subnav .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#flashcard-subnav .tab-btn')[0].classList.add('active');
+  document.querySelectorAll('[id$="-panel"]').forEach(el=>el.style.display='none');
+  document.getElementById('practice-panel').style.display='';
+  document.getElementById('flashcard-subnav').style.display='flex';
+  deck=correctCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||correctCards[0],cardMode:h.cardMode}));
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
+  updateStats();renderCard();
+}
+window.retryCorrect=retryCorrect;
+
 function retryWrong(){
   const wrongCards=history.filter(h=>!h.ok);
   if(!wrongCards.length)return;
@@ -2081,7 +2100,8 @@ async function loadAdminUsers(){
       <div class="admin-user-row">
         <div style="flex:1">
           <div class="admin-user-name">${u.displayName}</div>
-          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0} ngày</div>
+          <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;">📅 Hôm nay: ${fmtSecs(u.todayOnlineSecs)} · 📊 Tổng: ${fmtSecs(u.totalOnlineSecs)}</div>
         </div>
         <button class="admin-user-del" style="color:var(--yellow);border-color:var(--yellow)" onclick="resetStreak('${u.id}','${u.displayName}')">Reset streak</button>
         <button class="admin-user-del" style="color:var(--accent);border-color:var(--accent)" onclick="resetUserRanking('${u.id}','${u.displayName}')">Xóa BXH</button>
@@ -2191,93 +2211,93 @@ window.resetRanking=resetRanking;
 // ══════════════════════════════════════════════════════
 const GRAMMAR_Q=[
 // ── WORD FORM (20) ──────────────────────────────────────────────
-{id:'wf01',cat:'Word Form',s:'The company\'s financial _____ showed strong growth last quarter.',o:['A) perform','B) performance','C) performer','D) performed'],a:1,e:'"Performance" (n) is needed as the subject after "The company\'s financial".'},
-{id:'wf02',cat:'Word Form',s:'All employees must attend the _____ training session this Friday.',o:['A) mandate','B) mandatory','C) mandated','D) mandatorily'],a:1,e:'"Mandatory" (adj) modifies the noun "training session".'},
-{id:'wf03',cat:'Word Form',s:'The new system was implemented _____ across all departments.',o:['A) efficient','B) efficiency','C) efficiencies','D) efficiently'],a:3,e:'"Efficiently" (adv) modifies the verb "implemented".'},
-{id:'wf04',cat:'Word Form',s:'We appreciate your _____ in the annual conference.',o:['A) participate','B) participatory','C) participation','D) participant'],a:2,e:'"Participation" (n) follows the possessive "your".'},
-{id:'wf05',cat:'Word Form',s:'The _____ of the new product exceeded all expectations.',o:['A) launch','B) launched','C) launching','D) launches'],a:0,e:'"Launch" (n) is the subject of the sentence.'},
-{id:'wf06',cat:'Word Form',s:'Her _____ of the proposal surprised everyone on the board.',o:['A) reject','B) rejecting','C) rejection','D) rejected'],a:2,e:'"Rejection" (n) follows the possessive "her".'},
-{id:'wf07',cat:'Word Form',s:'The director gave a very _____ speech at the annual meeting.',o:['A) inspire','B) inspiration','C) inspirational','D) inspirationally'],a:2,e:'"Inspirational" (adj) modifies the noun "speech".'},
-{id:'wf08',cat:'Word Form',s:'Please handle all customer complaints with _____ and care.',o:['A) patient','B) patiently','C) patience','D) impatient'],a:2,e:'"Patience" (n) is needed after "with" in this noun phrase.'},
-{id:'wf09',cat:'Word Form',s:'The sales team worked _____ to meet the quarterly target.',o:['A) tireless','B) tirelessly','C) tirelessness','D) tired'],a:1,e:'"Tirelessly" (adv) modifies the verb "worked".'},
-{id:'wf10',cat:'Word Form',s:'The _____ of the new office building will begin next spring.',o:['A) construct','B) constructive','C) construction','D) constructed'],a:2,e:'"Construction" (n) is the subject of the sentence.'},
-{id:'wf11',cat:'Word Form',s:'Mr. Park is _____ for overseeing the marketing department.',o:['A) responsible','B) responsibility','C) responsibly','D) respond'],a:0,e:'"Responsible" (adj) follows "is" and pairs with "for".'},
-{id:'wf12',cat:'Word Form',s:'The new policy will _____ take effect from January 1st.',o:['A) official','B) officially','C) officiate','D) officials'],a:1,e:'"Officially" (adv) modifies the verb phrase "take effect".'},
-{id:'wf13',cat:'Word Form',s:'The training program improved employee _____ significantly.',o:['A) produce','B) productive','C) productivity','D) productively'],a:2,e:'"Productivity" (n) is the object of "improved".'},
-{id:'wf14',cat:'Word Form',s:'The results of the survey were quite _____.',o:['A) encourage','B) encouraged','C) encouraging','D) encouragement'],a:2,e:'"Encouraging" (adj) describes the subject "results". Present participle used as adjective.'},
-{id:'wf15',cat:'Word Form',s:'The company made a _____ to reduce its carbon footprint.',o:['A) commit','B) commitment','C) committed','D) committing'],a:1,e:'"Commitment" (n) follows the article "a".'},
-{id:'wf16',cat:'Word Form',s:'She was _____ recognized for her outstanding contribution.',o:['A) public','B) publicize','C) publicly','D) publication'],a:2,e:'"Publicly" (adv) modifies "recognized".'},
-{id:'wf17',cat:'Word Form',s:'The board is seeking a _____ candidate for the CEO position.',o:['A) quality','B) qualify','C) qualified','D) qualification'],a:2,e:'"Qualified" (adj) modifies the noun "candidate".'},
-{id:'wf18',cat:'Word Form',s:'The _____ between the two companies lasted for over a decade.',o:['A) partner','B) partnering','C) partnership','D) partnered'],a:2,e:'"Partnership" (n) is the subject of the sentence.'},
-{id:'wf19',cat:'Word Form',s:'The manager spoke _____ about the upcoming layoffs.',o:['A) honest','B) honesty','C) dishonest','D) honestly'],a:3,e:'"Honestly" (adv) modifies the verb "spoke".'},
-{id:'wf20',cat:'Word Form',s:'Staff will receive a _____ bonus at the end of the fiscal year.',o:['A) performance','B) perform','C) performed','D) performer'],a:0,e:'"Performance" (n) used as a modifier/adjective before "bonus".'},
+{id:'wf01',cat:'Word Form',s:'The company\'s financial _____ showed strong growth last quarter.',o:['A) perform','B) performance','C) performer','D) performed'],a:1,e:'Sau "The company financial" can mot DANH TU lam chu ngu. "Performance" (n) = hieu suat tai chinh la dung. Sai: "perform" (v), "performer" (n) = dien vien, "performed" (v qua khu).'},
+{id:'wf02',cat:'Word Form',s:'All employees must attend the _____ training session this Friday.',o:['A) mandate','B) mandatory','C) mandated','D) mandatorily'],a:1,e:'Trước danh từ "training session" cần TÍNH TỪ. "Mandatory" (adj) = bắt buộc là đúng. "Mandate" (n/v) = lệnh/ra lệnh, "mandated" (adj/v) nghĩa gần nhưng ít dùng hơn, "mandatorily" (adv) không thể đứng trước danh từ.'},
+{id:'wf03',cat:'Word Form',s:'The new system was implemented _____ across all departments.',o:['A) efficient','B) efficiency','C) efficiencies','D) efficiently'],a:3,e:'Sau động từ "implemented" cần TRẠNG TỪ bổ nghĩa. "Efficiently" (adv) = một cách hiệu quả là đúng. "Efficient" (adj) và "efficiency" (n) không thể bổ nghĩa cho động từ.'},
+{id:'wf04',cat:'Word Form',s:'We appreciate your _____ in the annual conference.',o:['A) participate','B) participatory','C) participation','D) participant'],a:2,e:'Sau tính từ sở hữu "your" cần DANH TỪ. "Participation" (n) = sự tham gia là đúng. "Participate" (v), "participatory" (adj), "participant" (n nhưng nghĩa là người tham gia, không phải hành động).'},
+{id:'wf05',cat:'Word Form',s:'The _____ of the new product exceeded all expectations.',o:['A) launch','B) launched','C) launching','D) launches'],a:0,e:'Sau mạo từ "The" cần DANH TỪ làm chủ ngữ. "Launch" (n) = sự ra mắt là đúng. "Launched" (v/adj), "launching" có thể dùng làm danh từ nhưng "launch" tự nhiên hơn.'},
+{id:'wf06',cat:'Word Form',s:'Her _____ of the proposal surprised everyone on the board.',o:['A) reject','B) rejecting','C) rejection','D) rejected'],a:2,e:'Sau đại từ sở hữu "Her" cần DANH TỪ. "Rejection" (n) = sự từ chối là đúng. "Reject" (v), "rejecting" (v-ing), "rejected" (adj/v quá khứ) đều không phù hợp.'},
+{id:'wf07',cat:'Word Form',s:'The director gave a very _____ speech at the annual meeting.',o:['A) inspire','B) inspiration','C) inspirational','D) inspirationally'],a:2,e:'Trước danh từ "speech" cần TÍNH TỪ. "Inspirational" (adj) = truyền cảm hứng là đúng. "Inspire" (v), "inspiration" (n), "inspirationally" (adv) không thể bổ nghĩa trực tiếp cho danh từ.'},
+{id:'wf08',cat:'Word Form',s:'Please handle all customer complaints with _____ and care.',o:['A) patient','B) patiently','C) patience','D) impatient'],a:2,e:'Sau giới từ "with" cần DANH TỪ. "Patience" (n) = sự kiên nhẫn là đúng. "Patient" (adj/n) = kiên nhẫn/bệnh nhân, "patiently" (adv), "impatient" (adj) = thiếu kiên nhẫn (nghĩa ngược).'},
+{id:'wf09',cat:'Word Form',s:'The sales team worked _____ to meet the quarterly target.',o:['A) tireless','B) tirelessly','C) tirelessness','D) tired'],a:1,e:'Sau động từ "worked" cần TRẠNG TỪ. "Tirelessly" (adv) = không mệt mỏi, kiên trì là đúng. "Tireless" (adj), "tirelessness" (n), "tired" (adj) = mệt mỏi (nghĩa ngược).'},
+{id:'wf10',cat:'Word Form',s:'The _____ of the new office building will begin next spring.',o:['A) construct','B) constructive','C) construction','D) constructed'],a:2,e:'Sau mạo từ "The" cần DANH TỪ làm chủ ngữ. "Construction" (n) = sự xây dựng là đúng. "Construct" (v), "constructive" (adj) = mang tính xây dựng, "constructed" (v quá khứ).'},
+{id:'wf11',cat:'Word Form',s:'Mr. Park is _____ for overseeing the marketing department.',o:['A) responsible','B) responsibility','C) responsibly','D) respond'],a:0,e:'Sau động từ "is" cần TÍNH TỪ (vị ngữ tính từ). "Responsible" (adj) + "for" = chịu trách nhiệm về là đúng. "Responsibility" (n), "responsibly" (adv), "respond" (v) đều sai cấu trúc.'},
+{id:'wf12',cat:'Word Form',s:'The new policy will _____ take effect from January 1st.',o:['A) official','B) officially','C) officiate','D) officials'],a:1,e:'Trước động từ nguyên thể "take effect" cần TRẠNG TỪ. "Officially" (adv) = một cách chính thức là đúng. "Official" (adj), "officiate" (v), "officials" (n số nhiều) đều sai.'},
+{id:'wf13',cat:'Word Form',s:'The training program improved employee _____ significantly.',o:['A) produce','B) productive','C) productivity','D) productively'],a:2,e:'Sau động từ "improved" cần DANH TỪ làm tân ngữ. "Productivity" (n) = năng suất là đúng. "Produce" (v/n) = sản xuất, "productive" (adj), "productively" (adv) đều sai vị trí.'},
+{id:'wf14',cat:'Word Form',s:'The results of the survey were quite _____.',o:['A) encourage','B) encouraged','C) encouraging','D) encouragement'],a:2,e:'Sau động từ "were" cần TÍNH TỪ bổ ngữ. "Encouraging" (adj/phân từ hiện tại) = đáng khích lệ là đúng. Phân biệt: "encouraging" (gây cảm giác tích cực) ≠ "encouraged" (cảm thấy được khích lệ — dùng cho người).'},
+{id:'wf15',cat:'Word Form',s:'The company made a _____ to reduce its carbon footprint.',o:['A) commit','B) commitment','C) committed','D) committing'],a:1,e:'Sau mạo từ "a" cần DANH TỪ đếm được số ít. "Commitment" (n) = cam kết là đúng. "Commit" (v), "committed" (adj), "committing" (v-ing) đều không phù hợp sau mạo từ.'},
+{id:'wf16',cat:'Word Form',s:'She was _____ recognized for her outstanding contribution.',o:['A) public','B) publicize','C) publicly','D) publication'],a:2,e:'Trước tính từ "recognized" cần TRẠNG TỪ. "Publicly" (adv) = công khai là đúng. "Public" (adj/n), "publicize" (v), "publication" (n) không thể bổ nghĩa cho tính từ/động từ.'},
+{id:'wf17',cat:'Word Form',s:'The board is seeking a _____ candidate for the CEO position.',o:['A) quality','B) qualify','C) qualified','D) qualification'],a:2,e:'Trước danh từ "candidate" cần TÍNH TỪ. "Qualified" (adj) = có đủ năng lực, đủ tiêu chuẩn là đúng. "Quality" (n/adj nhưng nghĩa khác), "qualify" (v), "qualification" (n).'},
+{id:'wf18',cat:'Word Form',s:'The _____ between the two companies lasted for over a decade.',o:['A) partner','B) partnering','C) partnership','D) partnered'],a:2,e:'Sau mạo từ "The" cần DANH TỪ làm chủ ngữ. "Partnership" (n) = quan hệ đối tác là đúng. "Partner" (n/v) = đối tác/hợp tác, "partnering" (v-ing), "partnered" (adj/v).'},
+{id:'wf19',cat:'Word Form',s:'The manager spoke _____ about the upcoming layoffs.',o:['A) honest','B) honesty','C) dishonest','D) honestly'],a:3,e:'Sau động từ "spoke" cần TRẠNG TỪ. "Honestly" (adv) = thành thật là đúng. "Honest" (adj), "honesty" (n), "dishonest" (adj) = không trung thực (nghĩa ngược).'},
+{id:'wf20',cat:'Word Form',s:'Staff will receive a _____ bonus at the end of the fiscal year.',o:['A) performance','B) perform','C) performed','D) performer'],a:0,e:'Trước danh từ "bonus" cần DANH TỪ/TÍNH TỪ bổ nghĩa. "Performance" (n) dùng như tính từ bổ nghĩa = thưởng theo hiệu suất (performance bonus) là đúng. "Perform" (v), "performed" (v quá khứ), "performer" (n = diễn viên).'},
 // ── VERB TENSE (10) ─────────────────────────────────────────────
-{id:'vt01',cat:'Verb Tense',s:'By the time the CEO arrived, the board _____ the decision already.',o:['A) made','B) has made','C) had made','D) was making'],a:2,e:'Past perfect (had + V3) is used for an action completed before another past event.'},
-{id:'vt02',cat:'Verb Tense',s:'The company _____ a new branch in Ho Chi Minh City next year.',o:['A) opens','B) opened','C) will open','D) open'],a:2,e:'Future simple (will + V) for a planned future action.'},
-{id:'vt03',cat:'Verb Tense',s:'She _____ for this company since she graduated from university.',o:['A) worked','B) works','C) has worked','D) had worked'],a:2,e:'Present perfect (has + V3) for an action starting in the past and continuing to now.'},
-{id:'vt04',cat:'Verb Tense',s:'The report was being _____ when the power went out.',o:['A) print','B) printed','C) printing','D) prints'],a:1,e:'Past continuous passive: "was being + V3".'},
-{id:'vt05',cat:'Verb Tense',s:'If we reduce costs now, we _____ higher profits next quarter.',o:['A) see','B) saw','C) will see','D) have seen'],a:2,e:'First conditional: If + present simple → will + V.'},
-{id:'vt06',cat:'Verb Tense',s:'The annual conference _____ every year in Singapore.',o:['A) held','B) is held','C) has held','D) was held'],a:1,e:'Present simple passive (is + V3) for a recurring event.'},
-{id:'vt07',cat:'Verb Tense',s:'We _____ the client for three hours before reaching an agreement.',o:['A) negotiate','B) were negotiating','C) had been negotiating','D) will negotiate'],a:2,e:'Past perfect continuous (had been + Ving) for an action in progress before a past point.'},
-{id:'vt08',cat:'Verb Tense',s:'The team _____ on the project when the manager called.',o:['A) worked','B) was working','C) has worked','D) works'],a:1,e:'Past continuous (was + Ving) for an action in progress at a specific past time.'},
-{id:'vt09',cat:'Verb Tense',s:'The new regulations _____ effect from the first of next month.',o:['A) takes','B) took','C) will take','D) take'],a:2,e:'Future simple (will + V) for a scheduled future event.'},
-{id:'vt10',cat:'Verb Tense',s:'By 2030, the company _____ its revenue by 50 percent.',o:['A) doubles','B) doubled','C) will have doubled','D) has doubled'],a:2,e:'Future perfect (will have + V3) for an action completed before a future time.'},
+{id:'vt01',cat:'Verb Tense',s:'By the time the CEO arrived, the board _____ the decision already.',o:['A) made','B) has made','C) had made','D) was making'],a:2,e:'Dùng THÌ QUÁ KHỨ HOÀN THÀNH (had + V3) khi hành động xảy ra TRƯỚC một hành động quá khứ khác. "The CEO arrived" là mốc quá khứ → quyết định được đưa ra TRƯỚC đó → "had made" là đúng.'},
+{id:'vt02',cat:'Verb Tense',s:'The company _____ a new branch in Ho Chi Minh City next year.',o:['A) opens','B) opened','C) will open','D) open'],a:2,e:'Dùng THÌ TƯƠNG LAI ĐƠN (will + V) cho kế hoạch hoặc dự định trong tương lai. "Next year" là dấu hiệu của tương lai → "will open" là đúng.'},
+{id:'vt03',cat:'Verb Tense',s:'She _____ for this company since she graduated from university.',o:['A) worked','B) works','C) has worked','D) had worked'],a:2,e:'Dùng THÌ HIỆN TẠI HOÀN THÀNH (has/have + V3) cho hành động bắt đầu trong quá khứ và vẫn còn tiếp diễn đến hiện tại. "Since she graduated" cho thấy liên tục từ quá khứ đến nay → "has worked" là đúng.'},
+{id:'vt04',cat:'Verb Tense',s:'The report was being _____ when the power went out.',o:['A) print','B) printed','C) printing','D) prints'],a:1,e:'THÌ QUÁ KHỨ BỊ ĐỘNG TIẾP DIỄN (was/were being + V3) diễn tả hành động đang xảy ra (bị động) tại một thời điểm trong quá khứ. "When the power went out" cho thấy hành động đang diễn ra → "was being printed" là đúng.'},
+{id:'vt05',cat:'Verb Tense',s:'If we reduce costs now, we _____ higher profits next quarter.',o:['A) see','B) saw','C) will see','D) have seen'],a:2,e:'Câu ĐIỀU KIỆN LOẠI 1 (điều kiện có thể xảy ra): If + thì hiện tại đơn, will + V. "If we reduce costs" → kết quả: "we will see higher profits" là đúng.'},
+{id:'vt06',cat:'Verb Tense',s:'The annual conference _____ every year in Singapore.',o:['A) held','B) is held','C) has held','D) was held'],a:1,e:'Dùng THÌ HIỆN TẠI BỊ ĐỘNG (am/is/are + V3) cho sự kiện xảy ra định kỳ/thường xuyên ở dạng bị động. "Every year" là dấu hiệu thì hiện tại đơn → "is held" là đúng.'},
+{id:'vt07',cat:'Verb Tense',s:'We _____ the client for three hours before reaching an agreement.',o:['A) negotiate','B) were negotiating','C) had been negotiating','D) will negotiate'],a:2,e:'Dùng THÌ QUÁ KHỨ HOÀN THÀNH TIẾP DIỄN (had been + V-ing) nhấn mạnh hành động kéo dài liên tục TRƯỚC một thời điểm trong quá khứ. "For three hours before reaching an agreement" → "had been negotiating" là đúng.'},
+{id:'vt08',cat:'Verb Tense',s:'The team _____ on the project when the manager called.',o:['A) worked','B) was working','C) has worked','D) works'],a:1,e:'Dùng THÌ QUÁ KHỨ TIẾP DIỄN (was/were + V-ing) cho hành động ĐANG XẢY RA tại một thời điểm trong quá khứ. "When the manager called" là thời điểm cụ thể → "was working" là đúng.'},
+{id:'vt09',cat:'Verb Tense',s:'The new regulations _____ effect from the first of next month.',o:['A) takes','B) took','C) will take','D) take'],a:2,e:'Dùng THÌ TƯƠNG LAI ĐƠN (will + V) cho sự kiện được lên kế hoạch trong tương lai. "From the first of next month" → "will take" là đúng.'},
+{id:'vt10',cat:'Verb Tense',s:'By 2030, the company _____ its revenue by 50 percent.',o:['A) doubles','B) doubled','C) will have doubled','D) has doubled'],a:2,e:'Dùng THÌ TƯƠNG LAI HOÀN THÀNH (will have + V3) cho hành động sẽ hoàn thành TRƯỚC một thời điểm trong tương lai. "By 2030" là mốc tương lai → "will have doubled" là đúng.'},
 // ── PASSIVE VOICE (10) ──────────────────────────────────────────
-{id:'pv01',cat:'Passive Voice',s:'The annual budget _____ by the board of directors last Monday.',o:['A) approved','B) was approved','C) has approved','D) is approving'],a:1,e:'Past simple passive (was + V3) for a completed past action.'},
-{id:'pv02',cat:'Passive Voice',s:'All applications _____ online before the deadline.',o:['A) must submit','B) must be submitted','C) must be submitting','D) must have submitted'],a:1,e:'Modal passive (must be + V3) for obligation in passive form.'},
-{id:'pv03',cat:'Passive Voice',s:'The new office building _____ currently by a local firm.',o:['A) designs','B) is being designed','C) has designed','D) designed'],a:1,e:'Present continuous passive (is being + V3) for an ongoing action.'},
-{id:'pv04',cat:'Passive Voice',s:'Employees _____ to report any safety concerns immediately.',o:['A) encourage','B) are encouraged','C) have encouraged','D) encouraging'],a:1,e:'Present simple passive (are + V3) for a general rule.'},
-{id:'pv05',cat:'Passive Voice',s:'The damaged goods _____ to the supplier for a full refund.',o:['A) returned','B) were returned','C) returning','D) had returning'],a:1,e:'Past simple passive (were + V3).'},
-{id:'pv06',cat:'Passive Voice',s:'New safety procedures _____ after last year\'s incident.',o:['A) introduce','B) have been introduced','C) introduced','D) are introducing'],a:1,e:'Present perfect passive (have been + V3) — the procedures were introduced and are still in effect.'},
-{id:'pv07',cat:'Passive Voice',s:'The merger _____ by the time we receive shareholder approval.',o:['A) will complete','B) will have been completed','C) completes','D) completed'],a:1,e:'Future perfect passive (will have been + V3) for a future completion.'},
-{id:'pv08',cat:'Passive Voice',s:'The documents need _____ before they can be sent out.',o:['A) sign','B) signed','C) to be signed','D) signing'],a:2,e:'"Need + to be + V3" is the correct passive infinitive structure.'},
-{id:'pv09',cat:'Passive Voice',s:'Our products _____ to over 30 countries worldwide.',o:['A) export','B) are exported','C) exporting','D) have exporting'],a:1,e:'Present simple passive (are + V3) for a general fact.'},
-{id:'pv10',cat:'Passive Voice',s:'The conference room _____ while repairs are underway.',o:['A) cannot use','B) cannot be used','C) not used','D) does not use'],a:1,e:'Modal passive (cannot be + V3) for prohibition.'},
+{id:'pv01',cat:'Passive Voice',s:'The annual budget _____ by the board of directors last Monday.',o:['A) approved','B) was approved','C) has approved','D) is approving'],a:1,e:'Dùng BỊ ĐỘNG THÌ QUÁ KHỨ ĐƠN (was/were + V3) khi chủ thể bị tác động trong quá khứ. "Last Monday" là dấu hiệu quá khứ, chủ ngữ "budget" là vật được phê duyệt → "was approved" là đúng.'},
+{id:'pv02',cat:'Passive Voice',s:'All applications _____ online before the deadline.',o:['A) must submit','B) must be submitted','C) must be submitting','D) must have submitted'],a:1,e:'Dùng MODAL + BỊ ĐỘNG (must be + V3) cho nghĩa vụ bị động. "Applications" là chủ ngữ chịu tác động, không phải người thực hiện → "must be submitted" là đúng. "Must submit" là chủ động (chủ ngữ tự nộp).'},
+{id:'pv03',cat:'Passive Voice',s:'The new office building _____ currently by a local firm.',o:['A) designs','B) is being designed','C) has designed','D) designed'],a:1,e:'Dùng HIỆN TẠI TIẾP DIỄN BỊ ĐỘNG (is being + V3) cho hành động đang xảy ra ở thời điểm nói, dạng bị động. "Currently" là dấu hiệu → "is being designed" là đúng.'},
+{id:'pv04',cat:'Passive Voice',s:'Employees _____ to report any safety concerns immediately.',o:['A) encourage','B) are encouraged','C) have encouraged','D) encouraging'],a:1,e:'Dùng HIỆN TẠI ĐƠN BỊ ĐỘNG (am/is/are + V3) cho quy định/chính sách chung. "Employees" = số nhiều → "are encouraged" là đúng. Lưu ý: "encourage somebody to do" → bị động: "be encouraged to do".'},
+{id:'pv05',cat:'Passive Voice',s:'The damaged goods _____ to the supplier for a full refund.',o:['A) returned','B) were returned','C) returning','D) had returning'],a:1,e:'Dùng QUÁ KHỨ ĐƠN BỊ ĐỘNG (was/were + V3). "The damaged goods" là chủ ngữ bị tác động, hành động trong quá khứ → "were returned" là đúng.'},
+{id:'pv06',cat:'Passive Voice',s:'New safety procedures _____ after last year\'s incident.',o:['A) introduce','B) have been introduced','C) introduced','D) are introducing'],a:1,e:'Dùng HIỆN TẠI HOÀN THÀNH BỊ ĐỘNG (have been + V3) nhấn mạnh kết quả kéo dài đến hiện tại. Thủ tục đã được áp dụng và vẫn còn hiệu lực → "have been introduced" là đúng.'},
+{id:'pv07',cat:'Passive Voice',s:'The merger _____ by the time we receive shareholder approval.',o:['A) will complete','B) will have been completed','C) completes','D) completed'],a:1,e:'Dùng TƯƠNG LAI HOÀN THÀNH BỊ ĐỘNG (will have been + V3) cho hành động sẽ hoàn thành trước mốc tương lai. "By the time we receive approval" là mốc tương lai → "will have been completed" là đúng.'},
+{id:'pv08',cat:'Passive Voice',s:'The documents need _____ before they can be sent out.',o:['A) sign','B) signed','C) to be signed','D) signing'],a:2,e:'Cấu trúc "need + to be + V3" = cần được làm gì. "The documents" là chủ ngữ cần được ký → "to be signed" là đúng. Lưu ý: "need + V-ing" cũng có nghĩa tương tự nhưng ở đây đáp án A cho sẵn "to be signed".'},
+{id:'pv09',cat:'Passive Voice',s:'Our products _____ to over 30 countries worldwide.',o:['A) export','B) are exported','C) exporting','D) have exporting'],a:1,e:'Dùng HIỆN TẠI ĐƠN BỊ ĐỘNG (are + V3) cho sự thật chung/thói quen. "Our products" là số nhiều, là vật được xuất khẩu → "are exported" là đúng.'},
+{id:'pv10',cat:'Passive Voice',s:'The conference room _____ while repairs are underway.',o:['A) cannot use','B) cannot be used','C) not used','D) does not use'],a:1,e:'Dùng MODAL + BỊ ĐỘNG phủ định (cannot be + V3) cho sự cấm đoán. "The conference room" là chủ ngữ không thể được sử dụng → "cannot be used" là đúng.'},
 // ── PREPOSITIONS (10) ────────────────────────────────────────────
-{id:'pr01',cat:'Prepositions',s:'She is responsible _____ managing the entire project team.',o:['A) of','B) for','C) with','D) about'],a:1,e:'"Responsible for" is the correct collocation.'},
-{id:'pr02',cat:'Prepositions',s:'The meeting has been rescheduled _____ next Thursday.',o:['A) in','B) on','C) at','D) to'],a:3,e:'"Rescheduled to" — when changing a time, use "to".'},
-{id:'pr03',cat:'Prepositions',s:'Please refer _____ the attached file for further information.',o:['A) at','B) with','C) to','D) in'],a:2,e:'"Refer to" is the correct phrasal verb.'},
-{id:'pr04',cat:'Prepositions',s:'The store will be closed _____ renovation until further notice.',o:['A) for','B) due to','C) because','D) despite'],a:1,e:'"Due to" introduces a noun phrase as the reason.'},
-{id:'pr05',cat:'Prepositions',s:'We are looking forward _____ hearing from you soon.',o:['A) to','B) for','C) at','D) of'],a:0,e:'"Look forward to + Ving" — "to" here is a preposition, not part of an infinitive.'},
-{id:'pr06',cat:'Prepositions',s:'The CEO will be _____ vacation from June 10 to 20.',o:['A) in','B) at','C) on','D) for'],a:2,e:'"On vacation" is the correct collocation.'},
-{id:'pr07',cat:'Prepositions',s:'The invoice must be paid _____ 30 days of receipt.',o:['A) in','B) within','C) after','D) on'],a:1,e:'"Within 30 days" means before 30 days have passed.'},
-{id:'pr08',cat:'Prepositions',s:'The company has been operating _____ over 50 years.',o:['A) since','B) for','C) during','D) from'],a:1,e:'"For" is used with a duration of time.'},
-{id:'pr09',cat:'Prepositions',s:'All staff should comply _____ the new dress code policy.',o:['A) to','B) at','C) for','D) with'],a:3,e:'"Comply with" is the correct collocation.'},
-{id:'pr10',cat:'Prepositions',s:'The product was developed _____ response to customer demand.',o:['A) as','B) in','C) at','D) with'],a:1,e:'"In response to" is a fixed prepositional phrase.'},
+{id:'pr01',cat:'Prepositions',s:'She is responsible _____ managing the entire project team.',o:['A) of','B) for','C) with','D) about'],a:1,e:'Collocation cố định: "responsible FOR" = chịu trách nhiệm về. Đây là cặp giới từ bắt buộc phải học thuộc. Các cặp tương tự: "accountable for", "liable for".'},
+{id:'pr02',cat:'Prepositions',s:'The meeting has been rescheduled _____ next Thursday.',o:['A) in','B) on','C) at','D) to'],a:3,e:'"Reschedule TO" = dời lịch sang (thời điểm mới). Phân biệt: "reschedule to Friday" (chuyển sang thứ Sáu) vs "postpone until Friday" (hoãn đến thứ Sáu). "To" dùng khi chỉ điểm đến mới.'},
+{id:'pr03',cat:'Prepositions',s:'Please refer _____ the attached file for further information.',o:['A) at','B) with','C) to','D) in'],a:2,e:'"Refer TO" = tham khảo, đề cập đến. Đây là phrasal verb cố định. Các cụm tương tự: "look at", "turn to", "consult". Luôn dùng "to" sau "refer".'},
+{id:'pr04',cat:'Prepositions',s:'The store will be closed _____ renovation until further notice.',o:['A) for','B) due to','C) because','D) despite'],a:1,e:'"Due TO + danh từ/cụm danh từ" = do, vì (nguyên nhân). Phân biệt: "due to" + noun phrase, "because" + mệnh đề (because + S + V). "For renovation" cũng đúng ngữ pháp nhưng "due to renovation" nhấn mạnh nguyên nhân hơn.'},
+{id:'pr05',cat:'Prepositions',s:'We are looking forward _____ hearing from you soon.',o:['A) to','B) for','C) at','D) of'],a:0,e:'"Look forward TO + V-ing" = mong chờ. "To" ở đây là GIỚI TỪ, không phải "to" nguyên thể → sau đó phải dùng V-ing, không dùng V nguyên thể. Đây là lỗi rất phổ biến trong TOEIC.'},
+{id:'pr06',cat:'Prepositions',s:'The CEO will be _____ vacation from June 10 to 20.',o:['A) in','B) at','C) on','D) for'],a:2,e:'"On vacation" = đang nghỉ phép. Collocation cố định trong tiếng Anh Mỹ. Trong tiếng Anh Anh dùng "on holiday". Phân biệt: "on vacation" (đang đi), "for a vacation" (để đi nghỉ).'},
+{id:'pr07',cat:'Prepositions',s:'The invoice must be paid _____ 30 days of receipt.',o:['A) in','B) within','C) after','D) on'],a:1,e:'"Within + khoảng thời gian" = trong vòng, không quá. "Within 30 days" = trong vòng 30 ngày (tức là phải làm trước khi 30 ngày kết thúc). Phân biệt: "in 30 days" = sau 30 ngày nữa.'},
+{id:'pr08',cat:'Prepositions',s:'The company has been operating _____ over 50 years.',o:['A) since','B) for','C) during','D) from'],a:1,e:'"For + khoảng thời gian" = trong (suốt) bao lâu. "For over 50 years" = trong hơn 50 năm. Phân biệt: "since" + điểm thời gian cụ thể (since 1970), "for" + khoảng thời gian (for 50 years).'},
+{id:'pr09',cat:'Prepositions',s:'All staff should comply _____ the new dress code policy.',o:['A) to','B) at','C) for','D) with'],a:3,e:'"Comply WITH" = tuân thủ. Collocation bắt buộc trong TOEIC. Các cụm tương tự: "agree with", "deal with", "meet with". Luôn ghi nhớ: comply + WITH.'},
+{id:'pr10',cat:'Prepositions',s:'The product was developed _____ response to customer demand.',o:['A) as','B) in','C) at','D) with'],a:1,e:'"In response TO" = để đáp lại, để phản hồi. Đây là cụm giới từ cố định (fixed prepositional phrase). Tương tự: "in reaction to", "in reply to", "in answer to".'},
 // ── CONJUNCTIONS (10) ────────────────────────────────────────────
-{id:'cj01',cat:'Conjunctions',s:'_____ the budget was limited, the team completed the project on time.',o:['A) However','B) Despite','C) Although','D) Even so'],a:2,e:'"Although" introduces a contrast clause with subject + verb.'},
-{id:'cj02',cat:'Conjunctions',s:'We will proceed with the launch _____ all requirements are met.',o:['A) only if','B) in spite of','C) so that','D) even though'],a:0,e:'"Only if" means "under the condition that".'},
-{id:'cj03',cat:'Conjunctions',s:'The company expanded rapidly, _____ it faced financial difficulties.',o:['A) and','B) yet','C) so','D) for'],a:1,e:'"Yet" shows unexpected contrast — it expanded but also faced difficulties.'},
-{id:'cj04',cat:'Conjunctions',s:'Please notify us _____ you will be absent from the training.',o:['A) so that','B) because','C) if','D) although'],a:2,e:'"If" introduces a conditional clause.'},
-{id:'cj05',cat:'Conjunctions',s:'The store will stay open late _____ customers can finish shopping.',o:['A) even though','B) so that','C) provided that','D) as long as'],a:1,e:'"So that" expresses purpose — the store stays open for that reason.'},
-{id:'cj06',cat:'Conjunctions',s:'_____ being new to the job, she performed exceptionally well.',o:['A) Although','B) Despite','C) However','D) Even though'],a:1,e:'"Despite" is followed by a noun/gerund phrase, not a clause.'},
-{id:'cj07',cat:'Conjunctions',s:'The project was approved _____ the initial budget concerns.',o:['A) because of','B) despite','C) although','D) so'],a:1,e:'"Despite" + noun phrase to show contrast.'},
-{id:'cj08',cat:'Conjunctions',s:'You must submit your application _____ you wish to be considered.',o:['A) otherwise','B) in case','C) if','D) as though'],a:2,e:'"If" introduces the condition required.'},
-{id:'cj09',cat:'Conjunctions',s:'She studied hard for the exam; _____, she passed with distinction.',o:['A) however','B) therefore','C) although','D) despite'],a:1,e:'"Therefore" shows a result/consequence. Used between two independent clauses with a semicolon.'},
-{id:'cj10',cat:'Conjunctions',s:'The factory operates 24 hours a day _____ demand remains high.',o:['A) so that','B) as long as','C) in order to','D) despite'],a:1,e:'"As long as" means "provided that" or "under the condition that".'},
+{id:'cj01',cat:'Conjunctions',s:'_____ the budget was limited, the team completed the project on time.',o:['A) However','B) Despite','C) Although','D) Even so'],a:2,e:'"Although/Even though/Though + mệnh đề (S+V)" = mặc dù. "Despite/In spite of + danh từ/V-ing" = mặc dù. Câu này có S+V ("the budget was limited") → cần liên từ → "Although" là đúng. "Despite" chỉ đi với danh từ/V-ing.'},
+{id:'cj02',cat:'Conjunctions',s:'We will proceed with the launch _____ all requirements are met.',o:['A) only if','B) in spite of','C) so that','D) even though'],a:0,e:'"Only if" = chỉ khi, chỉ với điều kiện là. Nhấn mạnh điều kiện duy nhất. "In spite of" + noun phrase (không phải mệnh đề). "So that" = để mà. "Even though" = mặc dù (ngược nghĩa).'},
+{id:'cj03',cat:'Conjunctions',s:'The company expanded rapidly, _____ it faced financial difficulties.',o:['A) and','B) yet','C) so','D) for'],a:1,e:'"Yet" (liên từ kết hợp) = thế nhưng, vậy mà. Diễn tả sự tương phản bất ngờ giữa hai ý. Tương tự "but" nhưng nhấn mạnh hơn. Câu này: mở rộng nhanh NHƯNG lại gặp khó khăn tài chính.'},
+{id:'cj04',cat:'Conjunctions',s:'Please notify us _____ you will be absent from the training.',o:['A) so that','B) because','C) if','D) although'],a:2,e:'"If" = nếu, dùng cho điều kiện. Câu này: "nếu bạn sẽ vắng mặt, hãy thông báo". "So that" = để mà, "because" = bởi vì (không phải điều kiện), "although" = mặc dù.'},
+{id:'cj05',cat:'Conjunctions',s:'The store will stay open late _____ customers can finish shopping.',o:['A) even though','B) so that','C) provided that','D) as long as'],a:1,e:'"So that + S + can/will + V" = để mà, nhằm mục đích. Diễn tả mục đích. Câu này: cửa hàng mở cửa muộn ĐỂ khách hàng có thể mua sắm xong. "Even though" = mặc dù, "provided that" = miễn là (điều kiện).'},
+{id:'cj06',cat:'Conjunctions',s:'_____ being new to the job, she performed exceptionally well.',o:['A) Although','B) Despite','C) However','D) Even though'],a:1,e:'"Despite + danh từ/V-ing" = mặc dù (theo sau phải là danh từ, không phải mệnh đề). "Being new to the job" là V-ing phrase → "Despite" là đúng. "Although/Even though" cần S+V theo sau.'},
+{id:'cj07',cat:'Conjunctions',s:'The project was approved _____ the initial budget concerns.',o:['A) because of','B) despite','C) although','D) so'],a:1,e:'"Despite + danh từ" = mặc dù. "Initial budget concerns" là cụm danh từ → "despite" là đúng. "Although + S+V" (không phải danh từ), "because of + danh từ" = vì (nguyên nhân, không phải tương phản).'},
+{id:'cj08',cat:'Conjunctions',s:'You must submit your application _____ you wish to be considered.',o:['A) otherwise','B) in case','C) if','D) as though'],a:2,e:'"If + S + V" = nếu, điều kiện. "You wish to be considered" là điều kiện để được xét duyệt. "Otherwise" = nếu không, "in case" = phòng khi, "as though" = như thể.'},
+{id:'cj09',cat:'Conjunctions',s:'She studied hard for the exam; _____, she passed with distinction.',o:['A) however','B) therefore','C) although','D) despite'],a:1,e:'"Therefore" (trạng từ liên kết) = do đó, vì vậy. Dùng sau dấu chấm phẩy (;) hoặc dấu chấm để nối hai câu độc lập, thể hiện kết quả. "However" = tuy nhiên (tương phản), "although" = mặc dù (nhượng bộ).'},
+{id:'cj10',cat:'Conjunctions',s:'The factory operates 24 hours a day _____ demand remains high.',o:['A) so that','B) as long as','C) in order to','D) despite'],a:1,e:'"As long as" = miễn là, chừng nào còn. Diễn tả điều kiện kéo dài. "So that" = để mà (mục đích), "in order to" + V nguyên thể (mục đích), "despite" + danh từ (tương phản).'},
 // ── PRONOUNS & DETERMINERS (5) ───────────────────────────────────
-{id:'pd01',cat:'Pronouns',s:'_____ employee is expected to complete the training by Friday.',o:['A) All','B) Every','C) Many','D) Several'],a:1,e:'"Every" takes a singular noun and singular verb.'},
-{id:'pd02',cat:'Pronouns',s:'The clients expressed _____ satisfaction with our services.',o:['A) they','B) their','C) them','D) themselves'],a:1,e:'"Their" is a possessive adjective modifying "satisfaction".'},
-{id:'pd03',cat:'Pronouns',s:'The two proposals are similar, but _____ has unique advantages.',o:['A) all','B) each','C) every','D) much'],a:1,e:'"Each" refers to two or more items individually.'},
-{id:'pd04',cat:'Pronouns',s:'Please send the report to Mr. Tran or _____ assistant.',o:['A) him','B) he','C) his','D) himself'],a:2,e:'"His" is the possessive adjective referring to Mr. Tran.'},
-{id:'pd05',cat:'Pronouns',s:'The management team completed the restructuring _____ without any outside help.',o:['A) them','B) their','C) themselves','D) they'],a:2,e:'"Themselves" is the reflexive pronoun for emphasis.'},
+{id:'pd01',cat:'Pronouns',s:'_____ employee is expected to complete the training by Friday.',o:['A) All','B) Every','C) Many','D) Several'],a:1,e:'"Every + danh từ số ÍT + động từ số ÍT" = mỗi, từng (dùng với danh từ đếm được số ít). "Every employee IS expected..." → đúng. "All + danh từ số NHIỀU" = tất cả. "Many/Several" = nhiều (không dùng với danh từ số ít).'},
+{id:'pd02',cat:'Pronouns',s:'The clients expressed _____ satisfaction with our services.',o:['A) they','B) their','C) them','D) themselves'],a:1,e:'Sau chủ ngữ "The clients" cần ĐẠI TỪ SỞ HỮU bổ nghĩa cho "satisfaction". "Their" (tính từ sở hữu) = của họ là đúng. "They" (chủ ngữ), "them" (tân ngữ), "themselves" (phản thân) đều sai vị trí.'},
+{id:'pd03',cat:'Pronouns',s:'The two proposals are similar, but _____ has unique advantages.',o:['A) all','B) each','C) every','D) much'],a:1,e:'"Each" dùng để chỉ từng cái trong nhóm hai hoặc nhiều hơn, nhấn mạnh tính riêng biệt. "Each has unique advantages" = mỗi cái đều có ưu điểm riêng. "All" = tất cả (số nhiều), "every" + số ít, "much" = nhiều (không đếm được).'},
+{id:'pd04',cat:'Pronouns',s:'Please send the report to Mr. Tran or _____ assistant.',o:['A) him','B) he','C) his','D) himself'],a:2,e:'Trước danh từ "assistant" cần TÍNH TỪ SỞ HỮU. "His assistant" = trợ lý của ông ấy (chỉ Mr. Tran). "Him" (tân ngữ), "he" (chủ ngữ), "himself" (phản thân) đều không thể đứng trước danh từ.'},
+{id:'pd05',cat:'Pronouns',s:'The management team completed the restructuring _____ without any outside help.',o:['A) them','B) their','C) themselves','D) they'],a:2,e:'"Themselves" là đại từ phản thân, dùng nhấn mạnh chủ ngữ "The management team" tự hoàn thành mà không cần trợ giúp. "Them" (tân ngữ thông thường), "their" (tính từ sở hữu), "they" (chủ ngữ).'},
 // ── COMPARISON (5) ───────────────────────────────────────────────
-{id:'cp01',cat:'Comparison',s:'Our new model is far _____ than the previous version.',o:['A) reliable','B) more reliable','C) most reliable','D) reliably'],a:1,e:'Comparative form: "more + adjective + than" for adjectives with 3+ syllables.'},
-{id:'cp02',cat:'Comparison',s:'This quarter\'s results are _____ we had expected.',o:['A) better than','B) the best than','C) well than','D) more good than'],a:0,e:'"Better than" is the comparative of "good".'},
-{id:'cp03',cat:'Comparison',s:'The _____ you invest early, the more you will gain in the long run.',o:['A) many','B) more','C) most','D) much'],a:1,e:'"The more... the more..." is a fixed comparative structure.'},
-{id:'cp04',cat:'Comparison',s:'Our customer service is _____ in the industry.',o:['A) better','B) good','C) best','D) the best'],a:3,e:'"The best" (superlative) is used when comparing with all others in a group.'},
-{id:'cp05',cat:'Comparison',s:'The second branch is twice _____ the first one.',o:['A) as large as','B) larger than','C) the largest','D) large than'],a:0,e:'"Twice as large as" is the correct structure for multiplier comparisons.'},
+{id:'cp01',cat:'Comparison',s:'Our new model is far _____ than the previous version.',o:['A) reliable','B) more reliable','C) most reliable','D) reliably'],a:1,e:'Tính từ dài (3 âm tiết trở lên) dùng "more + adj + than" để so sánh hơn. "More reliable than" = đáng tin cậy hơn. "Far more" nhấn mạnh mức độ chênh lệch lớn. "Most reliable" = so sánh nhất.'},
+{id:'cp02',cat:'Comparison',s:'This quarter\'s results are _____ we had expected.',o:['A) better than','B) the best than','C) well than','D) more good than'],a:0,e:'"Good" có dạng SO SÁNH HƠN BẤT QUY TẮC là "better". "Better than" = tốt hơn là đúng. "The best" là so sánh nhất (không dùng với "than"), "well" là trạng từ, "more good" không tồn tại.'},
+{id:'cp03',cat:'Comparison',s:'The _____ you invest early, the more you will gain in the long run.',o:['A) many','B) more','C) most','D) much'],a:1,e:'CẤU TRÚC "The + so sánh hơn..., the + so sánh hơn..." = càng... càng... "The more you invest..., the more you will gain" là cấu trúc cố định. "Many/most/much" không dùng trong cấu trúc này.'},
+{id:'cp04',cat:'Comparison',s:'Our customer service is _____ in the industry.',o:['A) better','B) good','C) best','D) the best'],a:3,e:'SO SÁNH NHẤT (the + adj + est hoặc the most + adj) dùng khi so sánh với tất cả trong nhóm. "In the industry" = trong toàn ngành → dùng so sánh nhất. "The best" là đúng. "Better" chỉ so sánh hơn.'},
+{id:'cp05',cat:'Comparison',s:'The second branch is twice _____ the first one.',o:['A) as large as','B) larger than','C) the largest','D) large than'],a:0,e:'CẤU TRÚC BỘI SỐ: "twice/three times + as + adj + as" = gấp đôi/ba lần. "Twice as large as" = lớn gấp đôi là đúng. KHÔNG nói "twice larger than" (sai trong chuẩn ngữ pháp). "Larger than" = lớn hơn (không có bội số).'},
 // ── MODAL VERBS (10) ─────────────────────────────────────────────
-{id:'mv01',cat:'Modal Verbs',s:'Employees _____ carry their ID badges at all times.',o:['A) can','B) must','C) might','D) would'],a:1,e:'"Must" expresses strong obligation or requirement.'},
-{id:'mv02',cat:'Modal Verbs',s:'You _____ bring your passport to the interview tomorrow.',o:['A) might','B) could','C) should','D) shall'],a:2,e:'"Should" expresses advice or recommendation.'},
-{id:'mv03',cat:'Modal Verbs',s:'The shipment _____ arrive by Friday at the latest.',o:['A) ought to','B) will','C) shall','D) can'],a:0,e:'"Ought to" expresses expectation or mild obligation, similar to "should".'},
-{id:'mv04',cat:'Modal Verbs',s:'We _____ call you back as soon as a decision has been made.',o:['A) must','B) shall','C) will','D) ought'],a:2,e:'"Will" expresses a promise or future intention.'},
-{id:'mv05',cat:'Modal Verbs',s:'_____ you please send me the updated contract by email?',o:['A) Would','B) Must','C) Shall','D) Should'],a:0,e:'"Would you please..." is a polite request form.'},
-{id:'mv06',cat:'Modal Verbs',s:'The candidate _____ have submitted her application last week.',o:['A) must','B) should','C) would','D) could'],a:1,e:'"Should have + V3" expresses criticism of a past action that didn\'t happen.'},
-{id:'mv07',cat:'Modal Verbs',s:'You _____ leave early today as all your tasks are done.',o:['A) must','B) might','C) may','D) shall'],a:2,e:'"May" gives permission in a formal context.'},
-{id:'mv08',cat:'Modal Verbs',s:'The merger _____ be announced before the end of this month.',o:['A) should','B) might','C) will','D) must'],a:1,e:'"Might" expresses possibility — it\'s uncertain.'},
-{id:'mv09',cat:'Modal Verbs',s:'Staff _____ not use company equipment for personal purposes.',o:['A) should','B) may','C) would','D) can'],a:0,e:'"Should not" expresses a rule or policy employees are expected to follow.'},
-{id:'mv10',cat:'Modal Verbs',s:'The new regulation _____ have a significant impact on our business.',o:['A) ought','B) could','C) should','D) shall'],a:1,e:'"Could" expresses possibility or potential.'},
+{id:'mv01',cat:'Modal Verbs',s:'Employees _____ carry their ID badges at all times.',o:['A) can','B) must','C) might','D) would'],a:1,e:'"Must" diễn tả NGHĨA VỤ BẮT BUỘC, quy định không thể tránh. "Employees must carry ID badges" = nhân viên bắt buộc phải đeo thẻ. "Can" = có thể (khả năng), "might" = có lẽ (khả năng thấp), "would" = sẽ (lịch sự/điều kiện).'},
+{id:'mv02',cat:'Modal Verbs',s:'You _____ bring your passport to the interview tomorrow.',o:['A) might','B) could','C) should','D) shall'],a:2,e:'"Should" diễn tả LỜI KHUYÊN hoặc KHUYẾN NGHỊ. "You should bring your passport" = bạn nên mang hộ chiếu (lời khuyên). "Might" = có thể, "could" = có thể (khả năng), "shall" = sẽ (trang trọng/đề xuất).'},
+{id:'mv03',cat:'Modal Verbs',s:'The shipment _____ arrive by Friday at the latest.',o:['A) ought to','B) will','C) shall','D) can'],a:0,e:'"Ought to" = nên, được mong đợi (tương tự "should" nhưng có hàm ý trách nhiệm đạo đức hơn). "The shipment ought to arrive" = lô hàng được kỳ vọng sẽ đến. Dùng phổ biến trong văn viết trang trọng.'},
+{id:'mv04',cat:'Modal Verbs',s:'We _____ call you back as soon as a decision has been made.',o:['A) must','B) shall','C) will','D) ought'],a:2,e:'"Will" diễn tả CAM KẾT hoặc QUYẾT TÂM trong tương lai. "We will call you back" = chúng tôi cam kết sẽ gọi lại. "Must" = phải (nghĩa vụ), "shall" = cách diễn đạt cổ điển, "ought" không đủ dạng (thiếu "to").'},
+{id:'mv05',cat:'Modal Verbs',s:'_____ you please send me the updated contract by email?',o:['A) Would','B) Must','C) Shall','D) Should'],a:0,e:'"Would you please...?" là cách YÊU CẦU LỊCH SỰ nhất trong giao tiếp kinh doanh. "Could you please...?" cũng lịch sự. "Must" = ra lệnh (không lịch sự), "shall/should" thường dùng đề xuất, không phải yêu cầu.'},
+{id:'mv06',cat:'Modal Verbs',s:'The candidate _____ have submitted her application last week.',o:['A) must','B) should','C) would','D) could'],a:1,e:'"Should have + V3" dien ta CHI TRICH ve viec KHONG LAM trong qua khu. "She should have submitted" = le ra co ay phai nop don nhung da khong nop. "Must have + V3" = chac han da (suy luan).'},
+{id:'mv07',cat:'Modal Verbs',s:'You _____ leave early today as all your tasks are done.',o:['A) must','B) might','C) may','D) shall'],a:2,e:'"May" diễn tả SỰ CHO PHÉP trong văn phong trang trọng. "You may leave early" = bạn được phép về sớm. "Must" = bắt buộc, "might" = có lẽ (khả năng), "shall" = sẽ (trang trọng, thường ở ngôi 1).'},
+{id:'mv08',cat:'Modal Verbs',s:'The merger _____ be announced before the end of this month.',o:['A) should','B) might','C) will','D) must'],a:1,e:'"Might" dien ta KHA NANG KHONG CHAC CHAN (thap hon "may"). Might be announced = co the se duoc thong bao (khong chac chan). "Should" = nen/duoc ky vong, "will" = chac chan se.'},
+{id:'mv09',cat:'Modal Verbs',s:'Staff _____ not use company equipment for personal purposes.',o:['A) should','B) may','C) would','D) can'],a:0,e:'"Should not" diễn tả ĐIỀU KHÔNG NÊN LÀM, quy định/chính sách. "Staff should not use company equipment for personal purposes" = nhân viên không nên/không được phép sử dụng. Phù hợp ngữ cảnh chính sách công ty.'},
+{id:'mv10',cat:'Modal Verbs',s:'The new regulation _____ have a significant impact on our business.',o:['A) ought','B) could','C) should','D) shall'],a:1,e:'"Could" diễn tả KHẢ NĂNG CÓ THỂ XẢY RA trong tương lai. "The new regulation could have an impact" = quy định mới CÓ THỂ ảnh hưởng (không chắc chắn). "Ought" thiếu "to", "should" = được kỳ vọng (chắc hơn), "shall" = trang trọng.'},
 ];
 
 
@@ -2636,6 +2656,19 @@ function checkWrongStreak(){
   if(match) showFunToast(match.emoji, match.msg);
 }
 
+
+// ── TIME FORMAT HELPERS ───────────────────────────────────────────
+const fmtSecs = (s) => {
+  if(!s || s<60) return s ? s+'s' : '—';
+  const m=Math.floor(s/60), h=Math.floor(m/60);
+  return h>0 ? h+'h '+m%60+'p' : m+'p';
+};
+const fmtTime = (secs) => {
+  if(!secs || secs<60) return secs ? secs+'s' : '—';
+  const m=Math.floor(secs/60), h=Math.floor(m/60);
+  if(h>0) return h+'h '+(m%60)+'p';
+  return m+' phút';
+};
 // ── HEARTBEAT & ONLINE STATUS ─────────────────────────────────────
 let heartbeatInterval = null;
 const ONLINE_THRESHOLD  = 2 * 60 * 1000;  // 2 min = online
@@ -2645,10 +2678,24 @@ const HEARTBEAT_INTERVAL = 30 * 1000;     // every 30s
 async function sendHeartbeat(){
   if(!currentUser) return;
   try{
-    await updateDoc(doc(db,'users',currentUser.username),{
-      lastSeen: serverTimestamp(),
-      lastTab:  currentTop || 'flashcard',
-    });
+    const today = new Date().toISOString().slice(0,10);
+    const userRef = doc(db,'users',currentUser.username);
+    const snap = await getDoc(userRef);
+    const data = snap.data() || {};
+    // Reset today counter if new day
+    const lastOnlineDate = data.lastOnlineDate || '';
+    const updateData = {
+      lastSeen:        serverTimestamp(),
+      lastTab:         currentTop || 'flashcard',
+      lastOnlineDate:  today,
+      totalOnlineSecs: increment(30),
+    };
+    if(lastOnlineDate !== today){
+      updateData.todayOnlineSecs = 30; // reset for new day
+    } else {
+      updateData.todayOnlineSecs = increment(30);
+    }
+    await updateDoc(userRef, updateData);
   }catch(e){ /* silent fail */ }
 }
 
@@ -2705,10 +2752,17 @@ async function loadOnlineUsers(){
       const badgeClass = u.isOnline ? 'badge-online' : 'badge-away';
       const badgeText  = u.isOnline ? '🟢 Online' : '🟡 Vừa rời';
       const tabLabel   = TAB_LABELS[u.tab] || u.tab;
+      const todayStr   = fmtTime(u.todayOnlineSecs);
+      const totalStr   = fmtTime(u.totalOnlineSecs);
       return `<div class="admin-online-row">
-        <div>
+        <div style="flex:1">
           <div class="admin-online-name">${u.name}</div>
           <div class="admin-online-time">${tabLabel} · ${timeStr}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px;">
+            📅 Hôm nay: <b style="color:var(--text)">${todayStr}</b>
+            &nbsp;·&nbsp;
+            📊 Tổng: <b style="color:var(--text)">${totalStr}</b>
+          </div>
         </div>
         <span class="admin-online-badge ${badgeClass}">${badgeText}</span>
       </div>`;
