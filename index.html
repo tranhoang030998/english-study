@@ -3002,7 +3002,10 @@ function showBuiltinEntry(word, resultEl){
 
   const allMeanings = [found.vn, ...(found.vn_alt||[])].filter(Boolean);
   let html = '<div class="dict-word-header">';
+  html += '<div style="display:flex;align-items:center;gap:10px;">';
   html += '<div class="dict-word-title">'+found.en+'</div>';
+  html += '<button class="dict-audio-btn" data-word="'+found.en+'" onclick="dictSpeak(this.dataset.word)" style="flex-shrink:0">🔊 Nghe</button>';
+  html += '</div>';
   if(found.pos) html += '<div class="dict-phonetic"><span style="color:var(--accent);font-weight:600">'+found.pos+'</span></div>';
   html += '</div>';
   html += '<div class="dict-meaning-block">';
@@ -3032,12 +3035,32 @@ function renderDictResult(entry){
   const audioUrl = entry.phonetics?.find(p=>p.audio)?.audio || '';
   const phonetic = entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '';
 
+  // Also look up Vietnamese meanings from TOEIC vocab
+  const vnEntry = ALL_WORDS.find(w =>
+    w.en.toLowerCase().replace(/\s*\([^)]+\)/g,'').trim() === (entry.word||'').toLowerCase()
+  );
+
   let html = '<div class="dict-word-header">';
+  html += '<div style="display:flex;align-items:center;gap:10px;">';
   html += '<div class="dict-word-title">'+entry.word+'</div>';
+  html += '<button class="dict-audio-btn" data-word="'+entry.word+'" onclick="dictSpeak(this.dataset.word)" style="flex-shrink:0">🔊 Nghe</button>';
+  html += '</div>';
   html += '<div class="dict-phonetic">';
   if(phonetic) html += '<span>'+phonetic+'</span>';
-  if(audioUrl) html += '<button class="dict-audio-btn" data-audio="'+audioUrl+'" onclick="playDictAudio(this.dataset.audio)">🔊 Nghe</button>';
-  html += '</div></div>';
+  if(audioUrl) html += '<button class="dict-audio-btn" data-audio="'+audioUrl+'" onclick="playDictAudio(this.dataset.audio)" style="margin-left:6px;">🎙️ Audio</button>';
+  html += '</div>';
+
+  // Show Vietnamese meanings if found in TOEIC vocab
+  if(vnEntry){
+    const allVn = [vnEntry.vn, ...(vnEntry.vn_alt||[])].filter(Boolean);
+    html += '<div style="margin-top:8px;padding:8px 12px;background:rgba(79,124,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;">';
+    html += '<div style="font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Nghĩa tiếng Việt</div>';
+    allVn.forEach((v,i)=>{
+      html += '<div style="font-size:13px;color:var(--green);margin-bottom:2px;">'+(i+1)+'. '+v+'</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
 
   (entry.meanings||[]).forEach(m => {
     html += '<div class="dict-meaning-block">';
@@ -3060,6 +3083,15 @@ function renderDictResult(entry){
 
   document.getElementById('dict-result').innerHTML = html;
 }
+
+function dictSpeak(word){
+  if(!window.speechSynthesis) return;
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US'; utter.rate = 0.85;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+}
+window.dictSpeak = dictSpeak;
 
 function dictSynClick(el){
   document.getElementById('dict-input').value = el.dataset.word;
