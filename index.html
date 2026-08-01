@@ -1559,19 +1559,7 @@ function buildDeck(){
   let pool;
   if(activeTopic==='bookmarks'){
     pool = ALL_WORDS.filter(w=>bookmarks.has(w.en));
-    if(!pool.length){
-      // No bookmarks yet - show empty state instead
-      document.getElementById('practice-panel').style.display='none';
-      document.getElementById('score-panel').style.display='none';
-      document.getElementById('flashcard').innerHTML=
-        '<div style="text-align:center;padding:32px 16px;color:var(--muted);">'
-        +'<div style="font-size:36px;margin-bottom:12px;">⭐</div>'
-        +'<div style="font-family:Space Grotesk,sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px;">Chưa có từ nào được đánh dấu</div>'
-        +'<div style="font-size:13px;">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>'
-        +'</div>';
-      document.getElementById('practice-panel').style.display='';
-      deck=[]; return;
-    }
+    // If empty, deck=[] will be handled by renderCard()
   } else if(activeTopic==='all'){
     pool=[...ALL_WORDS];
   } else {
@@ -1583,6 +1571,22 @@ function buildDeck(){
 }
 
 function renderCard(){
+  if(deck.length===0 && activeTopic==='bookmarks'){
+    // Show empty bookmark state
+    document.getElementById('flashcard').innerHTML=
+      '<div style="text-align:center;padding:32px 16px;">'
+      +'<div style="font-size:36px;margin-bottom:12px;">⭐</div>'
+      +'<div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px;">Chưa có từ nào được đánh dấu</div>'
+      +'<div style="font-size:13px;color:var(--muted);">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>'
+      +'</div>';
+    document.getElementById('progress-fill').style.width='0%';
+    document.getElementById('prog-text').textContent='0 từ đã đánh dấu';
+    document.getElementById('prog-pct').textContent='';
+    document.getElementById('feedback').textContent='';
+    document.getElementById('answer-input').value='';
+    document.getElementById('btn-skip').textContent='Bỏ qua →';
+    return;
+  }
   if(idx>=deck.length){showScore();return;}
   const card=deck[idx];answered=false;
   document.getElementById('btn-skip').textContent='Bỏ qua →';
