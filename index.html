@@ -1317,7 +1317,8 @@ async function updateStreak(username) {
 }
 
 function doLogout() {
-  saveLastSession();
+  saveLastSessionLocal(); // Sync save to localStorage before logout
+  saveLastSession();       // Async save to Firestore (best effort)
   stopHeartbeat();
   localStorage.removeItem('toeic_user');
   currentUser = null;
@@ -1799,6 +1800,10 @@ function updateProgress(){
 function updateStats(){
   document.getElementById('stat-correct')&&(document.getElementById('stat-correct').textContent=`${correctCount} đúng`);
   document.getElementById('stat-wrong')&&(document.getElementById('stat-wrong').textContent=`${wrongCount} sai`);
+  // Save session to localStorage every 5 answers
+  if((correctCount+wrongCount) > 0 && (correctCount+wrongCount) % 5 === 0){
+    saveLastSessionLocal();
+  }
   // Realtime badge check for key milestones
   if(currentUser && (correctCount===1 || bestComboSession===5 || bestComboSession===10 || bestComboSession===20)){
     checkAndAwardBadges({bestCombo:bestComboSession});
@@ -2905,14 +2910,31 @@ async function loadOnlineUsers(){
 }
 
 // ── PERSIST LAST SESSION ─────────────────────────────────────────
-async function saveLastSession(){
+function saveLastSessionLocal(){
+  // Save to localStorage immediately - no async, no timing issues
   if(!currentUser || history.length===0) return;
   try{
     const cards = history.map(h=>({
       en:h.en, vn:h.vn, topic:h.topic,
       cardMode:h.cardMode, ok:h.ok
     }));
-    await updateDoc(doc(db,'users',currentUser.username),{
+    const key = 'toeic_session_'+currentUser.username;
+    localStorage.setItem(key, JSON.stringify({
+      cards, date: new Date().toISOString().slice(0,10), count: cards.length
+    }));
+  }catch(e){ /* silent */ }
+}
+
+async function saveLastSession(){
+  saveLastSessionLocal(); // Always save to localStorage first
+  if(!currentUser || history.length===0) return;
+  try{
+    const cards = history.map(h=>({
+      en:h.en, vn:h.vn, topic:h.topic,
+      cardMode:h.cardMode, ok:h.ok
+    }));
+    const user = currentUser.username; // capture before any async
+    await updateDoc(doc(db,'users',user),{
       lastSessionCards: cards,
       lastSessionDate: new Date().toISOString().slice(0,10),
       lastSessionCount: cards.length,
@@ -2922,16 +2944,37 @@ async function saveLastSession(){
 
 async function loadLastSession(){
   if(!currentUser) return;
-  if(history.length > 0) return; // already have data this session
+  if(history.length > 0) return;
+
+  // Try localStorage first (instant, no network)
+  try{
+    const key = 'toeic_session_'+currentUser.username;
+    const saved = localStorage.getItem(key);
+    if(saved){
+      const data = JSON.parse(saved);
+      if(data?.cards?.length){
+        history = data.cards.map(c=>({
+          en:c.en, vn:c.vn, topic:c.topic,
+          cardMode:c.cardMode, ok:c.ok, userAnswer:'',
+        }));
+        return; // Got from localStorage, done
+      }
+    }
+  }catch(e){ /* fallthrough to Firestore */ }
+
+  // Fallback: try Firestore
   try{
     const snap = await getDoc(doc(db,'users',currentUser.username));
     const data = snap.data();
     if(!data?.lastSessionCards?.length) return;
-    // Restore history array
     history = data.lastSessionCards.map(c=>({
       en:c.en, vn:c.vn, topic:c.topic,
-      cardMode:c.cardMode, ok:c.ok,
-      userAnswer:'', // not stored
+      cardMode:c.cardMode, ok:c.ok, userAnswer:'',
+    }));
+    // Also cache to localStorage for next time
+    const key = 'toeic_session_'+currentUser.username;
+    localStorage.setItem(key, JSON.stringify({
+      cards: data.lastSessionCards, date: data.lastSessionDate
     }));
   }catch(e){ /* silent */ }
 }
@@ -3047,7 +3090,7 @@ function renderDictResult(entry){
   html += '</div>';
   html += '<div class="dict-phonetic">';
   if(phonetic) html += '<span>'+phonetic+'</span>';
-  if(audioUrl) html += '<button class="dict-audio-btn" data-audio="'+audioUrl+'" onclick="playDictAudio(this.dataset.audio)" style="margin-left:6px;">🎙️ Audio</button>';
+
   html += '</div>';
 
   // Show Vietnamese meanings if found in TOEIC vocab
@@ -3106,6 +3149,9 @@ function playDictAudio(url){
 }
 window.playDictAudio = playDictAudio;
 // ── Keyboard & Touch ──────────────────────────────────────────────
+// Save session when user closes/refreshes tab
+window.addEventListener('beforeunload', ()=>{ saveLastSessionLocal(); });
+
 document.addEventListener('keydown',e=>{
   if(document.getElementById('login-screen').style.display!=='none')return;
   if(e.key==='Enter'){e.preventDefault();if(!answered)checkAnswer();else nextCard();}
