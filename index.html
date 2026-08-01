@@ -190,6 +190,24 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* DICTIONARY */
+.dict-word-header{padding:16px 0 8px;}
+.dict-word-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;letter-spacing:-.5px;color:var(--text);}
+.dict-phonetic{font-size:14px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:10px;}
+.dict-audio-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:3px 10px;cursor:pointer;font-size:13px;font-family:'Space Grotesk',sans-serif;touch-action:manipulation;}
+.dict-audio-btn:hover{border-color:var(--accent);color:var(--accent);}
+.dict-meaning-block{margin-bottom:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);}
+.dict-pos{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+.dict-def-item{margin-bottom:10px;padding-left:12px;border-left:2px solid var(--border);}
+.dict-def-num{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:3px;font-family:'Space Grotesk',sans-serif;}
+.dict-def-text{font-size:14px;line-height:1.6;color:var(--text);}
+.dict-example{font-size:12.5px;font-style:italic;color:var(--muted);margin-top:4px;line-height:1.5;}
+.dict-synonyms{font-size:12px;color:var(--muted);margin-top:6px;}
+.dict-synonyms span{color:var(--accent);cursor:pointer;margin-right:6px;}
+.dict-synonyms span:hover{text-decoration:underline;}
+.dict-not-found{text-align:center;padding:32px 0;color:var(--muted);font-size:13px;}
+.dict-loading{text-align:center;padding:24px 0;color:var(--muted);font-size:13px;}
+
 /* ONLINE INDICATOR */
 .online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;animation:pulse-online 2s ease-in-out infinite;}
 @keyframes pulse-online{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.85);}}
@@ -352,6 +370,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   <button class="top-tab active" onclick="switchTop('flashcard',this)">📚 Flashcard</button>
   <button class="top-tab" onclick="switchTop('grammar',this)">✍️ Ngữ pháp</button>
   <button class="top-tab" onclick="switchTop('minitest',this)">🎯 Mini Test</button>
+  <button class="top-tab" onclick="switchTop('dictionary',this)">📖 Từ điển</button>
   <button class="top-tab" onclick="switchTop('dashboard',this)">📈 Dashboard</button>
   <button class="top-tab" id="admin-tab-btn" style="display:none" onclick="switchTop('admin',this)">⚙️ Admin</button>
 </div>
@@ -562,6 +581,27 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
   </div>
 </div>
 
+
+<!-- DICTIONARY PANEL -->
+<div id="dictionary-panel" style="display:none;width:100%;max-width:680px;padding:14px 16px 24px;">
+
+  <!-- Search bar -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <input id="dict-input" type="text" placeholder="Nhập từ tiếng Anh..." autocomplete="off" autocapitalize="off" spellcheck="false"
+      style="flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:15px;padding:12px 14px;outline:none;"
+      onkeydown="if(event.key==='Enter')lookupWord()">
+    <button onclick="lookupWord()" style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 18px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;white-space:nowrap;">Tra từ</button>
+  </div>
+
+  <!-- Quick TOEIC words -->
+  <div style="margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Từ vựng TOEIC nhanh</div>
+    <div id="dict-quick-words" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+  </div>
+
+  <!-- Result area -->
+  <div id="dict-result"></div>
+</div>
 </div><!-- end #app -->
 <div id="badge-toast">
   <div class="badge-toast-icon" id="badge-toast-icon">🏅</div>
@@ -1356,6 +1396,10 @@ function switchTop(section, btn){
     gp.style.display='block';gp.style.marginLeft='auto';gp.style.marginRight='auto';
     initGrammarFilters();
     if(!grammarDeck.length){buildGrammarDeck();renderGrammarCard();}
+  } else if(section==='dictionary'){
+    const dp2=document.getElementById('dictionary-panel');
+    dp2.style.display='block';dp2.style.marginLeft='auto';dp2.style.marginRight='auto';
+    initDictionary();
   } else if(section==='minitest'){
     const mp=document.getElementById('minitest-panel');
     mp.style.display='block';mp.style.marginLeft='auto';mp.style.marginRight='auto';
@@ -2891,6 +2935,108 @@ async function loadLastSession(){
     }));
   }catch(e){ /* silent */ }
 }
+
+// ══════════════════════════════════════════════════════
+//  DICTIONARY (Free Dictionary API)
+// ══════════════════════════════════════════════════════
+const DICT_API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+let dictAudio = null;
+let dictInitDone = false;
+
+// Quick words from TOEIC vocab - pick 20 representative ones
+const QUICK_WORDS = ['contract','negotiate','deadline','budget','invoice',
+  'deposit','resign','promotion','agenda','vacancy',
+  'reservation','complaint','guarantee','revenue','audit',
+  'courier','merger','compliance','warranty','renovation'];
+
+function initDictionary(){
+  if(dictInitDone) return;
+  dictInitDone = true;
+  const wrap = document.getElementById('dict-quick-words');
+  if(!wrap) return;
+  QUICK_WORDS.forEach(w => {
+    const btn = document.createElement('button');
+    btn.className = 'topic-chip';
+    btn.textContent = w;
+    btn.onclick = () => { document.getElementById('dict-input').value=w; lookupWord(); };
+    wrap.appendChild(btn);
+  });
+}
+window.initDictionary = initDictionary;
+
+async function lookupWord(){
+  const word = document.getElementById('dict-input').value.trim().toLowerCase();
+  if(!word) return;
+
+  const resultEl = document.getElementById('dict-result');
+  resultEl.innerHTML = '<div class="dict-loading">Đang tra từ...</div>';
+
+  try{
+    const res = await fetch(DICT_API + encodeURIComponent(word));
+    if(!res.ok){
+      resultEl.innerHTML = '<div class="dict-not-found">Không tìm thấy từ "<b>'+word+'</b>".<br>Thử kiểm tra chính tả hoặc tìm từ gốc.</div>';
+      return;
+    }
+    const data = await res.json();
+    renderDictResult(data[0]);
+  }catch(e){
+    resultEl.innerHTML = '<div class="dict-not-found">Lỗi kết nối. Vui lòng thử lại.</div>';
+  }
+}
+window.lookupWord = lookupWord;
+
+function renderDictResult(entry){
+  if(!entry){ document.getElementById('dict-result').innerHTML='<div class="dict-not-found">Không có kết quả.</div>'; return; }
+
+  // Find audio
+  const audioUrl = entry.phonetics?.find(p=>p.audio)?.audio || '';
+  const phonetic = entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '';
+
+  let html = '<div class="dict-word-header">';
+  html += '<div class="dict-word-title">'+entry.word+'</div>';
+  html += '<div class="dict-phonetic">';
+  if(phonetic) html += '<span>'+phonetic+'</span>';
+  if(audioUrl) html += '<button class="dict-audio-btn" data-audio="'+audioUrl+'" onclick="playDictAudio(this.dataset.audio)">🔊 Nghe</button>';
+  html += '</div></div>';
+
+  // Meanings
+  (entry.meanings||[]).forEach(m => {
+    html += '<div class="dict-meaning-block">';
+    html += '<div class="dict-pos">'+m.partOfSpeech+'</div>';
+
+    (m.definitions||[]).slice(0,3).forEach((d,i) => {
+      html += '<div class="dict-def-item">';
+      html += '<div class="dict-def-num">'+(i+1)+'</div>';
+      html += '<div class="dict-def-text">'+d.definition+'</div>';
+      if(d.example) html += '<div class="dict-example">"'+d.example+'"</div>';
+      html += '</div>';
+    });
+
+    // Synonyms
+    const syns = (m.synonyms||[]).slice(0,6);
+    if(syns.length){
+      html += '<div class="dict-synonyms">Từ đồng nghĩa: ';
+      syns.forEach(s => { html += '<span class="dict-syn-chip" data-word="'+s+'" onclick="dictSynClick(this)">'+s+'</span>'; });
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+
+  document.getElementById('dict-result').innerHTML = html;
+}
+
+function dictSynClick(el){
+  document.getElementById('dict-input').value = el.dataset.word;
+  lookupWord();
+}
+window.dictSynClick = dictSynClick;
+
+function playDictAudio(url){
+  if(dictAudio) dictAudio.pause();
+  dictAudio = new Audio(url);
+  dictAudio.play().catch(()=>{});
+}
+window.playDictAudio = playDictAudio;
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(document.getElementById('login-screen').style.display!=='none')return;
