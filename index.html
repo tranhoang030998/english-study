@@ -420,6 +420,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 
 <!-- SUMMARY TAB -->
 <div class="sum-panel" id="sum-panel">
+  <div id="sum-session-info" style="font-size:11px;color:var(--muted);font-family:'Space Grotesk',sans-serif;margin-bottom:10px;padding-top:2px;"></div>
   <div class="sum-stats">
     <div class="sum-stat-box"><div class="val" id="s-total">0</div><div class="lbl">Đã làm</div></div>
     <div class="sum-stat-box"><div class="val" style="color:var(--green)" id="s-correct">0</div><div class="lbl">Đúng</div></div>
@@ -1276,6 +1277,7 @@ async function updateStreak(username) {
 }
 
 function doLogout() {
+  saveLastSession();
   stopHeartbeat();
   localStorage.removeItem('toeic_user');
   currentUser = null;
@@ -1385,7 +1387,13 @@ function showFlashcardTab(tab){
       el.style.marginRight='auto';
     });
   }
-  if(tab==='summary'){renderSummary();renderBadges();}
+  if(tab==='summary'){
+    if(history.length===0){
+      loadLastSession().then(()=>{ renderSummary(); renderBadges(); });
+    } else {
+      renderSummary(); renderBadges();
+    }
+  }
   if(tab==='ranking') loadRanking();
 }
 
@@ -1785,6 +1793,7 @@ async function showScore(){
       await saveSession(correctCount, wrongCount, skipCount, pct);
       document.getElementById('score-save-msg').textContent='✓ Đã lưu vào bảng xếp hạng!';
       savedCorrect = correctCount; savedWrong = wrongCount;
+      saveLastSession();
       // Check badges with session data
       const isPerfect = wrongCount===0 && (correctCount+wrongCount)>=20;
       checkAndAwardBadges({bestCombo: bestComboSession, hadPerfectSession: isPerfect});
@@ -1997,6 +2006,16 @@ async function loadRanking(){
 
 // ── Summary ───────────────────────────────────────────────────────
 function renderSummary(){
+  // Show session info
+  const infoEl = document.getElementById('sum-session-info');
+  if(infoEl){
+    if(history.length===0){
+      infoEl.textContent='';
+    } else {
+      const today = new Date().toISOString().slice(0,10);
+      infoEl.textContent = '📋 Buổi học hôm nay · '+history.length+' thẻ đã làm';
+    }
+  }
   const ok=history.filter(h=>h.ok).length;
   const fail=history.filter(h=>!h.ok).length;
   const total=history.length;
@@ -2839,6 +2858,38 @@ async function loadOnlineUsers(){
   }catch(e){
     if(listEl) listEl.innerHTML='<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
   }
+}
+
+// ── PERSIST LAST SESSION ─────────────────────────────────────────
+async function saveLastSession(){
+  if(!currentUser || history.length===0) return;
+  try{
+    const cards = history.map(h=>({
+      en:h.en, vn:h.vn, topic:h.topic,
+      cardMode:h.cardMode, ok:h.ok
+    }));
+    await updateDoc(doc(db,'users',currentUser.username),{
+      lastSessionCards: cards,
+      lastSessionDate: new Date().toISOString().slice(0,10),
+      lastSessionCount: cards.length,
+    });
+  }catch(e){ /* silent */ }
+}
+
+async function loadLastSession(){
+  if(!currentUser) return;
+  if(history.length > 0) return; // already have data this session
+  try{
+    const snap = await getDoc(doc(db,'users',currentUser.username));
+    const data = snap.data();
+    if(!data?.lastSessionCards?.length) return;
+    // Restore history array
+    history = data.lastSessionCards.map(c=>({
+      en:c.en, vn:c.vn, topic:c.topic,
+      cardMode:c.cardMode, ok:c.ok,
+      userAnswer:'', // not stored
+    }));
+  }catch(e){ /* silent */ }
 }
 // ── Keyboard & Touch ──────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
