@@ -1559,7 +1559,19 @@ function buildDeck(){
   let pool;
   if(activeTopic==='bookmarks'){
     pool = ALL_WORDS.filter(w=>bookmarks.has(w.en));
-    if(!pool.length){ pool=[...ALL_WORDS]; } // fallback if no bookmarks
+    if(!pool.length){
+      // No bookmarks yet - show empty state instead
+      document.getElementById('practice-panel').style.display='none';
+      document.getElementById('score-panel').style.display='none';
+      document.getElementById('flashcard').innerHTML=
+        '<div style="text-align:center;padding:32px 16px;color:var(--muted);">'
+        +'<div style="font-size:36px;margin-bottom:12px;">⭐</div>'
+        +'<div style="font-family:Space Grotesk,sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px;">Chưa có từ nào được đánh dấu</div>'
+        +'<div style="font-size:13px;">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>'
+        +'</div>';
+      document.getElementById('practice-panel').style.display='';
+      deck=[]; return;
+    }
   } else if(activeTopic==='all'){
     pool=[...ALL_WORDS];
   } else {
