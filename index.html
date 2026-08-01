@@ -2939,7 +2939,6 @@ async function loadLastSession(){
 // ══════════════════════════════════════════════════════
 //  DICTIONARY (Free Dictionary API)
 // ══════════════════════════════════════════════════════
-const DICT_API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 let dictAudio = null;
 let dictInitDone = false;
 
@@ -2964,23 +2963,25 @@ function initDictionary(){
 }
 window.initDictionary = initDictionary;
 
+const DICT_API = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
+
 async function lookupWord(){
   const word = document.getElementById('dict-input').value.trim().toLowerCase();
   if(!word) return;
 
   const resultEl = document.getElementById('dict-result');
-  resultEl.innerHTML = '<div class="dict-loading">Đang tra từ...</div>';
+  resultEl.innerHTML = '<div class="dict-loading">Đang tra từ "'+word+'"...</div>';
 
   try{
     const res = await fetch(DICT_API + encodeURIComponent(word));
     if(!res.ok){
-      resultEl.innerHTML = '<div class="dict-not-found">Không tìm thấy từ "<b>'+word+'</b>".<br>Thử kiểm tra chính tả hoặc tìm từ gốc.</div>';
+      resultEl.innerHTML = '<div class="dict-not-found">Không tìm thấy từ "<b>'+word+'</b>".<br>Thử kiểm tra chính tả hoặc dùng từ gốc.</div>';
       return;
     }
     const data = await res.json();
     renderDictResult(data[0]);
   }catch(e){
-    resultEl.innerHTML = '<div class="dict-not-found">Lỗi kết nối. Vui lòng thử lại.</div>';
+    resultEl.innerHTML = '<div class="dict-not-found">Không tra được từ này. Tab Từ điển hoạt động khi dùng app trên GitHub Pages (trình duyệt thật), không hoạt động trong môi trường preview.</div>';
   }
 }
 window.lookupWord = lookupWord;
@@ -2988,7 +2989,6 @@ window.lookupWord = lookupWord;
 function renderDictResult(entry){
   if(!entry){ document.getElementById('dict-result').innerHTML='<div class="dict-not-found">Không có kết quả.</div>'; return; }
 
-  // Find audio
   const audioUrl = entry.phonetics?.find(p=>p.audio)?.audio || '';
   const phonetic = entry.phonetic || entry.phonetics?.find(p=>p.text)?.text || '';
 
@@ -2999,11 +2999,9 @@ function renderDictResult(entry){
   if(audioUrl) html += '<button class="dict-audio-btn" data-audio="'+audioUrl+'" onclick="playDictAudio(this.dataset.audio)">🔊 Nghe</button>';
   html += '</div></div>';
 
-  // Meanings
   (entry.meanings||[]).forEach(m => {
     html += '<div class="dict-meaning-block">';
     html += '<div class="dict-pos">'+m.partOfSpeech+'</div>';
-
     (m.definitions||[]).slice(0,3).forEach((d,i) => {
       html += '<div class="dict-def-item">';
       html += '<div class="dict-def-num">'+(i+1)+'</div>';
@@ -3011,12 +3009,10 @@ function renderDictResult(entry){
       if(d.example) html += '<div class="dict-example">"'+d.example+'"</div>';
       html += '</div>';
     });
-
-    // Synonyms
     const syns = (m.synonyms||[]).slice(0,6);
     if(syns.length){
       html += '<div class="dict-synonyms">Từ đồng nghĩa: ';
-      syns.forEach(s => { html += '<span class="dict-syn-chip" data-word="'+s+'" onclick="dictSynClick(this)">'+s+'</span>'; });
+      syns.forEach(s=>{ html += '<span class="dict-syn-chip" data-word="'+s+'" onclick="dictSynClick(this)">'+s+'</span>'; });
       html += '</div>';
     }
     html += '</div>';
