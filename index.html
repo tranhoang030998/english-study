@@ -416,9 +416,9 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
     </div>
   </div>
   <!-- Bookmark empty state (shown instead of flashcard) -->
-  <div id="bookmark-empty" style="display:none;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:32px 16px;text-align:center;margin-bottom:10px;">
+  <div id="bookmark-empty" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:32px 16px;text-align:center;margin-bottom:10px;min-height:210px;display:none;align-items:center;justify-content:center;flex-direction:column;">
     <div style="font-size:36px;margin-bottom:12px;">⭐</div>
-    <div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px);">Chưa có từ nào được đánh dấu</div>
+    <div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px;">Chưa có từ nào được đánh dấu</div>
     <div style="font-size:13px;color:var(--muted);">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>
   </div>
   <div class="input-area">
@@ -1583,7 +1583,7 @@ function renderCard(){
   const bmEmpty = document.getElementById('bookmark-empty');
   const flashcard = document.getElementById('flashcard');
   if(deck.length===0 && activeTopic==='bookmarks'){
-    if(bmEmpty){ bmEmpty.style.display='block'; }
+    if(bmEmpty){ bmEmpty.style.display='flex'; }
     if(flashcard){ flashcard.style.display='none'; }
     document.getElementById('progress-fill').style.width='0%';
     document.getElementById('prog-text').textContent='0 từ đã đánh dấu';
@@ -3320,15 +3320,28 @@ async function toggleBookmark(){
   if(!card || !currentUser) return;
   const word = card.en;
   const btn = document.getElementById('btn-bookmark');
-  if(bookmarks.has(word)){
+  const wasBookmarked = bookmarks.has(word);
+  if(wasBookmarked){
     bookmarks.delete(word);
     btn.textContent = '☆';
     btn.style.color = '';
+    // If in bookmark mode, remove card and move to next
+    if(activeTopic==='bookmarks'){
+      updateBookmarkChip();
+      const arr2 = [...bookmarks];
+      const lsKey2 = 'toeic_bm_'+currentUser.username;
+      localStorage.setItem(lsKey2, JSON.stringify(arr2));
+      updateDoc(doc(db,'users',currentUser.username),{bookmarks: arr2}).catch(()=>{});
+      // Rebuild deck without this card
+      deck = deck.filter(d=>d.en !== word);
+      if(idx >= deck.length) idx = Math.max(0, deck.length-1);
+      renderCard();
+      return;
+    }
   } else {
     bookmarks.add(word);
     btn.textContent = '⭐';
     btn.style.color = '#FFD700';
-    // Show mini toast
     showBadgeToast({icon:'⭐', name:'Đã đánh dấu "'+word+'"', desc:'Vào "⭐ Đã đánh dấu" để ôn lại'});
   }
   updateBookmarkChip();
