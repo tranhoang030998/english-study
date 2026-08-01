@@ -415,6 +415,12 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
       <div class="card-example" id="card-example"></div>
     </div>
   </div>
+  <!-- Bookmark empty state (shown instead of flashcard) -->
+  <div id="bookmark-empty" style="display:none;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:32px 16px;text-align:center;margin-bottom:10px;">
+    <div style="font-size:36px;margin-bottom:12px;">⭐</div>
+    <div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px);">Chưa có từ nào được đánh dấu</div>
+    <div style="font-size:13px;color:var(--muted);">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>
+  </div>
   <div class="input-area">
     <div class="input-row">
       <input type="text" id="answer-input" placeholder="Nhập nghĩa tiếng Việt..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
@@ -1571,14 +1577,12 @@ function buildDeck(){
 }
 
 function renderCard(){
+  // Show/hide bookmark empty state
+  const bmEmpty = document.getElementById('bookmark-empty');
+  const flashcard = document.getElementById('flashcard');
   if(deck.length===0 && activeTopic==='bookmarks'){
-    // Show empty bookmark state
-    document.getElementById('flashcard').innerHTML=
-      '<div style="text-align:center;padding:32px 16px;">'
-      +'<div style="font-size:36px;margin-bottom:12px;">⭐</div>'
-      +'<div style="font-weight:600;font-size:15px;color:var(--text);margin-bottom:8px;">Chưa có từ nào được đánh dấu</div>'
-      +'<div style="font-size:13px;color:var(--muted);">Bấm ☆ trên thẻ từ để đánh dấu từ khó</div>'
-      +'</div>';
+    if(bmEmpty){ bmEmpty.style.display='block'; }
+    if(flashcard){ flashcard.style.display='none'; }
     document.getElementById('progress-fill').style.width='0%';
     document.getElementById('prog-text').textContent='0 từ đã đánh dấu';
     document.getElementById('prog-pct').textContent='';
@@ -1586,6 +1590,9 @@ function renderCard(){
     document.getElementById('answer-input').value='';
     document.getElementById('btn-skip').textContent='Bỏ qua →';
     return;
+  } else {
+    if(bmEmpty) bmEmpty.style.display='none';
+    if(flashcard) flashcard.style.display='';
   }
   if(idx>=deck.length){showScore();return;}
   const card=deck[idx];answered=false;
