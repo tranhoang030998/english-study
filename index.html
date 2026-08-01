@@ -2975,16 +2975,56 @@ async function lookupWord(){
   try{
     const res = await fetch(DICT_API + encodeURIComponent(word));
     if(!res.ok){
-      resultEl.innerHTML = '<div class="dict-not-found">Không tìm thấy từ "<b>'+word+'</b>".<br>Thử kiểm tra chính tả hoặc dùng từ gốc.</div>';
+      // Fallback to built-in TOEIC vocabulary
+      showBuiltinEntry(word, resultEl);
       return;
     }
     const data = await res.json();
     renderDictResult(data[0]);
   }catch(e){
-    resultEl.innerHTML = '<div class="dict-not-found">Không tra được từ này. Tab Từ điển hoạt động khi dùng app trên GitHub Pages (trình duyệt thật), không hoạt động trong môi trường preview.</div>';
+    // Fallback to built-in TOEIC vocabulary
+    showBuiltinEntry(word, resultEl);
   }
 }
 window.lookupWord = lookupWord;
+
+function showBuiltinEntry(word, resultEl){
+  // Look up word in ALL_WORDS
+  const found = ALL_WORDS.find(w =>
+    w.en.toLowerCase() === word ||
+    w.en.toLowerCase().replace(/\s*\([^)]+\)/g,'').trim() === word
+  );
+
+  if(!found){
+    resultEl.innerHTML = '<div class="dict-not-found">Không tìm thấy "<b>'+word+'</b>" trong từ điển.<br>Thử kiểm tra chính tả hoặc tìm từ gốc (ví dụ: "negotiate" thay vì "negotiation").</div>';
+    return;
+  }
+
+  const allMeanings = [found.vn, ...(found.vn_alt||[])].filter(Boolean);
+  let html = '<div class="dict-word-header">';
+  html += '<div class="dict-word-title">'+found.en+'</div>';
+  if(found.pos) html += '<div class="dict-phonetic"><span style="color:var(--accent);font-weight:600">'+found.pos+'</span></div>';
+  html += '</div>';
+  html += '<div class="dict-meaning-block">';
+  html += '<div class="dict-pos">TOEIC Vocabulary</div>';
+  allMeanings.forEach((m,i)=>{
+    html += '<div class="dict-def-item">';
+    html += '<div class="dict-def-num">'+(i+1)+'</div>';
+    html += '<div class="dict-def-text" style="color:var(--green)">'+m+'</div>';
+    html += '</div>';
+  });
+  if(found.ex){
+    html += '<div style="margin-top:10px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:13px;color:var(--muted);font-style:italic;">"'+found.ex+'"</div>';
+  }
+  if(found.en_alt&&found.en_alt.length){
+    html += '<div class="dict-synonyms" style="margin-top:8px;">Synonyms: ';
+    found.en_alt.forEach(s=>{ html += '<span class="dict-syn-chip" data-word="'+s+'" onclick="dictSynClick(this)">'+s+'</span>'; });
+    html += '</div>';
+  }
+  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--muted);margin-top:8px;">📚 Nguồn: TOEIC Vocabulary (600 từ)</div>';
+  resultEl.innerHTML = html;
+}
 
 function renderDictResult(entry){
   if(!entry){ document.getElementById('dict-result').innerHTML='<div class="dict-not-found">Không có kết quả.</div>'; return; }
