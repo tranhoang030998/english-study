@@ -1564,7 +1564,9 @@ window.setMode=setMode;
 function buildDeck(){
   let pool;
   if(activeTopic==='bookmarks'){
-    pool = ALL_WORDS.filter(w=>bookmarks.has(w.en));
+    // Deduplicate by English word (same word may appear in multiple topics)
+    const seen = new Set();
+    pool = ALL_WORDS.filter(w=>{ if(bookmarks.has(w.en) && !seen.has(w.en)){ seen.add(w.en); return true; } return false; });
     // If empty, deck=[] will be handled by renderCard()
   } else if(activeTopic==='all'){
     pool=[...ALL_WORDS];
