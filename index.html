@@ -2560,6 +2560,20 @@ const GRAMMAR_Q=[
 {id:'cj15',cat:'Conjunctions',s:'The company succeeded _____ the challenging economic conditions.',o:['A) although','B) in spite of','C) even though','D) however'],a:1,e:'"In spite of + noun/V-ing" = mặc dù. "The challenging economic conditions" là danh từ → "in spite of". "Although/Even though" cần mệnh đề đầy đủ (S+V) theo sau.'},
 ];
 
+
+// ── STOP WORDS (articles, prepositions, conjunctions - skip tooltip) ──
+const STOP_WORDS = new Set(['the','a','an','of','in','on','at','by','for',
+  'with','from','to','into','out','up','down','about','after','before',
+  'and','or','but','so','yet','nor','as','if','then','than','that','this',
+  'these','those','it','its','we','they','you','he','she','is','are','was',
+  'were','be','been','being','have','has','had','do','does','did','will',
+  'would','could','should','may','might','must','shall','can','not','no',
+  'all','some','any','each','every','both','few','more','most','other',
+  'such','same','own','very','just','also','only','over','under','while',
+  'although','however','therefore','furthermore','moreover','nevertheless',
+  'i','my','me','our','us','your','their','them','him','her','his','hers',
+  'which','who','whom','whose','when','where','why','how','what']);
+
 const COMMON_WORDS = [
   {w:'accept',p:'verb',v:'chấp nhận',a:['đồng ý','tiếp nhận']},
   {w:'access',p:'verb',v:'truy cập',a:['tiếp cận']},
@@ -3961,6 +3975,8 @@ async function lookupWordTooltip(el, event){
   event.stopPropagation();
   const word = el.dataset.word;
   if(!word) return;
+  // Skip stop words
+  if(STOP_WORDS.has(word)){ return; }
 
   const tt = document.getElementById('word-tooltip');
   const ttWord = document.getElementById('tt-word');
@@ -3992,12 +4008,22 @@ async function lookupWordTooltip(el, event){
   });
 
   // 1. Check TOEIC vocab first (instant)
-  const base = word.replace(/(ing|ed|s|es|er|est|ly)$/, '').toLowerCase();
-  const found = ALL_WORDS.find(w =>
-    w.en.toLowerCase() === word ||
-    w.en.toLowerCase() === base ||
-    w.en.toLowerCase().split('/')[0].trim() === word
-  );
+  // Try multiple base forms for better matching
+  const tryBases = [word];
+  if(word.endsWith('ies')) tryBases.push(word.slice(0,-3)+'y');
+  if(word.endsWith('ves')) tryBases.push(word.slice(0,-3)+'f');
+  if(word.endsWith('es'))  tryBases.push(word.slice(0,-2));
+  if(word.endsWith('s'))   tryBases.push(word.slice(0,-1));
+  if(word.endsWith('ing')) tryBases.push(word.slice(0,-3), word.slice(0,-3)+'e');
+  if(word.endsWith('ed'))  tryBases.push(word.slice(0,-2), word.slice(0,-1));
+  if(word.endsWith('er'))  tryBases.push(word.slice(0,-2));
+  if(word.endsWith('ly'))  tryBases.push(word.slice(0,-2));
+  const base = tryBases[1] || word;
+
+  const found = ALL_WORDS.find(w => {
+    const en = w.en.toLowerCase().split('/')[0].trim().replace(/\s*\([^)]+\)/g,'').trim();
+    return tryBases.includes(en) || tryBases.includes(w.en.toLowerCase());
+  });
 
   if(found){
     ttPos.textContent = found.pos || '';
@@ -4008,7 +4034,7 @@ async function lookupWordTooltip(el, event){
   }
 
   // 2. Check COMMON_WORDS (instant, no API)
-  const common = COMMON_WORDS.find(w => w.w === word || w.w === base);
+  const common = COMMON_WORDS.find(w => tryBases.includes(w.w));
   if(common){
     ttPos.textContent = common.p || '';
     const vns2 = [common.v,...(common.a||[])].filter(Boolean).slice(0,3);
