@@ -418,7 +418,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 <!-- FLASHCARD SUB NAV -->
 <div id="flashcard-subnav" style="width:100%;max-width:100%;padding:0 16px;display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);align-self:stretch;">
   <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
-  <button class="tab-btn sub-tab" onclick="switchMainTab('mywords',this)">📝 Từ riêng</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('mywords',this)">✏️ Từ riêng</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
 </div>
@@ -1517,7 +1517,13 @@ window.switchTop=switchTop;
 function showFlashcardTab(tab){
   document.getElementById('practice-panel').style.display=tab==='practice'?'':'none';
   if(tab!=='practice') document.getElementById('score-panel').style.display='none';
-  // Set explicit centering via margin auto when showing panels
+  // Show/hide mywords panel
+  const mwEl=document.getElementById('mywords-panel');
+  if(mwEl){
+    mwEl.style.display=tab==='mywords'?'block':'none';
+    mwEl.style.marginLeft='auto'; mwEl.style.marginRight='auto';
+    if(tab==='mywords') renderMyWords();
+  }
   const sumEl=document.getElementById('sum-panel');
   const rankEl=document.getElementById('rank-panel');
   sumEl.style.display=tab==='summary'?'block':'none';
