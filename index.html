@@ -2933,12 +2933,14 @@ function checkWrongStreak(){
 
 // ── TIME FORMAT HELPERS ───────────────────────────────────────────
 const fmtSecs = (s) => {
-  if(!s || s<60) return s ? s+'s' : '—';
+  if(!s || s===0) return 'chưa có';
+  if(s < 60) return '< 1 phút';
   const m=Math.floor(s/60), h=Math.floor(m/60);
   return h>0 ? h+'h '+m%60+'p' : m+'p';
 };
 const fmtTime = (secs) => {
-  if(!secs || secs<60) return secs ? secs+'s' : '—';
+  if(!secs || secs===0) return 'chưa có';
+  if(secs < 60) return '< 1 phút';
   const m=Math.floor(secs/60), h=Math.floor(m/60);
   if(h>0) return h+'h '+(m%60)+'p';
   return m+' phút';
