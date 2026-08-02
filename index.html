@@ -417,9 +417,9 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 </div>
 <!-- FLASHCARD SUB NAV -->
 <div id="flashcard-subnav" style="width:100%;max-width:100%;padding:0 16px;display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);align-self:stretch;">
-  <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">Luyện tập</button>
+  <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('mywords',this)">📝 Từ riêng</button>
-  <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">Kết quả</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
 </div>
 
@@ -1433,7 +1433,7 @@ function showApp() {
   }
   // Set initial data-tab on sub-nav buttons
   document.querySelectorAll('#flashcard-subnav .tab-btn').forEach((b,i)=>{
-    b.setAttribute('data-tab',['practice','summary','ranking'][i]);
+    b.setAttribute('data-tab',['practice','mywords','summary','ranking'][i]);
   });
   loadUserStreak();
   loadBookmarks();
