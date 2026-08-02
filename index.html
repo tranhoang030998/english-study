@@ -1439,6 +1439,14 @@ function showApp() {
   loadBookmarks();
   loadMyWords();
   buildTopicChips();
+  // Always start at Flashcard > Luyện tập regardless of previous tab
+  document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.top-tab').classList.add('active'); // first top tab = Flashcard
+  document.querySelectorAll('#flashcard-subnav .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('#flashcard-subnav .tab-btn').classList.add('active'); // first = Luyện tập
+  document.getElementById('flashcard-subnav').style.display='flex';
+  ALL_PANELS.forEach(p=>{ const el=document.getElementById(p); if(el) el.style.display='none'; });
+  currentTop='flashcard';
   restart();
 }
 
