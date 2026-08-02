@@ -4695,6 +4695,12 @@ async function addMyWord(){
   renderMyWords();
   updateMyWordChip();
   buildTopicChips(); // refresh chips to update count
+  // Rebuild deck immediately if on practice tab & mix checked
+  const mixCheck2 = document.getElementById('mw-mix');
+  const practiceVisible = document.getElementById('practice-panel')?.style.display !== 'none';
+  if(mixCheck2 && mixCheck2.checked && practiceVisible){
+    buildDeck(); mixMyWordsIntoDeck(); renderCard();
+  }
 }
 window.addMyWord = addMyWord;
 
@@ -4703,6 +4709,12 @@ async function deleteMyWord(id){
   await saveMyWords();
   renderMyWords();
   updateMyWordChip();
+  // Rebuild deck immediately if on practice tab & mix checked
+  const mixCheck3 = document.getElementById('mw-mix');
+  const practiceVisible2 = document.getElementById('practice-panel')?.style.display !== 'none';
+  if(mixCheck3 && mixCheck3.checked && practiceVisible2){
+    buildDeck(); mixMyWordsIntoDeck(); renderCard();
+  }
 }
 window.deleteMyWord = deleteMyWord;
 
@@ -4720,7 +4732,7 @@ function renderMyWords(){
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
       <div style="flex:1;">
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;">${w.en}
-          <button onclick="speakAfterAnswer('${w.en}')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:4px;">🔊</button>
+          <button data-word="${w.en}" onclick="dictSpeak(this.dataset.word)" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:4px;">🔊</button>
         </div>
         <div style="font-size:12px;color:var(--green);margin-top:2px;">${w.vn}</div>
         ${w.ex?'<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px;">'+w.ex+'</div>':''}
