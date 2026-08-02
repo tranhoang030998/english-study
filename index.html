@@ -190,6 +190,26 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* BADGE POPUP */
+#badge-popup{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;
+  display:none;align-items:center;justify-content:center;padding:20px;}
+#badge-popup.show{display:flex;}
+.badge-popup-box{background:var(--surface);border:1px solid var(--gold);
+  border-radius:var(--card-radius);padding:24px 20px;max-width:300px;width:100%;
+  text-align:center;animation:combo-bounce .3s ease;}
+.badge-popup-icon{font-size:48px;margin-bottom:8px;}
+.badge-popup-name{font-family:'Space Grotesk',sans-serif;font-weight:700;
+  font-size:17px;color:var(--gold);margin-bottom:6px;}
+.badge-popup-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:16px;}
+.badge-popup-status{font-size:12px;font-weight:600;padding:4px 12px;
+  border-radius:8px;display:inline-block;}
+.badge-popup-status.earned{background:rgba(255,215,0,.15);color:var(--gold);}
+.badge-popup-status.locked{background:var(--surface2);color:var(--muted);}
+.badge-popup-close{margin-top:14px;font-family:'Space Grotesk',sans-serif;
+  font-size:13px;color:var(--muted);cursor:pointer;padding:8px 20px;
+  border:1px solid var(--border);border-radius:8px;background:transparent;
+  display:block;width:100%;}
+
 /* WORD CLICK TOOLTIP */
 #word-tooltip{
   position:fixed;z-index:9000;background:var(--surface);
@@ -653,6 +673,17 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
     <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;">Phiên bản mới đã sẵn sàng.<br>Vui lòng đăng nhập lại để dùng phiên bản mới nhất.</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:16px;" id="update-countdown">Tự động đăng xuất sau 10 giây...</div>
     <button onclick="forceLogout()" style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;">Đăng xuất ngay</button>
+  </div>
+</div>
+
+<!-- BADGE POPUP -->
+<div id="badge-popup">
+  <div class="badge-popup-box">
+    <div class="badge-popup-icon" id="bp-icon">🏅</div>
+    <div class="badge-popup-name" id="bp-name"></div>
+    <div class="badge-popup-desc" id="bp-desc"></div>
+    <div class="badge-popup-status" id="bp-status"></div>
+    <button class="badge-popup-close" onclick="closeBadgePopup()">Đóng</button>
   </div>
 </div>
 
@@ -1831,7 +1862,9 @@ async function renderBadges(){
     const userSnap = await getDoc(doc(db,'users',currentUser.username));
     const earned   = userSnap.data()?.badges || [];
     grid.innerHTML  = BADGES.map(b=>`
-      <div class="badge-item ${earned.includes(b.id)?'earned':'locked'}" title="${b.desc}">
+      <div class="badge-item ${earned.includes(b.id)?'earned':'locked'}"
+        onclick="showBadgePopup('${b.icon}','${b.name}','${b.desc}',${earned.includes(b.id)})"
+        style="cursor:pointer;">
         <span class="badge-icon">${b.icon}</span>
         <span class="badge-label">${b.name}</span>
       </div>`).join('');
@@ -4524,6 +4557,29 @@ document.addEventListener('click', (e)=>{
     const tt = document.getElementById('word-tooltip');
     if(tt) tt.style.display='none';
   }
+});
+
+// ── BADGE POPUP ────────────────────────────────────────────────────
+function showBadgePopup(icon, name, desc, earned){
+  document.getElementById('bp-icon').textContent   = icon;
+  document.getElementById('bp-name').textContent   = name;
+  document.getElementById('bp-desc').textContent   = desc;
+  const statusEl = document.getElementById('bp-status');
+  statusEl.textContent  = earned ? '✅ Đã đạt được' : '🔒 Chưa mở khóa';
+  statusEl.className    = 'badge-popup-status ' + (earned ? 'earned' : 'locked');
+  document.getElementById('badge-popup').classList.add('show');
+}
+window.showBadgePopup = showBadgePopup;
+
+function closeBadgePopup(){
+  document.getElementById('badge-popup').classList.remove('show');
+}
+window.closeBadgePopup = closeBadgePopup;
+
+// Close on backdrop tap
+document.addEventListener('click', e=>{
+  const popup = document.getElementById('badge-popup');
+  if(popup && e.target === popup) popup.classList.remove('show');
 });
 // ── Keyboard & Touch ──────────────────────────────────────────────
 // Save session when user closes/refreshes tab
