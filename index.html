@@ -190,6 +190,23 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .score-detail span{display:flex;align-items:center;gap:5px;}
 .btn-restart{font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:12px 0;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;width:100%;touch-action:manipulation;margin-bottom:8px;}
 .btn-restart:active{opacity:.8;}
+/* WORD CLICK TOOLTIP */
+#word-tooltip{
+  position:fixed;z-index:9000;background:var(--surface);
+  border:1px solid var(--accent);border-radius:12px;
+  padding:10px 14px;max-width:240px;min-width:140px;
+  box-shadow:0 8px 32px rgba(0,0,0,.4);
+  display:none;pointer-events:none;
+  animation:tooltip-pop .15s cubic-bezier(.175,.885,.32,1.275);
+}
+@keyframes tooltip-pop{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+#word-tooltip .tw-word{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;color:var(--text);}
+#word-tooltip .tw-pos{font-size:10px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin:2px 0 5px;}
+#word-tooltip .tw-meaning{font-size:12.5px;color:var(--green);line-height:1.5;}
+#word-tooltip .tw-en{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+.clickable-word{cursor:pointer;border-radius:3px;transition:background .15s;}
+.clickable-word:hover{background:rgba(79,124,255,.18);color:var(--accent);}
+
 /* BOOKMARK */
 .btn-bookmark{position:absolute;top:14px;left:14px;background:transparent;border:none;font-size:20px;cursor:pointer;padding:4px;line-height:1;touch-action:manipulation;transition:transform .2s;z-index:2;}
 .btn-bookmark:active{transform:scale(1.3);}
@@ -649,6 +666,13 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
     </div>
   </div>
 </div>
+<div id="word-tooltip">
+  <div class="tw-word" id="tt-word"></div>
+  <div class="tw-pos" id="tt-pos"></div>
+  <div class="tw-meaning" id="tt-meaning"></div>
+  <div class="tw-en" id="tt-en"></div>
+</div>
+
 <div style="width:100%;max-width:680px;margin:0 auto;text-align:center;padding:20px 16px 32px;font-size:12px;color:#3a3d52;font-family:'Space Grotesk',sans-serif;">
   Design by Chồng của Mận Xinh Đẹp
 </div>
@@ -1621,8 +1645,24 @@ function renderCard(){
   window.speechSynthesis && window.speechSynthesis.cancel();
   speakBtn.classList.remove('speaking');
   const exEl=document.getElementById('card-example');
-  exEl.textContent=card.ex;
-  exEl.style.visibility=card.cardMode==='vn-en'?'hidden':'visible';
+  if(card.ex && card.cardMode==='en-vn'){
+    // Make each word clickable
+    const words = card.ex.split(/(\s+|[.,!?;:])/);
+    exEl.innerHTML = words.map(w => {
+      const clean = w.trim().replace(/[^a-zA-Z'-]/g,'');
+      if(clean.length > 1){
+        return '<span class="clickable-word" data-word="'+clean.toLowerCase()+'" onclick="lookupWordTooltip(this,event)">'+w+'</span>';
+      }
+      return w;
+    }).join('');
+    exEl.style.visibility='visible';
+  } else if(card.ex && card.cardMode==='vn-en'){
+    exEl.textContent=card.ex;
+    exEl.style.visibility='hidden';
+  } else {
+    exEl.textContent='';
+    exEl.style.visibility='hidden';
+  }
   document.getElementById('feedback').textContent='';
   document.getElementById('feedback').className='feedback';
   inp.value='';inp.className='';inp.disabled=false;
@@ -3370,6 +3410,82 @@ function updateBookmarkBtn(){
     btn.textContent = '☆'; btn.style.color = '';
   }
 }
+
+// ── WORD CLICK TOOLTIP ────────────────────────────────────────────
+let tooltipTimeout = null;
+
+async function lookupWordTooltip(el, event){
+  const word = el.dataset.word;
+  if(!word) return;
+
+  const tt = document.getElementById('word-tooltip');
+  const ttWord = document.getElementById('tt-word');
+  const ttPos = document.getElementById('tt-pos');
+  const ttMeaning = document.getElementById('tt-meaning');
+  const ttEn = document.getElementById('tt-en');
+
+  // Position tooltip near click
+  const rect = el.getBoundingClientRect();
+  let top = rect.bottom + 8 + window.scrollY;
+  let left = rect.left + window.scrollX;
+  // Keep within viewport
+  if(left + 240 > window.innerWidth) left = window.innerWidth - 248;
+  if(left < 8) left = 8;
+
+  tt.style.top = top + 'px';
+  tt.style.left = left + 'px';
+  tt.style.display = 'block';
+
+  ttWord.textContent = word;
+  ttPos.textContent = '';
+  ttMeaning.textContent = 'Đang tra...';
+  ttEn.textContent = '';
+
+  // 1. Check TOEIC vocab first
+  const base = word.replace(/(ing|ed|s|es|er|est|ly)$/, '').toLowerCase();
+  const found = ALL_WORDS.find(w =>
+    w.en.toLowerCase() === word ||
+    w.en.toLowerCase() === base ||
+    w.en.toLowerCase().split('/')[0].trim() === word
+  );
+
+  if(found){
+    ttPos.textContent = found.pos || '';
+    const vns = [found.vn,...(found.vn_alt||[])].filter(Boolean).slice(0,3);
+    ttMeaning.textContent = vns.join(' · ');
+    ttEn.textContent = '';
+  } else {
+    // 2. Try Free Dictionary API
+    try{
+      const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+      if(res.ok){
+        const data = await res.json();
+        const entry = data[0];
+        const meaning = entry?.meanings?.[0];
+        ttPos.textContent = meaning?.partOfSpeech || '';
+        ttMeaning.textContent = meaning?.definitions?.[0]?.definition?.slice(0,80) || 'Không có nghĩa';
+        ttEn.textContent = '';
+      } else {
+        ttMeaning.textContent = 'Không tìm thấy từ này';
+      }
+    } catch(e){
+      ttMeaning.textContent = word.charAt(0).toUpperCase() + word.slice(1);
+    }
+  }
+
+  // Auto-hide after 4s or on click elsewhere
+  clearTimeout(tooltipTimeout);
+  tooltipTimeout = setTimeout(()=>{ tt.style.display='none'; }, 4000);
+}
+window.lookupWordTooltip = lookupWordTooltip;
+
+// Hide tooltip when clicking elsewhere
+document.addEventListener('click', (e)=>{
+  if(!e.target.classList.contains('clickable-word')){
+    const tt = document.getElementById('word-tooltip');
+    if(tt) tt.style.display='none';
+  }
+});
 // ── Keyboard & Touch ──────────────────────────────────────────────
 // Save session when user closes/refreshes tab
 window.addEventListener('beforeunload', ()=>{ saveLastSessionLocal(); });
