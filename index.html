@@ -1672,9 +1672,14 @@ function buildDeck(){
     pool=myWords.map(w=>({topic:'Từ riêng',en:w.en,pos:'',en_alt:[],vn:w.vn,vn_alt:[],ex:w.ex||''}))
       .filter(w=>{ if(!seen2.has(w.en)){seen2.add(w.en);return true;}return false; });
   } else if(activeTopic==='bookmarks'){
-    // Deduplicate by English word (same word may appear in multiple topics)
     const seen = new Set();
     pool = ALL_WORDS.filter(w=>{ if(bookmarks.has(w.en) && !seen.has(w.en)){ seen.add(w.en); return true; } return false; });
+    // Also include bookmarked custom words (Từ riêng)
+    const bmCustom = myWords.filter(w=>bookmarks.has(w.en) && !seen.has(w.en)).map(w=>{
+      seen.add(w.en);
+      return {topic:'Từ riêng',en:w.en,pos:'',en_alt:[],vn:w.vn,vn_alt:[],ex:w.ex||''};
+    });
+    pool = [...pool, ...bmCustom];
     // If empty, deck=[] will be handled by renderCard()
   } else if(activeTopic==='all'){
     pool=[...ALL_WORDS];
@@ -4725,6 +4730,14 @@ async function deleteMyWord(id){
   const toDelete = myWords.find(w=>w.id===id);
   const deletedEn = toDelete?.en || '';
   myWords = myWords.filter(w=>w.id!==id);
+  // Also remove from bookmarks if bookmarked
+  if(bookmarks.has(deletedEn)){
+    bookmarks.delete(deletedEn);
+    const lsKeyBm = 'toeic_bm_'+currentUser.username;
+    localStorage.setItem(lsKeyBm, JSON.stringify([...bookmarks]));
+    updateDoc(doc(db,'users',currentUser.username),{bookmarks:[...bookmarks]}).catch(()=>{});
+    updateBookmarkChip();
+  }
   await saveMyWords();
   renderMyWords();
   updateMyWordChip();
