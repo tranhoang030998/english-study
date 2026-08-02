@@ -418,6 +418,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 <!-- FLASHCARD SUB NAV -->
 <div id="flashcard-subnav" style="width:100%;max-width:100%;padding:0 16px;display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);align-self:stretch;">
   <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">Luyện tập</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('mywords',this)">📝 Từ riêng</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">Kết quả</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
 </div>
@@ -649,6 +650,34 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 
   <!-- Result area -->
   <div id="dict-result"></div>
+</div>
+
+<!-- TỪ RIÊNG PANEL -->
+<div id="mywords-panel" style="display:none;width:100%;max-width:680px;padding:14px 16px 24px;margin:0 auto;">
+
+  <!-- Add word form -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:16px;margin-bottom:16px;">
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Thêm từ mới</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <input id="mw-en" type="text" placeholder="Từ tiếng Anh (ví dụ: ambiguous)" autocomplete="off" autocapitalize="off"
+        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:'Noto Sans',sans-serif;">
+      <input id="mw-vn" type="text" placeholder="Nghĩa tiếng Việt (ví dụ: mơ hồ, không rõ ràng)" autocomplete="off"
+        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:'Noto Sans',sans-serif;">
+      <input id="mw-ex" type="text" placeholder="Câu ví dụ (tùy chọn)" autocomplete="off"
+        style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;padding:10px 12px;outline:none;font-family:'Noto Sans',sans-serif;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button onclick="addMyWord()" style="flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;">+ Thêm từ</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" id="mw-mix" style="cursor:pointer;"> Trộn vào bài học
+        </label>
+      </div>
+      <div id="mw-msg" style="font-size:12px;min-height:16px;font-family:'Space Grotesk',sans-serif;"></div>
+    </div>
+  </div>
+
+  <!-- Word list -->
+  <div style="font-family:'Space Grotesk',sans-serif;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;" id="mw-count">Từ đã thêm (0)</div>
+  <div id="mw-list" style="display:flex;flex-direction:column;gap:6px;"></div>
 </div>
 </div><!-- end #app -->
 <div id="badge-toast">
@@ -1408,6 +1437,7 @@ function showApp() {
   });
   loadUserStreak();
   loadBookmarks();
+  loadMyWords();
   buildTopicChips();
   restart();
 }
@@ -1445,7 +1475,7 @@ window.addEventListener('load', () => {
 
 // ── TOP LEVEL TAB SWITCH ──────────────────────────────────────────
 const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel',
-                  'grammar-panel','minitest-panel','dashboard-panel','admin-panel','dictionary-panel'];
+                  'grammar-panel','minitest-panel','dashboard-panel','admin-panel','dictionary-panel','mywords-panel'];
 let currentTop='flashcard';
 
 function switchTop(section, btn){
@@ -1560,6 +1590,11 @@ function buildTopicChips(){
   bk.className='topic-chip';bk.id='bookmark-chip';
   bk.innerHTML='⭐ Đã đánh dấu';
   bk.onclick=()=>setTopic('bookmarks',bk);wrap.appendChild(bk);
+  // My words chip
+  const mwc=document.createElement('button');
+  mwc.className='topic-chip';mwc.id='myword-chip';
+  mwc.innerHTML='📝 Từ riêng';
+  mwc.onclick=()=>setTopic('mywords',mwc);wrap.appendChild(mwc);
   topics.forEach(t=>{
     const b=document.createElement('button');
     b.className='topic-chip';b.textContent=t;
@@ -1618,7 +1653,11 @@ window.setMode=setMode;
 
 function buildDeck(){
   let pool;
-  if(activeTopic==='bookmarks'){
+  if(activeTopic==='mywords'){
+    const seen2=new Set();
+    pool=myWords.map(w=>({topic:'Từ riêng',en:w.en,pos:'',en_alt:[],vn:w.vn,vn_alt:[],ex:w.ex||''}))
+      .filter(w=>{ if(!seen2.has(w.en)){seen2.add(w.en);return true;}return false; });
+  } else if(activeTopic==='bookmarks'){
     // Deduplicate by English word (same word may appear in multiple topics)
     const seen = new Set();
     pool = ALL_WORDS.filter(w=>{ if(bookmarks.has(w.en) && !seen.has(w.en)){ seen.add(w.en); return true; } return false; });
@@ -1637,8 +1676,14 @@ function renderCard(){
   // Show/hide bookmark empty state
   const bmEmpty = document.getElementById('bookmark-empty');
   const flashcard = document.getElementById('flashcard');
-  if(deck.length===0 && activeTopic==='bookmarks'){
-    if(bmEmpty){ bmEmpty.style.display='flex'; }
+  if(deck.length===0 && (activeTopic==='bookmarks'||activeTopic==='mywords')){
+    if(bmEmpty){
+      bmEmpty.style.display='flex';
+      bmEmpty.querySelector('div:nth-child(2)').textContent=
+        activeTopic==='mywords'?'Chưa có từ riêng nào':'Chưa có từ nào được đánh dấu';
+      bmEmpty.querySelector('div:nth-child(3)').textContent=
+        activeTopic==='mywords'?'Vào tab "📝 Từ riêng" để thêm từ mới':'Bấm ☆ trên thẻ từ để đánh dấu từ khó';
+    }
     if(flashcard){ flashcard.style.display='none'; }
     document.getElementById('progress-fill').style.width='0%';
     document.getElementById('prog-text').textContent='0 từ đã đánh dấu';
@@ -1974,7 +2019,7 @@ async function showScore(){
 function restart(){
   document.getElementById('practice-panel').style.display='';
   document.getElementById('score-panel').classList.remove('show');
-  history=[];buildDeck();renderCard();
+  history=[];buildDeck();mixMyWordsIntoDeck();renderCard();
 }
 window.restart=restart;
 
@@ -4392,7 +4437,11 @@ async function toggleBookmark(){
     btn.textContent = '☆';
     btn.style.color = '';
     // If in bookmark mode, remove card and move to next
-    if(activeTopic==='bookmarks'){
+    if(activeTopic==='mywords'){
+    const seen2=new Set();
+    pool=myWords.map(w=>({topic:'Từ riêng',en:w.en,pos:'',en_alt:[],vn:w.vn,vn_alt:[],ex:w.ex||''}))
+      .filter(w=>{ if(!seen2.has(w.en)){seen2.add(w.en);return true;}return false; });
+  } else if(activeTopic==='bookmarks'){
       updateBookmarkChip();
       const arr2 = [...bookmarks];
       const lsKey2 = 'toeic_bm_'+currentUser.username;
@@ -4581,6 +4630,111 @@ document.addEventListener('click', e=>{
   const popup = document.getElementById('badge-popup');
   if(popup && e.target === popup) popup.classList.remove('show');
 });
+
+// ── TỪ RIÊNG (MY WORDS) ───────────────────────────────────────────
+let myWords = []; // [{en, vn, ex, id}]
+
+async function loadMyWords(){
+  if(!currentUser) return;
+  try{
+    const lsKey = 'toeic_mw_'+currentUser.username;
+    const ls = localStorage.getItem(lsKey);
+    if(ls) myWords = JSON.parse(ls);
+    // Sync from Firestore
+    getDoc(doc(db,'users',currentUser.username)).then(snap=>{
+      const fw = snap.data()?.myWords;
+      if(fw && fw.length){ myWords = fw; localStorage.setItem(lsKey, JSON.stringify(fw)); }
+      updateMyWordChip();
+    }).catch(()=>{});
+  }catch(e){ myWords=[]; }
+  updateMyWordChip();
+}
+
+async function saveMyWords(){
+  if(!currentUser) return;
+  const lsKey = 'toeic_mw_'+currentUser.username;
+  localStorage.setItem(lsKey, JSON.stringify(myWords));
+  updateDoc(doc(db,'users',currentUser.username),{myWords}).catch(()=>{});
+}
+
+function updateMyWordChip(){
+  const chip = document.getElementById('myword-chip');
+  if(chip) chip.innerHTML = '📝 Từ riêng' + (myWords.length>0?' ('+myWords.length+')':'');
+}
+
+async function addMyWord(){
+  const en = document.getElementById('mw-en').value.trim();
+  const vn = document.getElementById('mw-vn').value.trim();
+  const ex = document.getElementById('mw-ex').value.trim();
+  const msgEl = document.getElementById('mw-msg');
+
+  if(!en || !vn){ msgEl.style.color='var(--red)'; msgEl.textContent='Vui lòng nhập đủ từ và nghĩa.'; return; }
+
+  // Check duplicate
+  if(myWords.some(w=>w.en.toLowerCase()===en.toLowerCase())){
+    msgEl.style.color='var(--yellow)'; msgEl.textContent='Từ này đã có trong danh sách.'; return;
+  }
+
+  const newWord = { en, vn, ex, id: Date.now().toString() };
+  myWords.push(newWord);
+  await saveMyWords();
+
+  document.getElementById('mw-en').value='';
+  document.getElementById('mw-vn').value='';
+  document.getElementById('mw-ex').value='';
+  msgEl.style.color='var(--green)';
+  msgEl.textContent='✓ Đã thêm "'+en+'"!';
+  setTimeout(()=>{ msgEl.textContent=''; }, 2000);
+
+  renderMyWords();
+  updateMyWordChip();
+  buildTopicChips(); // refresh chips to update count
+}
+window.addMyWord = addMyWord;
+
+async function deleteMyWord(id){
+  myWords = myWords.filter(w=>w.id!==id);
+  await saveMyWords();
+  renderMyWords();
+  updateMyWordChip();
+}
+window.deleteMyWord = deleteMyWord;
+
+function renderMyWords(){
+  const listEl  = document.getElementById('mw-list');
+  const countEl = document.getElementById('mw-count');
+  if(!listEl) return;
+  if(countEl) countEl.textContent = 'Từ đã thêm ('+(myWords.length)+')';
+
+  if(!myWords.length){
+    listEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Chưa có từ nào. Thêm từ mới ở trên!</div>';
+    return;
+  }
+  listEl.innerHTML = myWords.map(w=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      <div style="flex:1;">
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;">${w.en}
+          <button onclick="speakAfterAnswer('${w.en}')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:4px;">🔊</button>
+        </div>
+        <div style="font-size:12px;color:var(--green);margin-top:2px;">${w.vn}</div>
+        ${w.ex?'<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px;">'+w.ex+'</div>':''}
+      </div>
+      <button onclick="deleteMyWord('${w.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px;">🗑</button>
+    </div>`).join('');
+}
+
+// Mix my words - called after buildDeck sets up deck
+function mixMyWordsIntoDeck(){
+  const mixCheck = document.getElementById('mw-mix');
+  if(mixCheck && mixCheck.checked && myWords.length>0 && activeTopic!=='bookmarks' && activeTopic!=='mywords'){
+    const extra = myWords.map(w=>({
+      topic:'Từ riêng',en:w.en,pos:'',en_alt:[],
+      vn:w.vn,vn_alt:[],ex:w.ex||''
+    }));
+    deck = [...deck, ...extra];
+    for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+  }
+}
 // ── Keyboard & Touch ──────────────────────────────────────────────
 // Save session when user closes/refreshes tab
 window.addEventListener('beforeunload', ()=>{ saveLastSessionLocal(); });
