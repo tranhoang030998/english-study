@@ -1966,6 +1966,12 @@ function updateProgress(){
   document.getElementById('prog-text').textContent=`Thẻ ${idx} / ${deck.length}`;
   document.getElementById('prog-pct').textContent=pct+'%';
 }
+function updateProgressDisplay(){
+  // Update count display without re-rendering the current card
+  updateProgress();
+  const counterEl = document.getElementById('card-counter');
+  if(counterEl && deck.length>0) counterEl.textContent=(idx+1)+' / '+deck.length;
+}
 function updateStats(){
   document.getElementById('stat-correct')&&(document.getElementById('stat-correct').textContent=`${correctCount} đúng`);
   document.getElementById('stat-wrong')&&(document.getElementById('stat-wrong').textContent=`${wrongCount} sai`);
@@ -4695,25 +4701,34 @@ async function addMyWord(){
   renderMyWords();
   updateMyWordChip();
   buildTopicChips(); // refresh chips to update count
-  // Rebuild deck immediately if on practice tab & mix checked
+  // Add card directly to deck if mix is checked (works even when on other tab)
   const mixCheck2 = document.getElementById('mw-mix');
-  const practiceVisible = document.getElementById('practice-panel')?.style.display !== 'none';
-  if(mixCheck2 && mixCheck2.checked && practiceVisible){
-    buildDeck(); mixMyWordsIntoDeck(); renderCard();
+  if(mixCheck2 && mixCheck2.checked && deck.length > 0){
+    const newCard = {topic:'Từ riêng',en:newWord.en,pos:'',en_alt:[],vn:newWord.vn,vn_alt:[],ex:newWord.ex||''};
+    // Insert at random position
+    const insertAt = Math.floor(Math.random()*(deck.length-idx)) + idx + 1;
+    deck.splice(insertAt, 0, newCard);
+    updateProgressDisplay();
   }
 }
 window.addMyWord = addMyWord;
 
 async function deleteMyWord(id){
+  const toDelete = myWords.find(w=>w.id===id);
+  const deletedEn = toDelete?.en || '';
   myWords = myWords.filter(w=>w.id!==id);
   await saveMyWords();
   renderMyWords();
   updateMyWordChip();
-  // Rebuild deck immediately if on practice tab & mix checked
+  // Remove card directly from deck if present (works even when on other tab)
   const mixCheck3 = document.getElementById('mw-mix');
-  const practiceVisible2 = document.getElementById('practice-panel')?.style.display !== 'none';
-  if(mixCheck3 && mixCheck3.checked && practiceVisible2){
-    buildDeck(); mixMyWordsIntoDeck(); renderCard();
+  if(mixCheck3 && mixCheck3.checked && deck.length > 0){
+    const beforeLen = deck.length;
+    deck = deck.filter(d => !(d.topic==='Từ riêng' && d.en===deletedEn));
+    if(deck.length < beforeLen){
+      if(idx >= deck.length) idx = Math.max(0, deck.length-1);
+      updateProgressDisplay();
+    }
   }
 }
 window.deleteMyWord = deleteMyWord;
