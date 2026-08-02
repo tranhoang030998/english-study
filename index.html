@@ -1680,6 +1680,18 @@ function buildDeck(){
       return {topic:'Từ riêng',en:w.en,pos:'',en_alt:[],vn:w.vn,vn_alt:[],ex:w.ex||''};
     });
     pool = [...pool, ...bmCustom];
+    // Cleanup orphaned bookmarks (words in bookmarks that no longer exist)
+    if(pool.length < bookmarks.size){
+      const validEns = new Set(pool.map(w=>w.en));
+      const orphaned = [...bookmarks].filter(en=>!validEns.has(en));
+      if(orphaned.length>0){
+        orphaned.forEach(en=>bookmarks.delete(en));
+        const lsKeyBm2='toeic_bm_'+currentUser.username;
+        localStorage.setItem(lsKeyBm2,JSON.stringify([...bookmarks]));
+        updateDoc(doc(db,'users',currentUser.username),{bookmarks:[...bookmarks]}).catch(()=>{});
+        updateBookmarkChip();
+      }
+    }
     // If empty, deck=[] will be handled by renderCard()
   } else if(activeTopic==='all'){
     pool=[...ALL_WORDS];
