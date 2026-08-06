@@ -2187,7 +2187,7 @@ async function loadRanking(){
               <div class="rank-streak" style="color:${active?'var(--yellow)':'var(--muted)'}">${r.streak>0?r.streak+' ngày liên tiếp':'Chưa có streak'}</div>
             </div>
             <div class="rank-stats">
-              <div class="rank-correct" style="font-size:22px">${r.streak>0?'🔥'.repeat(Math.min(r.streak,5)):'-'}</div>
+              <div class="rank-correct" style="font-size:18px;">${r.streak>0?r.streak+' 🔥':'-'}</div>
             </div>
           </div>`;
         }).join('');
