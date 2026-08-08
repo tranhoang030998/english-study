@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { showConfirm, fmtTime, getVNDate } from './utils.js';
+import { showConfirm, getVNDate } from './utils.js';
 import { ONLINE_THRESHOLD, AWAY_THRESHOLD } from './auth.js';
 import { loadRanking } from './flashcard.js';
 
@@ -232,17 +232,10 @@ export async function loadOnlineUsers(){
       const badgeClass = u.isOnline ? 'badge-online' : 'badge-away';
       const badgeText  = u.isOnline ? '🟢 Online' : '🟡 Vừa rời';
       const tabLabel   = TAB_LABELS[u.tab] || u.tab;
-      const todayStr   = fmtTime(u.todayOnlineSecs);
-      const totalStr   = fmtTime(u.totalOnlineSecs);
       return `<div class="admin-online-row">
         <div style="flex:1">
           <div class="admin-online-name">${u.name}</div>
           <div class="admin-online-time">${tabLabel} · ${timeStr}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;">
-            📅 Hôm nay: <b style="color:var(--text)">${todayStr}</b>
-            &nbsp;·&nbsp;
-            📊 Tổng: <b style="color:var(--text)">${totalStr}</b>
-          </div>
         </div>
         <span class="admin-online-badge ${badgeClass}">${badgeText}</span>
       </div>`;
