@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { showConfirm, fmtTime } from './utils.js';
+import { showConfirm, fmtTime, getVNDate } from './utils.js';
 import { ONLINE_THRESHOLD, AWAY_THRESHOLD } from './auth.js';
 import { loadRanking } from './flashcard.js';
 
@@ -47,6 +47,7 @@ export async function loadAdminUsers(){
           <div class="admin-user-name">${u.displayName}</div>
           <div class="admin-user-info">@${u.username} · PIN: ${u.pin} · 🔥${u.streak||0} · ${onlineStr}</div>
         </div>
+        <button class="admin-user-del" style="color:var(--green);border-color:var(--green)" onclick="setUserStreak('${u.id}','${u.displayName}',${u.streak||0})">Sửa streak</button>
         <button class="admin-user-del" style="color:var(--yellow);border-color:var(--yellow)" onclick="resetStreak('${u.id}','${u.displayName}')">Reset streak</button>
         <button class="admin-user-del" style="color:var(--accent);border-color:var(--accent)" onclick="resetUserRanking('${u.id}','${u.displayName}')">Xóa BXH</button>
         <button class="admin-user-del" onclick="deleteUser('${u.id}','${u.displayName}')">Xóa tài khoản</button>
@@ -102,6 +103,28 @@ export async function resetStreak(username, displayName){
   });
 }
 window.resetStreak=resetStreak;
+
+export async function setUserStreak(username, displayName, currentStreak){
+  const input = prompt(`Nhập số streak mới cho "${displayName}" (hiện tại: ${currentStreak}):`, currentStreak);
+  if(input === null) return; // bấm Hủy
+  const val = parseInt(input.trim(), 10);
+  if(isNaN(val) || val < 0){
+    alert('Vui lòng nhập một số nguyên không âm.');
+    return;
+  }
+  const msgEl=document.getElementById('admin-msg');
+  try{
+    // Đặt lastStudyDay = hôm nay để streak không tự rớt về 1 ở lần đăng nhập kế tiếp
+    await updateDoc(doc(db,'users',username),{streak:val, lastStudyDay:getVNDate(0)});
+    msgEl.className='admin-msg ok';
+    msgEl.textContent=`✓ Đã đặt streak của ${displayName} = ${val}.`;
+    loadAdminUsers();
+  }catch(e){
+    msgEl.className='admin-msg err';
+    msgEl.textContent='Lỗi: '+e.message;
+  }
+}
+window.setUserStreak=setUserStreak;
 
 export async function resetUserRanking(username, displayName){
   showConfirm('Xóa BXH', `Xóa toàn bộ điểm xếp hạng của "${displayName}"? Không thể hoàn tác.`, async ()=>{
