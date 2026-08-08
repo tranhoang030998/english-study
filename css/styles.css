@@ -73,9 +73,7 @@ header{width:100%;max-width:100%;padding:14px 20px;display:flex;align-items:cent
 .card-word.vn{font-size:clamp(18px,5vw,28px);letter-spacing:-.3px;}
 .card-example{font-size:12px;color:var(--muted);text-align:center;font-style:italic;max-width:100%;line-height:1.6;}
 .card-counter{position:absolute;top:14px;right:14px;font-family:'Space Grotesk',sans-serif;font-size:11px;color:var(--muted);}
-.result-icon{position:absolute;top:14px;left:14px;font-size:18px;display:none;}
-.flashcard.correct .result-icon.ok{display:block;}
-.flashcard.wrong .result-icon.fail{display:block;}
+.result-icon{display:none !important;}
 
 /* INPUT */
 .input-area{width:100%;max-width:680px;padding:10px 16px 0;}
