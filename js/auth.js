@@ -197,7 +197,10 @@ export async function sendHeartbeat(){
 export function startHeartbeat(){
   stopHeartbeat();
   sendHeartbeat(); // immediate
-  heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+  heartbeatInterval = setInterval(()=>{
+    // Chỉ gửi heartbeat khi tab đang thực sự mở & hiển thị (không tính tab bị đưa xuống nền)
+    if(document.visibilityState === 'visible') sendHeartbeat();
+  }, HEARTBEAT_INTERVAL);
   // Also send on tab focus
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState==='visible') sendHeartbeat();
