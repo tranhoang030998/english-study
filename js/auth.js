@@ -111,6 +111,9 @@ window.addEventListener('load', () => {
       showApp();
       startUpdateListener();
       startHeartbeat();
+      // Cập nhật streak ngay cả khi tự động đăng nhập (không gõ lại PIN),
+      // để streak không bị đứng yên rồi "rớt" oan vào lần gõ PIN kế tiếp
+      updateStreak(currentUser.username).then(()=>loadUserStreak());
       // Re-verify in background
       getDoc(doc(db,'users',currentUser.username)).then(snap=>{
         if(!snap.exists()){doLogout();}
