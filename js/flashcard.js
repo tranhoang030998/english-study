@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, increment, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { acceptableMatch, getVNDate, getWeekKey, showConfirm } from './utils.js';
+import { acceptableMatch, getVNDate, getWeekKey, getVNMonth, showConfirm } from './utils.js';
 import { currentUser, loadUserStreak, saveLastSessionLocal, saveLastSession } from './auth.js';
 import { ALL_WORDS } from './data/words.js';
 import { STOP_WORDS, EXTRA_DICT, COMMON_WORDS } from './data/dictionary-data.js';
@@ -472,9 +472,8 @@ window.restart=restart;
 
 // ── Save session to Firestore ─────────────────────────────────────
 export async function saveSession(correct, wrong, skip, pct) {
-  const now   = new Date();
-  const week  = getWeekKey(now);
-  const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const week  = getWeekKey();
+  const month = getVNMonth();
   const username = currentUser.username;
 
   // Save raw session
@@ -598,13 +597,12 @@ export async function loadRanking(){
 
     let col, rows=[];
     if(rankPeriod==='week'){
-      const week=getWeekKey(new Date());
+      const week=getWeekKey();
       const q=query(collection(db,'ranking_week'),where('week','==',week));
       const snap=await getDocs(q);
       snap.forEach(d=>rows.push(d.data()));
     } else if(rankPeriod==='month'){
-      const now=new Date();
-      const month=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+      const month=getVNMonth();
       const q=query(collection(db,'ranking_month'),where('month','==',month));
       const snap=await getDocs(q);
       snap.forEach(d=>rows.push(d.data()));
