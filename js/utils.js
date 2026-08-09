@@ -30,11 +30,21 @@ export function showConfirm(title, msg, onOk){
   okBtn.onclick     = ()=>{ cleanup(); onOk(); };
   cancelBtn.onclick = ()=>{ cleanup(); };
 }
-export function getWeekKey(date) {
-  const d = new Date(date);
-  d.setHours(0,0,0,0);
-  d.setDate(d.getDate() - d.getDay() + 1); // Monday
+export function getWeekKey(offsetDays=0) {
+  // Thứ Hai của tuần hiện tại, tính theo giờ Việt Nam cố định (UTC+7),
+  // không phụ thuộc múi giờ của thiết bị/trình duyệt.
+  const ms = Date.now() + 7*60*60*1000 + offsetDays*86400000;
+  const d = new Date(ms);
+  const day = d.getUTCDay(); // 0=CN..6=T7 (an toàn vì ms đã dịch theo VN)
+  const diffToMonday = (day === 0 ? -6 : 1) - day;
+  d.setUTCDate(d.getUTCDate() + diffToMonday);
   return d.toISOString().slice(0,10);
+}
+
+export function getVNMonth(offsetDays=0) {
+  // "YYYY-MM" theo giờ Việt Nam cố định (UTC+7)
+  const ms = Date.now() + 7*60*60*1000 + offsetDays*86400000;
+  return new Date(ms).toISOString().slice(0,7);
 }
 
 // ── Ranking ───────────────────────────────────────────────────────
