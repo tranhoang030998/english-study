@@ -49,6 +49,11 @@ export async function updateStreak(username) {
     // Already counted today — no change
   } else if(lastDay === yesterday){
     streak += 1;  // Consecutive day ✓
+  } else if(lastDay > today){
+    // lastStudyDay đã lưu trên server "mới hơn" ngày mà THIẾT BỊ NÀY tính ra —
+    // gần như chắc chắn đồng hồ thiết bị này đang chạy sai (chậm hơn thực tế).
+    // Không reset/ghi đè để tránh làm mất streak đúng đã lưu từ thiết bị khác.
+    return streak;
   } else {
     streak = 1;   // Missed a day — reset
   }
