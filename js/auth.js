@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, updateDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getVNDate } from './utils.js';
+import { vnDateFromMs } from './utils.js';
 import { buildTopicChips, restart, loadBookmarks, loadMyWords, history, setHistory } from './flashcard.js';
 import { ALL_PANELS, currentTop, setCurrentTop } from './app.js';
 
@@ -38,10 +38,17 @@ window.doLogin = doLogin;
 
 export async function updateStreak(username) {
   const ref  = doc(db, 'users', username);
+
+  // Ghi 1 mốc serverTimestamp() rồi đọc lại ngay để lấy GIỜ THẬT của Firebase server —
+  // không dùng đồng hồ thiết bị (Date.now()) nữa vì đồng hồ máy học viên có thể sai
+  // (nhanh/chậm), từng gây streak bị reset oan hoặc bị đứng yên không tăng.
+  await updateDoc(ref, { _tsProbe: serverTimestamp() });
   const snap = await getDoc(ref);
   const data = snap.data();
-  const today     = getVNDate(0);   // e.g. "2026-08-07"
-  const yesterday = getVNDate(-1);  // e.g. "2026-08-06"
+  const serverMs = data._tsProbe?.toMillis ? data._tsProbe.toMillis() : Date.now();
+
+  const today     = vnDateFromMs(serverMs, 0);
+  const yesterday = vnDateFromMs(serverMs, -1);
   const lastDay   = data.lastStudyDay || '';
 
   let streak = data.streak || 0;
@@ -49,11 +56,6 @@ export async function updateStreak(username) {
     // Already counted today — no change
   } else if(lastDay === yesterday){
     streak += 1;  // Consecutive day ✓
-  } else if(lastDay > today){
-    // lastStudyDay đã lưu trên server "mới hơn" ngày mà THIẾT BỊ NÀY tính ra —
-    // gần như chắc chắn đồng hồ thiết bị này đang chạy sai (chậm hơn thực tế).
-    // Không reset/ghi đè để tránh làm mất streak đúng đã lưu từ thiết bị khác.
-    return streak;
   } else {
     streak = 1;   // Missed a day — reset
   }
