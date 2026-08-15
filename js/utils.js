@@ -6,6 +6,13 @@ export function getVNDate(offsetDays=0){
   return new Date(ms).toISOString().slice(0,10);
 }
 
+export function vnDateFromMs(ms, offsetDays=0){
+  // Giống getVNDate() nhưng nhận mốc thời gian (ms) truyền vào thay vì Date.now() —
+  // dùng để tính ngày dựa trên GIỜ SERVER thay vì đồng hồ thiết bị.
+  const shifted = ms + 7*60*60*1000 + offsetDays*86400000;
+  return new Date(shifted).toISOString().slice(0,10);
+}
+
 export function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
 export function acceptableMatch(input,card,cardMode){
   const inp=normalize(input);
