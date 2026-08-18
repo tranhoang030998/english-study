@@ -1062,29 +1062,32 @@ window.addMyWord = addMyWord;
 
 export async function deleteMyWord(id){
   const toDelete = myWords.find(w=>w.id===id);
-  const deletedEn = toDelete?.en || '';
-  myWords = myWords.filter(w=>w.id!==id);
-  // Also remove from bookmarks if bookmarked
-  if(bookmarks.has(deletedEn)){
-    bookmarks.delete(deletedEn);
-    const lsKeyBm = 'toeic_bm_'+currentUser.username;
-    localStorage.setItem(lsKeyBm, JSON.stringify([...bookmarks]));
-    updateDoc(doc(db,'users',currentUser.username),{bookmarks:[...bookmarks]}).catch(()=>{});
-    updateBookmarkChip();
-  }
-  await saveMyWords();
-  renderMyWords();
-  updateMyWordChip();
-  // Remove card directly from deck if present (works even when on other tab)
-  const mixCheck3 = document.getElementById('mw-mix');
-  if(mixCheck3 && mixCheck3.checked && deck.length > 0){
-    const beforeLen = deck.length;
-    deck = deck.filter(d => !(d.topic==='Từ riêng' && d.en===deletedEn));
-    if(deck.length < beforeLen){
-      if(idx >= deck.length) idx = Math.max(0, deck.length-1);
-      updateProgressDisplay();
+  if(!toDelete) return;
+  showConfirm('Xóa từ', `Xóa từ "${toDelete.en}" khỏi danh sách từ riêng?`, async ()=>{
+    const deletedEn = toDelete.en || '';
+    myWords = myWords.filter(w=>w.id!==id);
+    // Also remove from bookmarks if bookmarked
+    if(bookmarks.has(deletedEn)){
+      bookmarks.delete(deletedEn);
+      const lsKeyBm = 'toeic_bm_'+currentUser.username;
+      localStorage.setItem(lsKeyBm, JSON.stringify([...bookmarks]));
+      updateDoc(doc(db,'users',currentUser.username),{bookmarks:[...bookmarks]}).catch(()=>{});
+      updateBookmarkChip();
     }
-  }
+    await saveMyWords();
+    renderMyWords();
+    updateMyWordChip();
+    // Remove card directly from deck if present (works even when on other tab)
+    const mixCheck3 = document.getElementById('mw-mix');
+    if(mixCheck3 && mixCheck3.checked && deck.length > 0){
+      const beforeLen = deck.length;
+      deck = deck.filter(d => !(d.topic==='Từ riêng' && d.en===deletedEn));
+      if(deck.length < beforeLen){
+        if(idx >= deck.length) idx = Math.max(0, deck.length-1);
+        updateProgressDisplay();
+      }
+    }
+  });
 }
 window.deleteMyWord = deleteMyWord;
 
