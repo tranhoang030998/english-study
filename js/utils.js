@@ -17,11 +17,12 @@ export function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' ');
 export function acceptableMatch(input,card,cardMode){
   const inp=normalize(input);
   const pool=cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
-  // Split each answer by "/" — e.g. "gọi món/đơn hàng" also accepts "gọi món" or "đơn hàng"
+  // Tách theo cả "/" và "," — ví dụ "lối mòn, đường đi" hay "gọi món/đơn hàng"
+  // đều chấp nhận đúng khi học viên gõ MỘT trong các nghĩa đó.
   const expanded=new Set();
   pool.forEach(a=>{
     expanded.add(normalize(a));
-    String(a).split('/').forEach(part=>expanded.add(normalize(part.trim())));
+    String(a).split(/[/,]/).forEach(part=>expanded.add(normalize(part.trim())));
   });
   return expanded.has(inp);
 }
