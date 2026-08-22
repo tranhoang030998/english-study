@@ -14,6 +14,24 @@ export function vnDateFromMs(ms, offsetDays=0){
 }
 
 export function normalize(s){ return s.toLowerCase().trim().replace(/\s+/g,' '); }
+
+export function levenshtein(a, b){
+  a=a.toLowerCase(); b=b.toLowerCase();
+  const m=a.length, n=b.length;
+  if(m===0) return n;
+  if(n===0) return m;
+  const dp=new Array(n+1);
+  for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0]; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const tmp=dp[j];
+      dp[j]= a[i-1]===b[j-1] ? prev : 1+Math.min(prev,dp[j],dp[j-1]);
+      prev=tmp;
+    }
+  }
+  return dp[n];
+}
 export function acceptableMatch(input,card,cardMode){
   const inp=normalize(input);
   const pool=cardMode==='en-vn'?[card.vn,...(card.vn_alt||[])]:[card.en,...(card.en_alt||[])];
@@ -27,7 +45,7 @@ export function acceptableMatch(input,card,cardMode){
   return expanded.has(inp);
 }
 
-export function showConfirm(title, msg, onOk){
+export function showConfirm(title, msg, onOk, onCancel){
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-msg').textContent   = msg;
   const overlay = document.getElementById('confirm-modal');
@@ -36,7 +54,7 @@ export function showConfirm(title, msg, onOk){
   const cancelBtn = document.getElementById('modal-cancel');
   function cleanup(){ overlay.classList.remove('show'); okBtn.onclick=null; cancelBtn.onclick=null; }
   okBtn.onclick     = ()=>{ cleanup(); onOk(); };
-  cancelBtn.onclick = ()=>{ cleanup(); };
+  cancelBtn.onclick = ()=>{ cleanup(); if(onCancel) onCancel(); };
 }
 export function getWeekKey(offsetDays=0) {
   // Thứ Hai của tuần hiện tại, tính theo giờ Việt Nam cố định (UTC+7),
