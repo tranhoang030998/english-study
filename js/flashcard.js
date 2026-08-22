@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, increment, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { acceptableMatch, getVNDate, getWeekKey, getVNMonth, showConfirm } from './utils.js';
+import { acceptableMatch, getVNDate, getWeekKey, getVNMonth, showConfirm, levenshtein } from './utils.js';
 import { currentUser, loadUserStreak, saveLastSessionLocal, saveLastSession } from './auth.js';
 import { ALL_WORDS } from './data/words.js';
 import { STOP_WORDS, EXTRA_DICT, COMMON_WORDS } from './data/dictionary-data.js';
@@ -1021,6 +1021,32 @@ export function updateMyWordChip(){
   if(chip) chip.innerHTML = '📝 Từ riêng' + (myWords.length>0?' ('+myWords.length+')':'');
 }
 
+// ── Kiểm tra chính tả khi thêm từ riêng ─────────────────────────────
+let _spellVocab = null;
+function getSpellVocab(){
+  if(_spellVocab) return _spellVocab;
+  const set = new Set();
+  ALL_WORDS.forEach(w=>set.add(w.en.toLowerCase()));
+  COMMON_WORDS.forEach(w=>set.add(w.w.toLowerCase()));
+  Object.keys(EXTRA_DICT).forEach(w=>set.add(w.toLowerCase()));
+  _spellVocab = set;
+  return set;
+}
+function findClosestWord(input){
+  const word = input.trim().toLowerCase();
+  if(!word || word.length < 4 || /\s/.test(word)) return null; // từ quá ngắn hoặc nhiều từ thì bỏ qua
+  const vocab = getSpellVocab();
+  if(vocab.has(word)) return null; // đã đúng chính tả
+  let best=null, bestDist=Infinity;
+  for(const w of vocab){
+    if(Math.abs(w.length-word.length) > 2) continue;
+    const d = levenshtein(word, w);
+    if(d < bestDist){ bestDist=d; best=w; if(bestDist===1) break; }
+  }
+  const threshold = word.length <= 5 ? 1 : 2;
+  return (best && bestDist>0 && bestDist<=threshold) ? best : null;
+}
+
 export async function addMyWord(){
   const en = document.getElementById('mw-en').value.trim();
   const vn = document.getElementById('mw-vn').value.trim();
@@ -1034,6 +1060,22 @@ export async function addMyWord(){
     msgEl.style.color='var(--yellow)'; msgEl.textContent='Từ này đã có trong danh sách.'; return;
   }
 
+  const suggestion = findClosestWord(en);
+  if(suggestion){
+    showConfirm(
+      'Kiểm tra chính tả',
+      `Bạn nhập "${en}" — có phải ý bạn là "${suggestion}" không?`,
+      ()=>{ document.getElementById('mw-en').value = suggestion; _insertMyWord(suggestion, vn, ex); },
+      ()=>{ _insertMyWord(en, vn, ex); }
+    );
+    return;
+  }
+  await _insertMyWord(en, vn, ex);
+}
+window.addMyWord = addMyWord;
+
+async function _insertMyWord(en, vn, ex){
+  const msgEl = document.getElementById('mw-msg');
   const newWord = { en, vn, ex, id: Date.now().toString() };
   myWords.push(newWord);
   await saveMyWords();
@@ -1113,6 +1155,74 @@ export function renderMyWords(){
       <button onclick="deleteMyWord('${w.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px;">🗑</button>
     </div>`).join('');
 }
+
+// ── Xuất / Nhập từ riêng (chia sẻ giữa các học viên) ────────────────
+export function exportMyWords(){
+  const msgEl = document.getElementById('mw-msg');
+  if(!myWords.length){
+    if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Chưa có từ nào để xuất.'; }
+    return;
+  }
+  const payload = {
+    app: 'TOEIC KING', type: 'my-words', exportedBy: currentUser?.displayName || '',
+    words: myWords.map(w=>({en:w.en, vn:w.vn, ex:w.ex||''}))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const safeName = (currentUser?.username || 'tu-rieng').replace(/[^a-z0-9_-]/gi,'');
+  a.href = url;
+  a.download = `toeicking-tu-rieng-${safeName}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+window.exportMyWords = exportMyWords;
+
+export function importMyWords(file){
+  const msgEl = document.getElementById('mw-msg');
+  const fileInput = document.getElementById('mw-import-file');
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e)=>{
+    if(fileInput) fileInput.value = ''; // cho phép chọn lại cùng file lần sau
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){
+      if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='File không hợp lệ (không đọc được JSON).'; }
+      return;
+    }
+    const list = Array.isArray(data) ? data : Array.isArray(data?.words) ? data.words : null;
+    if(!list){
+      if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent='File không đúng định dạng từ riêng.'; }
+      return;
+    }
+    const existing = new Set(myWords.map(w=>w.en.toLowerCase()));
+    let added = 0, skipped = 0;
+    list.forEach(item=>{
+      const en = String(item?.en||'').trim();
+      const vn = String(item?.vn||'').trim();
+      const ex = String(item?.ex||'').trim();
+      if(!en || !vn) return;
+      if(existing.has(en.toLowerCase())){ skipped++; return; }
+      existing.add(en.toLowerCase());
+      myWords.push({en, vn, ex, id: Date.now().toString()+Math.random().toString(36).slice(2,6)});
+      added++;
+    });
+    if(added>0) await saveMyWords();
+    renderMyWords();
+    updateMyWordChip();
+    buildTopicChips();
+    if(msgEl){
+      msgEl.style.color='var(--green)';
+      msgEl.textContent = `✓ Đã nhập ${added} từ mới${skipped?` (bỏ qua ${skipped} từ trùng)`:''}.`;
+      setTimeout(()=>{ msgEl.textContent=''; }, 3000);
+    }
+  };
+  reader.readAsText(file);
+}
+window.importMyWords = importMyWords;
 
 // Mix my words - called after buildDeck sets up deck
 export function mixMyWordsIntoDeck(){
