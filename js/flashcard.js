@@ -1124,15 +1124,24 @@ export async function checkMyWordsSpelling(){
   resultsEl.innerHTML = `
     <div style="font-size:12px;color:var(--yellow);margin-bottom:8px;">⚠️ Phát hiện ${flagged.length} từ có thể sai chính tả (đã đối chiếu từ điển tiếng Anh thật):</div>
     ${flagged.map(f=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--yellow);border-radius:10px;margin-bottom:6px;">
-        <div style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--yellow);border-radius:10px;margin-bottom:6px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;font-size:13px;font-family:'Space Grotesk',sans-serif;">
           <span style="color:var(--red);text-decoration:line-through;">${f.en}</span>
-          <span style="color:var(--muted);"> → </span>
-          ${f.suggestion
-            ? `<span style="color:var(--green);font-weight:600;">${f.suggestion}</span>`
-            : `<span style="color:var(--muted);font-style:italic;">không tìm thấy trong từ điển, bạn tự kiểm tra lại</span>`}
+          ${f.suggestion ? `
+            <span style="color:var(--muted);"> → </span>
+            <span style="color:var(--green);font-weight:600;">${f.suggestion}</span>
+          ` : `
+            <span style="color:var(--muted);"> → không tìm thấy trong từ điển</span>
+          `}
         </div>
-        ${f.suggestion ? `<button onclick="fixMyWordSpelling('${f.id}','${f.suggestion}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Sửa</button>` : ''}
+        ${f.suggestion
+          ? `<button onclick="fixMyWordSpelling('${f.id}','${f.suggestion}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Sửa</button>`
+          : `
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input id="fix-input-${f.id}" value="${f.en.replace(/"/g,'&quot;')}" onkeydown="if(event.key==='Enter')fixMyWordManual('${f.id}')" style="font-size:12px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);width:130px;font-family:'Space Grotesk',sans-serif;">
+              <button onclick="fixMyWordManual('${f.id}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Lưu</button>
+            </div>
+          `}
       </div>
     `).join('')}
   `;
@@ -1148,6 +1157,25 @@ export async function fixMyWordSpelling(id, correctSpelling){
   checkMyWordsSpelling(); // chạy lại để cập nhật danh sách còn lỗi
 }
 window.fixMyWordSpelling = fixMyWordSpelling;
+
+export async function fixMyWordManual(id){
+  const input = document.getElementById('fix-input-'+id);
+  if(!input) return;
+  const newEn = input.value.trim();
+  if(!newEn) return;
+  const w = myWords.find(x=>x.id===id);
+  if(!w) return;
+  if(myWords.some(x=>x.id!==id && x.en.toLowerCase()===newEn.toLowerCase())){
+    input.style.borderColor='var(--red)';
+    input.title='Từ này đã có trong danh sách rồi';
+    return;
+  }
+  w.en = newEn;
+  await saveMyWords();
+  renderMyWords();
+  checkMyWordsSpelling(); // chạy lại để cập nhật danh sách còn lỗi
+}
+window.fixMyWordManual = fixMyWordManual;
 
 export async function addMyWord(){
   const en = document.getElementById('mw-en').value.trim();
