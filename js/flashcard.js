@@ -1047,6 +1047,52 @@ function findClosestWord(input){
   return (best && bestDist>0 && bestDist<=threshold) ? best : null;
 }
 
+// ── Kiểm tra chính tả toàn bộ danh sách từ riêng đã có ──────────────
+export function checkMyWordsSpelling(){
+  const msgEl = document.getElementById('mw-msg');
+  const resultsEl = document.getElementById('mw-spellcheck-results');
+  if(!resultsEl) return;
+  if(!myWords.length){
+    if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Chưa có từ nào để kiểm tra.'; }
+    resultsEl.innerHTML='';
+    return;
+  }
+  const flagged = [];
+  myWords.forEach(w=>{
+    const suggestion = findClosestWord(w.en);
+    if(suggestion) flagged.push({id:w.id, en:w.en, suggestion});
+  });
+  if(!flagged.length){
+    resultsEl.innerHTML = `<div style="padding:12px;background:var(--green-bg);border:1px solid var(--green);border-radius:10px;color:var(--green);font-size:13px;text-align:center;">✓ Không phát hiện lỗi chính tả nào trong ${myWords.length} từ.</div>`;
+    setTimeout(()=>{ if(resultsEl.innerHTML.includes('Không phát hiện')) resultsEl.innerHTML=''; }, 5000);
+    return;
+  }
+  resultsEl.innerHTML = `
+    <div style="font-size:12px;color:var(--yellow);margin-bottom:8px;">⚠️ Phát hiện ${flagged.length} từ có thể sai chính tả:</div>
+    ${flagged.map(f=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--yellow);border-radius:10px;margin-bottom:6px;">
+        <div style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">
+          <span style="color:var(--red);text-decoration:line-through;">${f.en}</span>
+          <span style="color:var(--muted);"> → </span>
+          <span style="color:var(--green);font-weight:600;">${f.suggestion}</span>
+        </div>
+        <button onclick="fixMyWordSpelling('${f.id}','${f.suggestion}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Sửa</button>
+      </div>
+    `).join('')}
+  `;
+}
+window.checkMyWordsSpelling = checkMyWordsSpelling;
+
+export async function fixMyWordSpelling(id, correctSpelling){
+  const w = myWords.find(x=>x.id===id);
+  if(!w) return;
+  w.en = correctSpelling;
+  await saveMyWords();
+  renderMyWords();
+  checkMyWordsSpelling(); // chạy lại để cập nhật danh sách còn lỗi
+}
+window.fixMyWordSpelling = fixMyWordSpelling;
+
 export async function addMyWord(){
   const en = document.getElementById('mw-en').value.trim();
   const vn = document.getElementById('mw-vn').value.trim();
