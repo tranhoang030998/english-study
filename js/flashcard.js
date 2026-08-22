@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, where, incr
 import { acceptableMatch, getVNDate, getWeekKey, getVNMonth, showConfirm, levenshtein } from './utils.js';
 import { currentUser, loadUserStreak, saveLastSessionLocal, saveLastSession } from './auth.js';
 import { ALL_WORDS } from './data/words.js';
-import { STOP_WORDS, EXTRA_DICT, COMMON_WORDS } from './data/dictionary-data.js';
+import { STOP_WORDS, EXTRA_DICT, COMMON_WORDS, DICT_API } from './data/dictionary-data.js';
 import { dictSpeak } from './dictionary.js';
 import { deleteUserRanking } from './admin.js';
 
@@ -1021,7 +1021,9 @@ export function updateMyWordChip(){
   if(chip) chip.innerHTML = '📝 Từ riêng' + (myWords.length>0?' ('+myWords.length+')':'');
 }
 
-// ── Kiểm tra chính tả khi thêm từ riêng ─────────────────────────────
+// ── Kiểm tra chính tả: đối chiếu từ điển tiếng Anh thật (Free Dictionary API),
+// không chỉ so trong kho ~1500 từ TOEIC nội bộ (kho nhỏ đó chỉ dùng để GỢI Ý sửa,
+// không dùng để KẾT LUẬN đúng/sai — tránh báo nhầm các từ đúng nhưng ngoài kho).
 let _spellVocab = null;
 function getSpellVocab(){
   if(_spellVocab) return _spellVocab;
@@ -1032,51 +1034,105 @@ function getSpellVocab(){
   _spellVocab = set;
   return set;
 }
-function findClosestWord(input){
-  const word = input.trim().toLowerCase();
-  if(!word || word.length < 4 || /\s/.test(word)) return null; // từ quá ngắn hoặc nhiều từ thì bỏ qua
-  const vocab = getSpellVocab();
-  if(vocab.has(word)) return null; // đã đúng chính tả
-  let best=null, bestDist=Infinity;
-  for(const w of vocab){
-    if(Math.abs(w.length-word.length) > 2) continue;
-    const d = levenshtein(word, w);
-    if(d < bestDist){ bestDist=d; best=w; if(bestDist===1) break; }
+
+const _knownWordCache = new Map();
+async function isKnownWord(word){
+  const w = word.toLowerCase();
+  if(getSpellVocab().has(w)) return true;
+  if(_knownWordCache.has(w)) return _knownWordCache.get(w);
+  let known = true;
+  try{
+    const res = await fetch(DICT_API + encodeURIComponent(w));
+    known = res.ok;
+  }catch(e){
+    known = true; // lỗi mạng/API thì bỏ qua, không báo sai oan
   }
-  const threshold = word.length <= 5 ? 1 : 2;
+  _knownWordCache.set(w, known);
+  return known;
+}
+
+function findClosestWord(word){
+  const w = word.trim().toLowerCase();
+  if(!w || w.length < 4) return null;
+  const vocab = getSpellVocab();
+  if(vocab.has(w)) return null;
+  let best=null, bestDist=Infinity;
+  for(const v of vocab){
+    if(Math.abs(v.length-w.length) > 2) continue;
+    const d = levenshtein(w, v);
+    if(d < bestDist){ bestDist=d; best=v; if(bestDist===1) break; }
+  }
+  const threshold = w.length <= 5 ? 1 : 2;
   return (best && bestDist>0 && bestDist<=threshold) ? best : null;
 }
 
+// Kiểm tra cả cụm (có thể nhiều từ, ví dụ "take park in") — kiểm tra TỪNG từ trong cụm
+// bằng từ điển thật, chỉ những từ không tồn tại trong từ điển mới bị coi là sai.
+// Trả về null nếu cả cụm đều là từ tiếng Anh hợp lệ.
+async function checkPhraseSpelling(phrase){
+  const tokens = phrase.trim().split(/\s+/);
+  const flaggedIdx = [];
+  for(let i=0;i<tokens.length;i++){
+    const clean = tokens[i].replace(/[^a-zA-Z']/g,'');
+    if(clean.length < 3) continue; // từ quá ngắn (a, in, to...) bỏ qua, dễ báo nhầm
+    const known = await isKnownWord(clean);
+    if(!known) flaggedIdx.push(i);
+  }
+  if(!flaggedIdx.length) return null;
+  const correctedTokens = [...tokens];
+  let hasSuggestion = false;
+  flaggedIdx.forEach(i=>{
+    const s = findClosestWord(tokens[i].replace(/[^a-zA-Z']/g,''));
+    if(s){ correctedTokens[i] = s; hasSuggestion = true; }
+  });
+  return { suggestion: hasSuggestion ? correctedTokens.join(' ') : null };
+}
+
 // ── Kiểm tra chính tả toàn bộ danh sách từ riêng đã có ──────────────
-export function checkMyWordsSpelling(){
+export async function checkMyWordsSpelling(){
   const msgEl = document.getElementById('mw-msg');
   const resultsEl = document.getElementById('mw-spellcheck-results');
+  const btn = document.getElementById('mw-check-btn');
   if(!resultsEl) return;
   if(!myWords.length){
     if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Chưa có từ nào để kiểm tra.'; }
     resultsEl.innerHTML='';
     return;
   }
+  if(btn){ btn.disabled = true; btn.textContent = '🔍 Đang kiểm tra...'; }
+  resultsEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--muted);font-size:13px;">Đang đối chiếu từ điển cho ${myWords.length} từ, vui lòng đợi chút...</div>`;
+
   const flagged = [];
-  myWords.forEach(w=>{
-    const suggestion = findClosestWord(w.en);
-    if(suggestion) flagged.push({id:w.id, en:w.en, suggestion});
-  });
+  const CONCURRENCY = 4;
+  let cursor = 0;
+  async function worker(){
+    while(cursor < myWords.length){
+      const w = myWords[cursor++];
+      const check = await checkPhraseSpelling(w.en);
+      if(check) flagged.push({id:w.id, en:w.en, suggestion:check.suggestion});
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,myWords.length)}, worker));
+
+  if(btn){ btn.disabled = false; btn.textContent = '🔍 Kiểm tra từ riêng'; }
+
   if(!flagged.length){
     resultsEl.innerHTML = `<div style="padding:12px;background:var(--green-bg);border:1px solid var(--green);border-radius:10px;color:var(--green);font-size:13px;text-align:center;">✓ Không phát hiện lỗi chính tả nào trong ${myWords.length} từ.</div>`;
     setTimeout(()=>{ if(resultsEl.innerHTML.includes('Không phát hiện')) resultsEl.innerHTML=''; }, 5000);
     return;
   }
   resultsEl.innerHTML = `
-    <div style="font-size:12px;color:var(--yellow);margin-bottom:8px;">⚠️ Phát hiện ${flagged.length} từ có thể sai chính tả:</div>
+    <div style="font-size:12px;color:var(--yellow);margin-bottom:8px;">⚠️ Phát hiện ${flagged.length} từ có thể sai chính tả (đã đối chiếu từ điển tiếng Anh thật):</div>
     ${flagged.map(f=>`
       <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--yellow);border-radius:10px;margin-bottom:6px;">
         <div style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">
           <span style="color:var(--red);text-decoration:line-through;">${f.en}</span>
           <span style="color:var(--muted);"> → </span>
-          <span style="color:var(--green);font-weight:600;">${f.suggestion}</span>
+          ${f.suggestion
+            ? `<span style="color:var(--green);font-weight:600;">${f.suggestion}</span>`
+            : `<span style="color:var(--muted);font-style:italic;">không tìm thấy trong từ điển, bạn tự kiểm tra lại</span>`}
         </div>
-        <button onclick="fixMyWordSpelling('${f.id}','${f.suggestion}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Sửa</button>
+        ${f.suggestion ? `<button onclick="fixMyWordSpelling('${f.id}','${f.suggestion}')" style="font-size:12px;padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:8px;cursor:pointer;white-space:nowrap;">Sửa</button>` : ''}
       </div>
     `).join('')}
   `;
@@ -1098,6 +1154,7 @@ export async function addMyWord(){
   const vn = document.getElementById('mw-vn').value.trim();
   const ex = document.getElementById('mw-ex').value.trim();
   const msgEl = document.getElementById('mw-msg');
+  const addBtn = document.getElementById('mw-add-btn');
 
   if(!en || !vn){ msgEl.style.color='var(--red)'; msgEl.textContent='Vui lòng nhập đủ từ và nghĩa.'; return; }
 
@@ -1106,12 +1163,17 @@ export async function addMyWord(){
     msgEl.style.color='var(--yellow)'; msgEl.textContent='Từ này đã có trong danh sách.'; return;
   }
 
-  const suggestion = findClosestWord(en);
-  if(suggestion){
+  if(addBtn) addBtn.disabled = true;
+  msgEl.style.color='var(--muted)'; msgEl.textContent='Đang kiểm tra chính tả...';
+  const check = await checkPhraseSpelling(en);
+  if(addBtn) addBtn.disabled = false;
+  msgEl.textContent = '';
+
+  if(check && check.suggestion){
     showConfirm(
       'Kiểm tra chính tả',
-      `Bạn nhập "${en}" — có phải ý bạn là "${suggestion}" không?`,
-      ()=>{ document.getElementById('mw-en').value = suggestion; _insertMyWord(suggestion, vn, ex); },
+      `Bạn nhập "${en}" — có phải ý bạn là "${check.suggestion}" không?`,
+      ()=>{ document.getElementById('mw-en').value = check.suggestion; _insertMyWord(check.suggestion, vn, ex); },
       ()=>{ _insertMyWord(en, vn, ex); }
     );
     return;
@@ -1146,7 +1208,6 @@ async function _insertMyWord(en, vn, ex){
     updateProgressDisplay();
   }
 }
-window.addMyWord = addMyWord;
 
 export async function deleteMyWord(id){
   const toDelete = myWords.find(w=>w.id===id);
