@@ -4,6 +4,7 @@ import { acceptableMatch, getVNDate, getWeekKey, getVNMonth, showConfirm, levens
 import { currentUser, loadUserStreak, saveLastSessionLocal, saveLastSession } from './auth.js';
 import { ALL_WORDS } from './data/words.js';
 import { STOP_WORDS, EXTRA_DICT, COMMON_WORDS, DICT_API } from './data/dictionary-data.js';
+import { KNOWN_PHRASES } from './data/phrases.js';
 import { dictSpeak } from './dictionary.js';
 import { deleteUserRanking } from './admin.js';
 
@@ -1070,15 +1071,44 @@ function findClosestWord(word){
 // bằng từ điển thật, chỉ những từ không tồn tại trong từ điển mới bị coi là sai.
 // Trả về null nếu cả cụm đều là từ tiếng Anh hợp lệ.
 async function checkPhraseSpelling(phrase){
-  const tokens = phrase.trim().split(/\s+/);
+  const norm = phrase.trim().toLowerCase().replace(/\s+/g,' ');
+  const tokens = norm.split(' ');
+
+  if(tokens.length === 1){
+    // Từ đơn: kiểm tra qua từ điển thật, bỏ qua từ nối/giới từ (STOP_WORDS)
+    const clean = tokens[0].replace(/[^a-zA-Z']/g,'');
+    if(clean.length < 4 || STOP_WORDS.has(clean)) return null;
+    const known = await isKnownWord(clean);
+    if(known) return null;
+    const suggestion = findClosestWord(clean);
+    return { suggestion };
+  }
+
+  // Cụm nhiều từ: so trước với kho cụm động từ/collocation quen thuộc (KNOWN_PHRASES),
+  // vì đây là cách duy nhất bắt được lỗi kiểu "take park in" (từng từ đều đúng
+  // chính tả, chỉ là ghép sai cụm — từ điển từng từ không thể phát hiện được).
+  if(KNOWN_PHRASES.includes(norm)) return null; // khớp đúng 1 cụm đã biết
+  let bestPhrase=null, bestDist=Infinity;
+  for(const p of KNOWN_PHRASES){
+    if(Math.abs(p.length-norm.length) > 3) continue;
+    const d = levenshtein(norm, p);
+    if(d < bestDist){ bestDist=d; bestPhrase=p; if(bestDist===1) break; }
+  }
+  const phraseThreshold = Math.max(1, Math.floor(norm.length/6));
+  if(bestPhrase && bestDist>0 && bestDist<=phraseThreshold){
+    return { suggestion: bestPhrase };
+  }
+
+  // Không khớp/gần khớp cụm quen thuộc nào -> kiểm tra từng từ riêng lẻ,
+  // bỏ qua từ nối (STOP_WORDS) vì từ điển hay không có định nghĩa cho chúng.
   const flaggedIdx = [];
   for(let i=0;i<tokens.length;i++){
     const clean = tokens[i].replace(/[^a-zA-Z']/g,'');
-    if(clean.length < 3) continue; // từ quá ngắn (a, in, to...) bỏ qua, dễ báo nhầm
+    if(clean.length < 3 || STOP_WORDS.has(clean)) continue;
     const known = await isKnownWord(clean);
     if(!known) flaggedIdx.push(i);
   }
-  if(!flaggedIdx.length) return null;
+  if(!flaggedIdx.length) return null; // các từ đều hợp lệ — có thể là 1 cụm danh từ/khác ngoài kho, vẫn chấp nhận
   const correctedTokens = [...tokens];
   let hasSuggestion = false;
   flaggedIdx.forEach(i=>{
