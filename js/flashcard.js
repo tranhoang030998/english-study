@@ -1082,7 +1082,27 @@ function findClosestWord(word){
 // Kiểm tra cả cụm (có thể nhiều từ, ví dụ "take park in") — kiểm tra TỪNG từ trong cụm
 // bằng từ điển thật, chỉ những từ không tồn tại trong từ điển mới bị coi là sai.
 // Trả về null nếu cả cụm đều là từ tiếng Anh hợp lệ.
-async function checkPhraseSpelling(phrase){
+async function checkPhraseSpelling(phraseRaw){
+  // Nhiều học viên ghi kiểu "từ hay ghi nhầm = từ đúng/đồng nghĩa" trong cùng 1 ô
+  // (vd: "take park in = participate in", "cushin = pillow") — tách riêng từng vế
+  // ra kiểm tra rồi ghép lại, thay vì coi cả chuỗi dài đó là 1 cụm duy nhất.
+  if(phraseRaw.includes('=')){
+    const parts = phraseRaw.split('=').map(p=>p.trim()).filter(Boolean);
+    if(parts.length === 2){
+      const [leftCheck, rightCheck] = await Promise.all([
+        checkSinglePhrase(parts[0]),
+        checkSinglePhrase(parts[1])
+      ]);
+      if(!leftCheck && !rightCheck) return null;
+      const newLeft  = leftCheck?.suggestion  || parts[0];
+      const newRight = rightCheck?.suggestion || parts[1];
+      return { suggestion: `${newLeft} = ${newRight}` };
+    }
+  }
+  return checkSinglePhrase(phraseRaw);
+}
+
+async function checkSinglePhrase(phrase){
   const norm = phrase.trim().toLowerCase().replace(/\s+/g,' ');
   const tokens = norm.split(' ');
 
