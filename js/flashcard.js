@@ -1037,16 +1037,28 @@ function getSpellVocab(){
 }
 
 const _knownWordCache = new Map();
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
 async function isKnownWord(word){
   const w = word.toLowerCase();
   if(getSpellVocab().has(w)) return true;
   if(_knownWordCache.has(w)) return _knownWordCache.get(w);
   let known = true;
   try{
-    const res = await fetch(DICT_API + encodeURIComponent(w));
-    known = res.ok;
+    let res = await fetch(DICT_API + encodeURIComponent(w));
+    if(res.status === 429){
+      // Bị giới hạn tần suất gọi — đợi rồi thử lại 1 lần, KHÔNG vội coi là đúng
+      await sleep(1200);
+      res = await fetch(DICT_API + encodeURIComponent(w));
+    }
+    if(res.status === 429){
+      // Vẫn bị chặn sau khi thử lại — không đủ dữ kiện để kết luận, bỏ qua từ này
+      known = true;
+    } else {
+      known = res.ok;
+    }
   }catch(e){
-    known = true; // lỗi mạng/API thì bỏ qua, không báo sai oan
+    known = true; // lỗi mạng thì bỏ qua, không báo sai oan
   }
   _knownWordCache.set(w, known);
   return known;
@@ -1133,13 +1145,14 @@ export async function checkMyWordsSpelling(){
   resultsEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--muted);font-size:13px;">Đang đối chiếu từ điển cho ${myWords.length} từ, vui lòng đợi chút...</div>`;
 
   const flagged = [];
-  const CONCURRENCY = 4;
+  const CONCURRENCY = 2;
   let cursor = 0;
   async function worker(){
     while(cursor < myWords.length){
       const w = myWords[cursor++];
       const check = await checkPhraseSpelling(w.en);
       if(check) flagged.push({id:w.id, en:w.en, suggestion:check.suggestion});
+      await sleep(120); // giãn cách giữa các lần gọi từ điển, tránh bị chặn (429)
     }
   }
   await Promise.all(Array.from({length:Math.min(CONCURRENCY,myWords.length)}, worker));
