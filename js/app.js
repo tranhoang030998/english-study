@@ -8,6 +8,7 @@ import './minitest.js';
 import './dictionary.js';
 import './dashboard.js';
 import './admin.js';
+import './dictation.js';
 
 import { currentUser, loadLastSession } from './auth.js';
 import {
@@ -18,6 +19,7 @@ import {
 } from './flashcard.js';
 import { initGrammarFilters, grammarDeck, buildGrammarDeck, renderGrammarCard } from './grammar.js';
 import { initDictionary } from './dictionary.js';
+import { initDictation } from './dictation.js';
 import { loadDashboard } from './dashboard.js';
 import { loadAdminUsers, loadOnlineUsers } from './admin.js';
 
@@ -26,6 +28,7 @@ export const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel'
 export let currentTop='flashcard';
 
 export function switchTop(section, btn){
+  window.speechSynthesis && window.speechSynthesis.cancel();
   currentTop=section;
   document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -62,6 +65,7 @@ export function switchTop(section, btn){
 window.switchTop=switchTop;
 
 export function showFlashcardTab(tab){
+  window.speechSynthesis && window.speechSynthesis.cancel();
   document.getElementById('practice-panel').style.display=tab==='practice'?'':'none';
   if(tab!=='practice') document.getElementById('score-panel').style.display='none';
   // Show/hide mywords panel
@@ -70,6 +74,11 @@ export function showFlashcardTab(tab){
     mwEl.style.display=tab==='mywords'?'block':'none';
     mwEl.style.marginLeft='auto'; mwEl.style.marginRight='auto';
     if(tab==='mywords') renderMyWords();
+  }
+  const dictEl=document.getElementById('dictation-panel');
+  if(dictEl){
+    dictEl.style.display=tab==='dictation'?'block':'none';
+    if(tab==='dictation'){ dictEl.style.marginLeft='auto'; dictEl.style.marginRight='auto'; initDictation(); }
   }
   const sumEl=document.getElementById('sum-panel');
   const rankEl=document.getElementById('rank-panel');
