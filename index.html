@@ -55,6 +55,7 @@
 <div id="flashcard-subnav" style="width:100%;max-width:100%;padding:0 16px;display:flex;gap:0;overflow-x:auto;background:var(--surface);border-bottom:1px solid var(--border);align-self:stretch;">
   <button class="tab-btn sub-tab active" onclick="switchMainTab('practice',this)">📝 Luyện tập</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('mywords',this)">✏️ Từ riêng</button>
+  <button class="tab-btn sub-tab" onclick="switchMainTab('dictation',this)">🎧 Nghe chép</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('summary',this)">📊 Kết quả</button>
   <button class="tab-btn sub-tab" onclick="switchMainTab('ranking',this)">🏆 Xếp hạng</button>
 </div>
@@ -142,6 +143,27 @@
   <div class="badges-section">
     <div class="badges-title">Huy hiệu của bạn</div>
     <div class="badge-grid" id="badge-grid"></div>
+  </div>
+</div>
+
+<!-- DICTATION TAB (Nghe chép) -->
+<div id="dictation-panel" style="display:none;width:100%;max-width:680px;padding:14px 16px 24px;margin:0 auto;box-sizing:border-box;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--muted);">
+    <span id="dict-progress">Câu 1</span>
+    <span id="dict-session-stats">Đã làm: 0 · Điểm TB: —</span>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:24px 20px;text-align:center;">
+    <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;" id="dict-topic"></div>
+    <button onclick="playDictationAudio()" style="font-size:34px;background:transparent;border:none;cursor:pointer;color:var(--accent);padding:8px;" title="Nghe câu">🔊</button>
+    <div style="margin-top:4px;">
+      <button onclick="playDictationAudio()" style="font-size:12px;font-family:'Noto Sans',sans-serif;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;">🔁 Nghe lại</button>
+    </div>
+    <textarea id="dict-input" placeholder="Gõ lại câu bạn vừa nghe..." style="width:100%;box-sizing:border-box;margin-top:18px;padding:12px;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:14px;resize:vertical;"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button id="dict-check-btn" onclick="checkDictation()" style="flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--radius);cursor:pointer;">Kiểm tra</button>
+      <button id="dict-next-btn" onclick="nextDictationSentence()" style="display:none;flex:1;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;padding:11px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);cursor:pointer;">Câu tiếp theo →</button>
+    </div>
+    <div id="dict-result" style="display:none;margin-top:16px;text-align:left;padding:14px;background:var(--surface2);border-radius:10px;font-family:'Space Grotesk',sans-serif;font-size:14px;line-height:1.8;"></div>
   </div>
 </div>
 
