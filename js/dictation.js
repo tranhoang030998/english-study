@@ -96,20 +96,35 @@ function renderDictationCard(){
 }
 
 let _dictUtterance = null; // giữ tham chiếu sống, tránh bị trình duyệt "dọn rác" giữa chừng khi câu dài
+let _voicesReady = false;
+if(window.speechSynthesis){
+  // Nạp sẵn danh sách giọng đọc — nếu gọi speak() trước khi voices load xong,
+  // 1 số bản Chrome sẽ đọc lỗi/đọc cụt câu dài mà không báo lỗi gì.
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.addEventListener('voiceschanged', ()=>{ _voicesReady = true; });
+}
+
+function speakDictationNow(sentence){
+  const utter = new SpeechSynthesisUtterance(sentence);
+  utter.lang = 'en-US';
+  utter.rate = 0.85;
+  _dictUtterance = utter; // giữ tham chiếu sống
+  window.speechSynthesis.speak(utter);
+}
+
 export function playDictationAudio(){
   if(!window.speechSynthesis) return;
   const item = dictDeck[dictIdx];
   if(!item) return;
-  window.speechSynthesis.cancel();
-  // Đợi 1 nhịp ngắn sau cancel() trước khi speak() — tránh xung đột khiến
-  // câu bị cắt cụt chỉ còn nghe được vài chữ cuối (bug hay gặp trên Chrome Android).
-  setTimeout(()=>{
-    const utter = new SpeechSynthesisUtterance(item.sentence);
-    utter.lang = 'en-US';
-    utter.rate = 0.85;
-    _dictUtterance = utter;
-    window.speechSynthesis.speak(utter);
-  }, 80);
+
+  // Chỉ cancel() khi THỰC SỰ đang đọc dở — gọi cancel() dồn dập ngay cả lúc
+  // không cần thiết chính là nguyên nhân khiến Chrome đọc cụt câu dài.
+  if(window.speechSynthesis.speaking || window.speechSynthesis.pending){
+    window.speechSynthesis.cancel();
+    setTimeout(()=>speakDictationNow(item.sentence), 150);
+  } else {
+    speakDictationNow(item.sentence);
+  }
 }
 window.playDictationAudio = playDictationAudio;
 
