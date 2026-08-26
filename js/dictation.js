@@ -1,5 +1,6 @@
 import { ALL_WORDS } from './data/words.js';
 import { myWords } from './flashcard.js';
+import { DICTATION_SENTENCES } from './data/dictation-sentences.js';
 
 // ── Xây kho câu ví dụ để luyện nghe-chép (chỉ lấy câu đủ dài, có nghĩa) ────
 let _dictationPool = null;
@@ -22,7 +23,7 @@ let dictScoreSum = 0;
 let dictChecked = false;
 
 function buildDictDeck(){
-  const base = [...getDictationPool()];
+  const base = [...getDictationPool(), ...DICTATION_SENTENCES];
   // Trộn thêm câu ví dụ học viên tự thêm (nếu có)
   myWords.forEach(w=>{
     if(w.ex && w.ex.trim().length >= 12){
@@ -94,15 +95,21 @@ function renderDictationCard(){
   dictChecked = false;
 }
 
+let _dictUtterance = null; // giữ tham chiếu sống, tránh bị trình duyệt "dọn rác" giữa chừng khi câu dài
 export function playDictationAudio(){
   if(!window.speechSynthesis) return;
   const item = dictDeck[dictIdx];
   if(!item) return;
   window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(item.sentence);
-  utter.lang = 'en-US';
-  utter.rate = 0.85;
-  window.speechSynthesis.speak(utter);
+  // Đợi 1 nhịp ngắn sau cancel() trước khi speak() — tránh xung đột khiến
+  // câu bị cắt cụt chỉ còn nghe được vài chữ cuối (bug hay gặp trên Chrome Android).
+  setTimeout(()=>{
+    const utter = new SpeechSynthesisUtterance(item.sentence);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    _dictUtterance = utter;
+    window.speechSynthesis.speak(utter);
+  }, 80);
 }
 window.playDictationAudio = playDictationAudio;
 
