@@ -83,6 +83,7 @@ export function initDictation(){
 }
 
 function renderDictationCard(){
+  stopDictationAudio();
   if(dictIdx >= dictDeck.length) buildDictDeck(), dictIdx = 0; // hết bộ thì trộn lại bộ mới
   const item = dictDeck[dictIdx];
   document.getElementById('dict-progress').textContent = `Câu ${dictIdx+1}`;
@@ -95,20 +96,83 @@ function renderDictationCard(){
   dictChecked = false;
 }
 
-let _dictUtterance = null; // giữ tham chiếu sống, tránh bị trình duyệt "dọn rác" giữa chừng khi câu dài
+export function stopDictationAudio(){
+  if(window.speechSynthesis) window.speechSynthesis.cancel();
+  _dictPlaying = false;
+  clearInterval(_dictProgressTimer);
+  updatePlayIcon(false);
+  const bar = document.getElementById('dict-progress-fill');
+  if(bar) bar.style.width = '0%';
+}
+window.stopDictationAudio = stopDictationAudio;
+
+// ── Phát âm thanh: chia câu dài thành từng cụm ngắn, đọc nối tiếp nhau ──────
+// (câu ngắn ít khi bị lỗi cắt cụt hơn hẳn so với đọc nguyên câu dài 1 lần —
+// đây là hướng khắc phục mạnh hơn 2 lần vá trước, vốn chỉ chỉnh thời điểm
+// gọi cancel()/speak() mà chưa giải quyết được gốc rễ).
 let _voicesReady = false;
 if(window.speechSynthesis){
-  // Nạp sẵn danh sách giọng đọc — nếu gọi speak() trước khi voices load xong,
-  // 1 số bản Chrome sẽ đọc lỗi/đọc cụt câu dài mà không báo lỗi gì.
   window.speechSynthesis.getVoices();
   window.speechSynthesis.addEventListener('voiceschanged', ()=>{ _voicesReady = true; });
 }
 
-function speakDictationNow(sentence){
-  const utter = new SpeechSynthesisUtterance(sentence);
+let _dictUtterQueue = [];   // các SpeechSynthesisUtterance đang giữ tham chiếu sống
+let _dictPlaying = false;
+let _dictProgressTimer = null;
+let _dictProgressStart = 0;
+let _dictProgressTotalMs = 0;
+
+function splitIntoChunks(sentence){
+  // Cắt theo dấu phẩy/chấm phẩy trước, cụm nào vẫn còn dài (>5 từ) thì cắt tiếp theo nhóm 4 từ
+  const clauses = sentence.split(/(?<=[,;])\s+/);
+  const chunks = [];
+  clauses.forEach(clause=>{
+    const words = clause.trim().split(/\s+/);
+    if(words.length <= 5){ chunks.push(clause.trim()); return; }
+    for(let i=0;i<words.length;i+=4){
+      chunks.push(words.slice(i,i+4).join(' '));
+    }
+  });
+  return chunks.filter(Boolean);
+}
+
+function updatePlayIcon(playing){
+  const btn = document.getElementById('dict-play-btn');
+  if(btn) btn.textContent = playing ? '⏸' : '▶️';
+}
+
+function startProgressBar(totalMs){
+  const bar = document.getElementById('dict-progress-fill');
+  if(!bar) return;
+  _dictProgressStart = Date.now();
+  _dictProgressTotalMs = totalMs;
+  clearInterval(_dictProgressTimer);
+  _dictProgressTimer = setInterval(()=>{
+    const elapsed = Date.now() - _dictProgressStart;
+    const pct = Math.min(100, (elapsed/_dictProgressTotalMs)*100);
+    bar.style.width = pct+'%';
+    if(pct>=100) clearInterval(_dictProgressTimer);
+  }, 100);
+}
+function stopProgressBar(fill){
+  clearInterval(_dictProgressTimer);
+  const bar = document.getElementById('dict-progress-fill');
+  if(bar) bar.style.width = fill ? '100%' : '0%';
+}
+
+function speakChunks(chunks, i){
+  if(i >= chunks.length){
+    _dictPlaying = false;
+    updatePlayIcon(false);
+    stopProgressBar(true);
+    return;
+  }
+  const utter = new SpeechSynthesisUtterance(chunks[i]);
   utter.lang = 'en-US';
   utter.rate = 0.85;
-  _dictUtterance = utter; // giữ tham chiếu sống
+  utter.onend = ()=>{ if(_dictPlaying) speakChunks(chunks, i+1); };
+  utter.onerror = ()=>{ if(_dictPlaying) speakChunks(chunks, i+1); }; // lỗi 1 cụm thì bỏ qua, đọc tiếp cụm sau
+  _dictUtterQueue.push(utter); // giữ tham chiếu sống, tránh bị dọn rác giữa chừng
   window.speechSynthesis.speak(utter);
 }
 
@@ -117,19 +181,38 @@ export function playDictationAudio(){
   const item = dictDeck[dictIdx];
   if(!item) return;
 
-  // Chỉ cancel() khi THỰC SỰ đang đọc dở — gọi cancel() dồn dập ngay cả lúc
-  // không cần thiết chính là nguyên nhân khiến Chrome đọc cụt câu dài.
-  if(window.speechSynthesis.speaking || window.speechSynthesis.pending){
-    window.speechSynthesis.cancel();
-    setTimeout(()=>speakDictationNow(item.sentence), 150);
-  } else {
-    speakDictationNow(item.sentence);
+  if(_dictPlaying){
+    // Đang đọc -> bấm là Tạm dừng
+    window.speechSynthesis.pause();
+    _dictPlaying = false;
+    updatePlayIcon(false);
+    clearInterval(_dictProgressTimer);
+    return;
   }
+  if(window.speechSynthesis.paused){
+    // Đang tạm dừng -> bấm là Đọc tiếp
+    window.speechSynthesis.resume();
+    _dictPlaying = true;
+    updatePlayIcon(true);
+    return;
+  }
+
+  // Bắt đầu đọc mới từ đầu
+  window.speechSynthesis.cancel();
+  _dictUtterQueue = [];
+  const chunks = splitIntoChunks(item.sentence);
+  const wordCount = item.sentence.split(/\s+/).length;
+  const estMs = Math.max(1200, wordCount * 420); // ước lượng ~420ms/từ ở rate 0.85
+  _dictPlaying = true;
+  updatePlayIcon(true);
+  startProgressBar(estMs);
+  speakChunks(chunks, 0);
 }
 window.playDictationAudio = playDictationAudio;
 
 export function checkDictation(){
   if(dictChecked) return;
+  stopDictationAudio();
   const item = dictDeck[dictIdx];
   if(!item) return;
   const said = document.getElementById('dict-input').value.trim();
