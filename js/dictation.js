@@ -122,20 +122,6 @@ let _dictProgressTimer = null;
 let _dictProgressStart = 0;
 let _dictProgressTotalMs = 0;
 
-function splitIntoChunks(sentence){
-  // Cắt theo dấu phẩy/chấm phẩy trước, cụm nào vẫn còn dài (>5 từ) thì cắt tiếp theo nhóm 4 từ
-  const clauses = sentence.split(/(?<=[,;])\s+/);
-  const chunks = [];
-  clauses.forEach(clause=>{
-    const words = clause.trim().split(/\s+/);
-    if(words.length <= 5){ chunks.push(clause.trim()); return; }
-    for(let i=0;i<words.length;i+=4){
-      chunks.push(words.slice(i,i+4).join(' '));
-    }
-  });
-  return chunks.filter(Boolean);
-}
-
 function updatePlayIcon(playing){
   const btn = document.getElementById('dict-play-btn');
   if(btn) btn.textContent = playing ? '⏸' : '▶️';
@@ -160,18 +146,20 @@ function stopProgressBar(fill){
   if(bar) bar.style.width = fill ? '100%' : '0%';
 }
 
-function speakChunks(chunks, i){
-  if(i >= chunks.length){
+function speakSentence(sentence){
+  const utter = new SpeechSynthesisUtterance(sentence);
+  utter.lang = 'en-US';
+  utter.rate = 0.85;
+  utter.onend = ()=>{
     _dictPlaying = false;
     updatePlayIcon(false);
     stopProgressBar(true);
-    return;
-  }
-  const utter = new SpeechSynthesisUtterance(chunks[i]);
-  utter.lang = 'en-US';
-  utter.rate = 0.85;
-  utter.onend = ()=>{ if(_dictPlaying) speakChunks(chunks, i+1); };
-  utter.onerror = ()=>{ if(_dictPlaying) speakChunks(chunks, i+1); }; // lỗi 1 cụm thì bỏ qua, đọc tiếp cụm sau
+  };
+  utter.onerror = ()=>{
+    _dictPlaying = false;
+    updatePlayIcon(false);
+    stopProgressBar(false);
+  };
   _dictUtterQueue.push(utter); // giữ tham chiếu sống, tránh bị dọn rác giữa chừng
   window.speechSynthesis.speak(utter);
 }
@@ -200,13 +188,12 @@ export function playDictationAudio(){
   // Bắt đầu đọc mới từ đầu
   window.speechSynthesis.cancel();
   _dictUtterQueue = [];
-  const chunks = splitIntoChunks(item.sentence);
   const wordCount = item.sentence.split(/\s+/).length;
   const estMs = Math.max(1200, wordCount * 420); // ước lượng ~420ms/từ ở rate 0.85
   _dictPlaying = true;
   updatePlayIcon(true);
   startProgressBar(estMs);
-  speakChunks(chunks, 0);
+  speakSentence(item.sentence);
 }
 window.playDictationAudio = playDictationAudio;
 
