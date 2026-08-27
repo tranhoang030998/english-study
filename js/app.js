@@ -28,7 +28,7 @@ export const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel'
 export let currentTop='flashcard';
 
 export function switchTop(section, btn){
-  window.speechSynthesis && window.speechSynthesis.cancel();
+  window.stopDictationAudio ? window.stopDictationAudio() : (window.speechSynthesis && window.speechSynthesis.cancel());
   currentTop=section;
   document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
@@ -65,7 +65,7 @@ export function switchTop(section, btn){
 window.switchTop=switchTop;
 
 export function showFlashcardTab(tab){
-  window.speechSynthesis && window.speechSynthesis.cancel();
+  window.stopDictationAudio ? window.stopDictationAudio() : (window.speechSynthesis && window.speechSynthesis.cancel());
   document.getElementById('practice-panel').style.display=tab==='practice'?'':'none';
   if(tab!=='practice') document.getElementById('score-panel').style.display='none';
   // Show/hide mywords panel
