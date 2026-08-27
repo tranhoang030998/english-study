@@ -154,9 +154,9 @@
   </div>
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);padding:24px 20px;text-align:center;">
     <div style="font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;" id="dict-topic"></div>
-    <button onclick="playDictationAudio()" style="font-size:34px;background:transparent;border:none;cursor:pointer;color:var(--accent);padding:8px;" title="Nghe câu">🔊</button>
-    <div style="margin-top:4px;">
-      <button onclick="playDictationAudio()" style="font-size:12px;font-family:'Noto Sans',sans-serif;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);cursor:pointer;">🔁 Nghe lại</button>
+    <button id="dict-play-btn" onclick="playDictationAudio()" style="font-size:38px;background:transparent;border:none;cursor:pointer;color:var(--accent);padding:8px;line-height:1;" title="Nghe câu / Tạm dừng">▶️</button>
+    <div style="width:100%;max-width:320px;margin:10px auto 0;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;">
+      <div id="dict-progress-fill" style="height:100%;width:0%;background:var(--accent);transition:width .1s linear;"></div>
     </div>
     <textarea id="dict-input" placeholder="Gõ lại câu bạn vừa nghe..." style="width:100%;box-sizing:border-box;margin-top:18px;padding:12px;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'Noto Sans',sans-serif;font-size:14px;resize:vertical;"></textarea>
     <div style="display:flex;gap:8px;margin-top:12px;">
