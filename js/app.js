@@ -9,6 +9,7 @@ import './dictionary.js';
 import './dashboard.js';
 import './admin.js';
 import './dictation.js';
+import './vocabtest.js';
 
 import { currentUser, loadLastSession } from './auth.js';
 import {
@@ -22,12 +23,30 @@ import { initDictionary } from './dictionary.js';
 import { initDictation } from './dictation.js';
 import { loadDashboard } from './dashboard.js';
 import { loadAdminUsers, loadOnlineUsers } from './admin.js';
+import { showConfirm } from './utils.js';
+import { initVocabTest, hasUnsavedVocabTest, clearVocabTest } from './vocabtest.js';
 
 export const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel',
-                  'grammar-panel','minitest-panel','dashboard-panel','admin-panel','dictionary-panel','mywords-panel'];
+                  'grammar-panel','minitest-panel','dashboard-panel','admin-panel','dictionary-panel','mywords-panel',
+                  'dictation-panel','vocabtest-panel'];
 export let currentTop='flashcard';
 
 export function switchTop(section, btn){
+  // Chặn rời tab Kiểm tra từ vựng nếu đã ghi từ mà chưa bấm "Gửi bài" —
+  // tránh học viên tra từ điển/dịch rồi quay lại ghi tiếp (gian lận).
+  if(currentTop==='vocabtest' && section!=='vocabtest' && hasUnsavedVocabTest()){
+    showConfirm(
+      'Rời khỏi trang?',
+      'Bạn chưa bấm "Gửi bài" — nếu rời khỏi trang này, TOÀN BỘ từ đã ghi sẽ bị XÓA. Bạn có chắc muốn rời đi không?',
+      ()=>{ clearVocabTest(); doSwitchTop(section, btn); }
+    );
+    return;
+  }
+  doSwitchTop(section, btn);
+}
+window.switchTop=switchTop;
+
+function doSwitchTop(section, btn){
   window.stopDictationAudio ? window.stopDictationAudio() : (window.speechSynthesis && window.speechSynthesis.cancel());
   currentTop=section;
   document.querySelectorAll('.top-tab').forEach(b=>b.classList.remove('active'));
@@ -51,6 +70,10 @@ export function switchTop(section, btn){
   } else if(section==='minitest'){
     const mp=document.getElementById('minitest-panel');
     mp.style.display='block';mp.style.marginLeft='auto';mp.style.marginRight='auto';
+  } else if(section==='vocabtest'){
+    const vp=document.getElementById('vocabtest-panel');
+    vp.style.display='block';vp.style.marginLeft='auto';vp.style.marginRight='auto';
+    initVocabTest();
   } else if(section==='dashboard'){
     const dp=document.getElementById('dashboard-panel');
     dp.style.display='block';dp.style.marginLeft='auto';dp.style.marginRight='auto';
@@ -60,9 +83,9 @@ export function switchTop(section, btn){
     ap.style.display='block';ap.style.marginLeft='auto';ap.style.marginRight='auto';
     loadAdminUsers();
     loadOnlineUsers();
+    if(window.loadVocabTests) window.loadVocabTests();
   }
 }
-window.switchTop=switchTop;
 
 export function showFlashcardTab(tab){
   window.stopDictationAudio ? window.stopDictationAudio() : (window.speechSynthesis && window.speechSynthesis.cancel());
