@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { showConfirm, getVNDate } from './utils.js';
 import { ONLINE_THRESHOLD, AWAY_THRESHOLD } from './auth.js';
 import { loadRanking } from './flashcard.js';
@@ -252,3 +252,36 @@ export async function loadOnlineUsers(){
 }
 
 // ── PERSIST LAST SESSION ─────────────────────────────────────────
+
+// ── Xem bài kiểm tra từ vựng học viên đã nộp ────────────────────────
+export async function loadVocabTests(){
+  const listEl = document.getElementById('admin-vt-list');
+  const countEl = document.getElementById('vt-submit-count');
+  if(!listEl) return;
+  try{
+    const q = query(collection(db,'vocab_tests'), orderBy('submittedAt','desc'), limit(50));
+    const snap = await getDocs(q);
+    if(countEl) countEl.textContent = `(${snap.size} bài gần nhất)`;
+    if(snap.empty){
+      listEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">Chưa có bài nộp nào.</div>';
+      return;
+    }
+    listEl.innerHTML = snap.docs.map(d=>{
+      const data = d.data();
+      const time = data.submittedAt?.toDate ? data.submittedAt.toDate().toLocaleString('vi-VN') : '';
+      const words = (data.words||[]);
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-weight:600;font-family:'Space Grotesk',sans-serif;">${data.displayName||data.username}</div>
+          <div style="font-size:11px;color:var(--muted);">${time}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${words.map((w,i)=>`<span style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;">${i+1}. ${w}</span>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    listEl.innerHTML = '<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
+  }
+}
+window.loadVocabTests = loadVocabTests;
