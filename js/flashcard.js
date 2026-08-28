@@ -192,6 +192,7 @@ export function renderCard(){
 
 
 // Text-to-speech
+let _speakUtterance = null; // giữ tham chiếu sống, tránh bị dọn rác giữa chừng
 export function speakWord(){
   if(!window.speechSynthesis) return;
   const card = deck[idx];
@@ -200,17 +201,19 @@ export function speakWord(){
   const btn  = document.getElementById('btn-speak');
 
   window.speechSynthesis.cancel();
+  setTimeout(()=>{
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang  = 'en-US';
+    utter.rate  = 0.85;  // slightly slower for clarity
+    utter.pitch = 1;
 
-  const utter = new SpeechSynthesisUtterance(word);
-  utter.lang  = 'en-US';
-  utter.rate  = 0.85;  // slightly slower for clarity
-  utter.pitch = 1;
+    utter.onstart = ()=> btn.classList.add('speaking');
+    utter.onend   = ()=> btn.classList.remove('speaking');
+    utter.onerror = ()=> btn.classList.remove('speaking');
 
-  utter.onstart = ()=> btn.classList.add('speaking');
-  utter.onend   = ()=> btn.classList.remove('speaking');
-  utter.onerror = ()=> btn.classList.remove('speaking');
-
-  window.speechSynthesis.speak(utter);
+    _speakUtterance = utter;
+    window.speechSynthesis.speak(utter);
+  }, 80);
 }
 window.speakWord = speakWord;
 
@@ -1045,7 +1048,25 @@ function getSpellVocab(){
   return set;
 }
 
+const DICT_CACHE_KEY = 'toeic_dict_cache_v1';
 const _knownWordCache = new Map();
+let _networkCallCount = 0; // đếm số lần THỰC SỰ gọi API trong phiên hiện tại
+(function loadDictCache(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(DICT_CACHE_KEY) || '{}');
+    Object.entries(saved).forEach(([w,known])=>_knownWordCache.set(w, known));
+  }catch(e){ /* bỏ qua nếu dữ liệu cache hỏng */ }
+})();
+let _dictCacheSaveTimer = null;
+function persistDictCache(){
+  clearTimeout(_dictCacheSaveTimer);
+  _dictCacheSaveTimer = setTimeout(()=>{
+    try{
+      const obj = Object.fromEntries(_knownWordCache);
+      localStorage.setItem(DICT_CACHE_KEY, JSON.stringify(obj));
+    }catch(e){ /* localStorage đầy hoặc bị chặn thì bỏ qua, không ảnh hưởng chức năng chính */ }
+  }, 500);
+}
 function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
 async function isKnownWord(word){
@@ -1054,6 +1075,7 @@ async function isKnownWord(word){
   if(_knownWordCache.has(w)) return _knownWordCache.get(w);
   let known = true;
   try{
+    _networkCallCount++;
     let res = await fetch(DICT_API + encodeURIComponent(w));
     if(res.status === 429){
       // Bị giới hạn tần suất gọi — đợi rồi thử lại 1 lần, KHÔNG vội coi là đúng
@@ -1070,6 +1092,7 @@ async function isKnownWord(word){
     known = true; // lỗi mạng thì bỏ qua, không báo sai oan
   }
   _knownWordCache.set(w, known);
+  persistDictCache();
   return known;
 }
 
@@ -1171,17 +1194,22 @@ export async function checkMyWordsSpelling(){
     return;
   }
   if(btn){ btn.disabled = true; btn.textContent = '🔍 Đang kiểm tra...'; }
-  resultsEl.innerHTML = `<div style="text-align:center;padding:12px;color:var(--muted);font-size:13px;">Đang đối chiếu từ điển cho ${myWords.length} từ, vui lòng đợi chút...</div>`;
+  resultsEl.innerHTML = `<div id="mw-check-progress" style="text-align:center;padding:12px;color:var(--muted);font-size:13px;">Đang đối chiếu từ điển... 0/${myWords.length} từ</div>`;
 
   const flagged = [];
   const CONCURRENCY = 2;
   let cursor = 0;
+  let done = 0;
+  const progressEl = document.getElementById('mw-check-progress');
   async function worker(){
     while(cursor < myWords.length){
       const w = myWords[cursor++];
+      const before = _networkCallCount;
       const check = await checkPhraseSpelling(w.en);
       if(check) flagged.push({id:w.id, en:w.en, suggestion:check.suggestion});
-      await sleep(120); // giãn cách giữa các lần gọi từ điển, tránh bị chặn (429)
+      done++;
+      if(progressEl) progressEl.textContent = `Đang đối chiếu từ điển... ${done}/${myWords.length} từ`;
+      if(_networkCallCount > before) await sleep(120); // chỉ nghỉ khi vừa gọi mạng thật, từ đã biết thì bỏ qua luôn cho nhanh
     }
   }
   await Promise.all(Array.from({length:Math.min(CONCURRENCY,myWords.length)}, worker));
