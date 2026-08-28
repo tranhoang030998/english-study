@@ -1378,7 +1378,19 @@ export function renderMyWords(){
     listEl.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Chưa có từ nào. Thêm từ mới ở trên!</div>';
     return;
   }
-  listEl.innerHTML = myWords.map(w=>`
+  listEl.innerHTML = myWords.map(w=>{
+    if(w.id === _mwEditingId){
+      return `
+      <div style="padding:10px 12px;background:var(--surface);border:1px solid var(--accent);border-radius:10px;">
+        <input id="mw-edit-en-${w.id}" value="${(w.en||'').replace(/"/g,'&quot;')}" placeholder="Từ tiếng Anh" style="width:100%;box-sizing:border-box;margin-bottom:6px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;">
+        <input id="mw-edit-vn-${w.id}" value="${(w.vn||'').replace(/"/g,'&quot;')}" placeholder="Nghĩa tiếng Việt" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--green);font-size:13px;">
+        <div style="display:flex;gap:8px;">
+          <button onclick="saveMyWordEdit('${w.id}')" style="flex:1;padding:8px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Lưu</button>
+          <button onclick="cancelMyWordEdit()" style="flex:1;padding:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;font-size:13px;cursor:pointer;">Hủy</button>
+        </div>
+      </div>`;
+    }
+    return `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
       <div style="flex:1;">
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;">${w.en}
@@ -1387,9 +1399,46 @@ export function renderMyWords(){
         <div style="font-size:12px;color:var(--green);margin-top:2px;">${w.vn}</div>
         ${w.ex?'<div style="font-size:11px;color:var(--muted);font-style:italic;margin-top:2px;">'+w.ex+'</div>':''}
       </div>
+      <button onclick="startMyWordEdit('${w.id}')" style="background:transparent;border:none;color:var(--accent);cursor:pointer;font-size:16px;padding:4px;">✏️</button>
       <button onclick="deleteMyWord('${w.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:18px;padding:4px;">🗑</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+let _mwEditingId = null;
+export function startMyWordEdit(id){
+  _mwEditingId = id;
+  renderMyWords();
+}
+window.startMyWordEdit = startMyWordEdit;
+
+export function cancelMyWordEdit(){
+  _mwEditingId = null;
+  renderMyWords();
+}
+window.cancelMyWordEdit = cancelMyWordEdit;
+
+export async function saveMyWordEdit(id){
+  const enInput = document.getElementById('mw-edit-en-'+id);
+  const vnInput = document.getElementById('mw-edit-vn-'+id);
+  if(!enInput || !vnInput) return;
+  const en = enInput.value.trim();
+  const vn = vnInput.value.trim();
+  if(!en || !vn){ alert('Vui lòng nhập đủ từ tiếng Anh và nghĩa tiếng Việt.'); return; }
+  if(myWords.some(x=>x.id!==id && x.en.toLowerCase()===en.toLowerCase())){
+    alert('Từ "'+en+'" đã có trong danh sách rồi.');
+    return;
+  }
+  const w = myWords.find(x=>x.id===id);
+  if(!w) return;
+  w.en = en; w.vn = vn;
+  await saveMyWords();
+  _mwEditingId = null;
+  renderMyWords();
+  updateMyWordChip();
+  buildTopicChips();
+}
+window.saveMyWordEdit = saveMyWordEdit;
 
 // ── Xuất / Nhập từ riêng (chia sẻ giữa các học viên) ────────────────
 export function exportMyWords(){
