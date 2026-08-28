@@ -47,6 +47,7 @@
   <button class="top-tab active" onclick="switchTop('flashcard',this)">📚 Flashcard</button>
   <button class="top-tab" onclick="switchTop('grammar',this)">✍️ Ngữ pháp</button>
   <button class="top-tab" onclick="switchTop('minitest',this)">🎯 Mini Test</button>
+  <button class="top-tab" onclick="switchTop('vocabtest',this)">📝 Kiểm tra từ vựng</button>
   <button class="top-tab" onclick="switchTop('dictionary',this)">📖 Từ điển</button>
   <button class="top-tab" onclick="switchTop('dashboard',this)">📈 Dashboard</button>
   <button class="top-tab" id="admin-tab-btn" style="display:none" onclick="switchTop('admin',this)">⚙️ Admin</button>
@@ -178,6 +179,17 @@
   <div class="rank-table" id="rank-table"><div class="rank-loading">Đang tải...</div></div>
 </div>
 
+<!-- VOCAB TEST TAB (Kiểm tra từ vựng - giáo viên đọc tiếng Việt, học viên gõ tiếng Anh) -->
+<div id="vocabtest-panel" style="display:none;width:100%;max-width:680px;padding:14px 16px 24px;margin:0 auto;box-sizing:border-box;">
+  <div style="background:var(--surface);border:1px solid var(--yellow);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--yellow);line-height:1.5;">
+    ⚠️ Ghi từ tiếng Anh theo đúng thứ tự giáo viên đọc. Nếu rời khỏi trang này mà chưa bấm "Gửi bài", toàn bộ từ đã ghi sẽ bị xóa hết.
+  </div>
+  <div id="vt-rows" style="display:flex;flex-direction:column;gap:8px;"></div>
+  <button onclick="addVocabTestRow()" style="width:100%;margin-top:10px;padding:10px;background:var(--surface2);border:1px dashed var(--border);border-radius:var(--radius);color:var(--muted);cursor:pointer;font-size:13px;">+ Thêm dòng</button>
+  <button onclick="submitVocabTest()" style="width:100%;margin-top:14px;padding:13px;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-weight:600;font-size:14px;cursor:pointer;">📤 Gửi bài</button>
+  <div id="vt-msg" style="margin-top:10px;text-align:center;font-size:13px;"></div>
+</div>
+
 <!-- ADMIN PANEL -->
 <div class="admin-panel" id="admin-panel">
   <div class="admin-section">Tạo tài khoản học viên</div>
@@ -190,6 +202,9 @@
   <div class="admin-msg" id="admin-msg"></div>
   <div class="admin-section">Danh sách học viên</div>
   <div class="admin-user-list" id="admin-user-list"></div>
+
+  <div class="admin-section" style="margin-top:24px;">📝 Bài kiểm tra từ vựng đã nộp <span id="vt-submit-count" style="color:var(--green);font-size:12px;"></span></div>
+  <div id="admin-vt-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
 
   <div class="admin-section" style="margin-top:24px;">Đang online <span id="online-count" style="color:var(--green);font-size:12px;"></span></div>
   <div id="admin-online-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
