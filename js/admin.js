@@ -259,13 +259,29 @@ export async function loadVocabTests(){
   const countEl = document.getElementById('vt-submit-count');
   if(!listEl) return;
   try{
-    const q = query(collection(db,'vocab_tests'), orderBy('submittedAt','desc'), limit(50));
+    const q = query(collection(db,'vocab_tests'), orderBy('submittedAt','desc'), limit(100));
     const snap = await getDocs(q);
     if(countEl) countEl.textContent = `(${snap.size} bài gần nhất)`;
     if(snap.empty){
       listEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">Chưa có bài nộp nào.</div>';
       return;
     }
+
+    // Gom bài nộp theo từng học viên
+    const byStudent = new Map();
+    snap.docs.forEach(d=>{
+      const data = d.data();
+      const key = data.username;
+      if(!byStudent.has(key)) byStudent.set(key, { displayName: data.displayName||data.username, subs: [] });
+      byStudent.get(key).subs.push({ id: d.id, data });
+    });
+    // Học viên có bài nộp gần nhất lên đầu
+    const students = Array.from(byStudent.entries()).sort((a,b)=>{
+      const ta = a[1].subs[0]?.data.submittedAt?.toMillis?.() || 0;
+      const tb = b[1].subs[0]?.data.submittedAt?.toMillis?.() || 0;
+      return tb-ta;
+    });
+
     const toolbarHtml = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
@@ -274,54 +290,66 @@ export async function loadVocabTests(){
         <button class="admin-btn danger" style="padding:6px 12px;font-size:12px;" onclick="deleteSelectedVocabTests()">🗑 Xóa mục đã chọn</button>
         <button class="admin-btn danger" style="padding:6px 12px;font-size:12px;background:#2d0808;border-color:#7f1d1d;color:#fca5a5;" onclick="deleteAllVocabTests()">🗑 Xóa TẤT CẢ bài nộp</button>
       </div>`;
-    const cardsHtml = snap.docs.map(d=>{
-      const data = d.data();
-      const time = data.submittedAt?.toDate ? data.submittedAt.toDate().toLocaleString('vi-VN') : '';
-      const words = (data.words||[]);
-      const grades = (data.grades||[]);
-      const correctN = grades.filter(g=>g==='correct').length;
-      const wrongN   = grades.filter(g=>g==='wrong').length;
-      const gradedN  = correctN + wrongN;
-      const statusBadge = data.returned
-        ? `<span style="font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:1px 6px;white-space:nowrap;">✓ đã trả</span>`
-        : gradedN>0
-          ? `<span style="font-size:10px;color:var(--yellow);border:1px solid var(--yellow);border-radius:6px;padding:1px 6px;white-space:nowrap;">${correctN}/${words.length} đúng</span>`
-          : `<span style="font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;white-space:nowrap;">chưa chấm</span>`;
+
+    const studentsHtml = students.map(([username, info])=>{
+      const subCount = info.subs.length;
+      const subsHtml = info.subs.map(({id, data})=>renderVocabSubmission(id, data)).join('');
       return `<details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
         <summary style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;">
-          <input type="checkbox" class="vt-select-cb" data-id="${d.id}" onclick="event.stopPropagation()">
-          <span style="font-weight:600;font-family:'Space Grotesk',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.displayName||data.username}</span>
-          ${statusBadge}
-          <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${time}</span>
-          <button onclick="event.stopPropagation();deleteVocabTest('${d.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 4px;flex-shrink:0;">🗑</button>
+          <span style="font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${info.displayName}</span>
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap;">${subCount} bài nộp</span>
         </summary>
-        <div style="padding:0 12px 12px;">
-          ${gradedN>0 ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Đã chấm: ${gradedN}/${words.length} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span></div>` : ''}
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            ${words.map((w,i)=>{
-              const g = grades[i];
-              const borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
-              return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;">
-                <span style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">${i+1}. ${w}</span>
-                <button onclick="gradeVocabWord('${d.id}',${i},'correct')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='correct'?'1':'.4'};">✅</button>
-                <button onclick="gradeVocabWord('${d.id}',${i},'wrong')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='wrong'?'1':'.4'};">❌</button>
-              </div>`;
-            }).join('')}
-          </div>
-          <div style="margin-top:10px;">
-            ${data.returned
-              ? `<div style="font-size:12px;color:var(--green);text-align:center;padding:8px;background:var(--green-bg);border-radius:8px;">✓ Đã trả bài cho học viên</div>`
-              : `<button onclick="returnVocabTest('${d.id}')" style="width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📤 Trả bài chấm</button>`}
-          </div>
-        </div>
+        <div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;">${subsHtml}</div>
       </details>`;
     }).join('');
-    listEl.innerHTML = toolbarHtml + cardsHtml;
+
+    listEl.innerHTML = toolbarHtml + studentsHtml;
   }catch(e){
     listEl.innerHTML = '<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
   }
 }
 window.loadVocabTests = loadVocabTests;
+
+function renderVocabSubmission(docId, data){
+  const time = data.submittedAt?.toDate ? data.submittedAt.toDate().toLocaleString('vi-VN') : '';
+  const words = (data.words||[]);
+  const grades = (data.grades||[]);
+  const correctN = grades.filter(g=>g==='correct').length;
+  const wrongN   = grades.filter(g=>g==='wrong').length;
+  const gradedN  = correctN + wrongN;
+  const statusBadge = data.returned
+    ? `<span id="vt-badge-${docId}" style="font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:1px 6px;white-space:nowrap;">✓ đã trả</span>`
+    : gradedN>0
+      ? `<span id="vt-badge-${docId}" style="font-size:10px;color:var(--yellow);border:1px solid var(--yellow);border-radius:6px;padding:1px 6px;white-space:nowrap;">${correctN}/${words.length} đúng</span>`
+      : `<span id="vt-badge-${docId}" style="font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;white-space:nowrap;">chưa chấm</span>`;
+  return `<details style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;">
+    <summary style="padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" class="vt-select-cb" data-id="${docId}" onclick="event.stopPropagation()">
+      <span style="font-size:12px;color:var(--text);flex:1;">📅 ${time}</span>
+      ${statusBadge}
+      <button onclick="event.stopPropagation();deleteVocabTest('${docId}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 4px;flex-shrink:0;">🗑</button>
+    </summary>
+    <div style="padding:0 10px 10px;">
+      <div id="vt-summary-${docId}" style="font-size:12px;color:var(--muted);margin-bottom:8px;">${gradedN>0 ? `Đã chấm: ${gradedN}/${words.length} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span>` : ''}</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        ${words.map((w,i)=>{
+          const g = grades[i];
+          const borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
+          return `<div id="vt-word-${docId}-${i}" style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg);border:1px solid ${borderColor};border-radius:6px;">
+            <span style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">${i+1}. ${w}</span>
+            <button class="vt-ok-btn" onclick="gradeVocabWord('${docId}',${i},'correct')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='correct'?'1':'.4'};">✅</button>
+            <button class="vt-no-btn" onclick="gradeVocabWord('${docId}',${i},'wrong')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='wrong'?'1':'.4'};">❌</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <div id="vt-return-${docId}" style="margin-top:10px;">
+        ${data.returned
+          ? `<div style="font-size:12px;color:var(--green);text-align:center;padding:8px;background:var(--green-bg);border-radius:8px;">✓ Đã trả bài cho học viên</div>`
+          : `<button onclick="returnVocabTest('${docId}')" style="width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📤 Trả bài chấm</button>`}
+      </div>
+    </div>
+  </details>`;
+}
 
 export function toggleAllVocabSelect(checked){
   document.querySelectorAll('.vt-select-cb').forEach(cb=>{ cb.checked = checked; });
@@ -366,12 +394,45 @@ export async function gradeVocabWord(docId, wordIndex, verdict){
     // Bấm lại đúng verdict đang chọn thì bỏ chấm (toggle về chưa chấm)
     grades[wordIndex] = grades[wordIndex]===verdict ? null : verdict;
     await updateDoc(ref, { grades });
-    loadVocabTests();
+    // Cập nhật trực tiếp trên giao diện tại đúng dòng vừa chấm — KHÔNG load lại
+    // toàn bộ danh sách, để tránh làm các khung đang mở bị đóng lại.
+    updateVocabWordUI(docId, wordIndex, grades, data.words.length, data.returned);
   }catch(e){
     alert('Lỗi khi chấm điểm: '+e.message);
   }
 }
 window.gradeVocabWord = gradeVocabWord;
+
+function updateVocabWordUI(docId, wordIndex, grades, totalWords, returned){
+  const g = grades[wordIndex];
+  const rowEl = document.getElementById(`vt-word-${docId}-${wordIndex}`);
+  if(rowEl){
+    rowEl.style.borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
+    const okBtn = rowEl.querySelector('.vt-ok-btn');
+    const noBtn = rowEl.querySelector('.vt-no-btn');
+    if(okBtn) okBtn.style.opacity = g==='correct' ? '1' : '.4';
+    if(noBtn) noBtn.style.opacity = g==='wrong' ? '1' : '.4';
+  }
+  const correctN = grades.filter(x=>x==='correct').length;
+  const wrongN   = grades.filter(x=>x==='wrong').length;
+  const gradedN  = correctN + wrongN;
+  const summaryEl = document.getElementById(`vt-summary-${docId}`);
+  if(summaryEl){
+    summaryEl.innerHTML = gradedN>0 ? `Đã chấm: ${gradedN}/${totalWords} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span>` : '';
+  }
+  const badgeEl = document.getElementById(`vt-badge-${docId}`);
+  if(badgeEl && !returned){
+    if(gradedN>0){
+      badgeEl.textContent = `${correctN}/${totalWords} đúng`;
+      badgeEl.style.color = 'var(--yellow)';
+      badgeEl.style.borderColor = 'var(--yellow)';
+    } else {
+      badgeEl.textContent = 'chưa chấm';
+      badgeEl.style.color = 'var(--muted)';
+      badgeEl.style.borderColor = 'var(--border)';
+    }
+  }
+}
 
 export async function returnVocabTest(docId){
   showConfirm('Trả bài chấm', 'Gửi kết quả chấm cho học viên xem trong Dashboard? Học viên sẽ thấy được từ nào đúng, từ nào sai.', async ()=>{
