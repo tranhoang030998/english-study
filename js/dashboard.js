@@ -91,10 +91,54 @@ export async function loadDashboard(){
     }
 
     if(currentUser.isAdmin) await loadClassDashboard();
+    await loadMyVocabTestResults();
     loadEl.style.display='none'; contEl.style.display='block';
   } catch(e){
     loadEl.textContent='Lỗi tải dashboard: '+e.message;
     console.error(e);
+  }
+}
+
+export async function loadMyVocabTestResults(){
+  const el = document.getElementById('dash-vocabtests');
+  if(!el || !currentUser) return;
+  el.innerHTML = '<div style="color:var(--muted);font-size:12px;">Đang tải...</div>';
+  try{
+    // Không dùng orderBy kèm where để tránh cần composite index — lọc & sắp xếp ở client
+    const snap = await getDocs(query(collection(db,'vocab_tests'), where('username','==',currentUser.username)));
+    const results = [];
+    snap.forEach(d=>{ const data=d.data(); if(data.returned) results.push(data); });
+    results.sort((a,b)=>{
+      const ta=a.submittedAt?.toMillis?.()||0, tb=b.submittedAt?.toMillis?.()||0;
+      return tb-ta;
+    });
+    if(!results.length){
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;">Chưa có bài kiểm tra từ vựng nào được trả.</div>';
+      return;
+    }
+    el.innerHTML = results.slice(0,10).map(data=>{
+      const time = data.submittedAt?.toDate ? data.submittedAt.toDate().toLocaleString('vi-VN') : '';
+      const words = data.words||[];
+      const grades = data.grades||[];
+      const correctN = grades.filter(g=>g==='correct').length;
+      const wrongN = grades.filter(g=>g==='wrong').length;
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="font-weight:700;font-family:'Space Grotesk',sans-serif;color:${correctN>=wrongN?'var(--green)':'var(--yellow)'};">${correctN}/${words.length} đúng</div>
+          <div style="font-size:11px;color:var(--muted);">${time}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${words.map((w,i)=>{
+            const g=grades[i];
+            const color = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--muted)';
+            const icon  = g==='correct' ? '✓' : g==='wrong' ? '✗' : '·';
+            return `<span style="font-size:12px;background:var(--surface2);border:1px solid ${color};color:${color};border-radius:6px;padding:3px 8px;">${icon} ${w}</span>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML = '<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
   }
 }
 
