@@ -50,6 +50,7 @@
   <button class="top-tab" onclick="switchTop('vocabtest',this)">📝 Kiểm tra từ vựng</button>
   <button class="top-tab" onclick="switchTop('dictionary',this)">📖 Từ điển</button>
   <button class="top-tab" onclick="switchTop('dashboard',this)">📈 Dashboard</button>
+  <button class="top-tab" id="submissions-tab-btn" style="display:none" onclick="switchTop('submissions',this)">📥 Quản lý nộp bài</button>
   <button class="top-tab" id="admin-tab-btn" style="display:none" onclick="switchTop('admin',this)">⚙️ Admin</button>
 </div>
 <!-- FLASHCARD SUB NAV -->
@@ -190,6 +191,12 @@
   <div id="vt-msg" style="margin-top:10px;text-align:center;font-size:13px;"></div>
 </div>
 
+<!-- SUBMISSIONS PANEL (Quản lý nộp bài kiểm tra từ vựng) -->
+<div id="submissions-panel" style="display:none;width:100%;max-width:680px;padding:14px 16px 24px;margin:0 auto;box-sizing:border-box;">
+  <div class="admin-section">📝 Bài kiểm tra từ vựng đã nộp <span id="vt-submit-count" style="color:var(--green);font-size:12px;"></span></div>
+  <div id="admin-vt-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
+</div>
+
 <!-- ADMIN PANEL -->
 <div class="admin-panel" id="admin-panel">
   <div class="admin-section">Tạo tài khoản học viên</div>
@@ -202,9 +209,6 @@
   <div class="admin-msg" id="admin-msg"></div>
   <div class="admin-section">Danh sách học viên</div>
   <div class="admin-user-list" id="admin-user-list"></div>
-
-  <div class="admin-section" style="margin-top:24px;">📝 Bài kiểm tra từ vựng đã nộp <span id="vt-submit-count" style="color:var(--green);font-size:12px;"></span></div>
-  <div id="admin-vt-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
 
   <div class="admin-section" style="margin-top:24px;">Đang online <span id="online-count" style="color:var(--green);font-size:12px;"></span></div>
   <div id="admin-online-list" style="margin-bottom:8px;"><div style="color:var(--muted);font-size:13px;">Đang tải...</div></div>
