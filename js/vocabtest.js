@@ -1,6 +1,7 @@
 import { db } from './firebase-config.js';
 import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { currentUser } from './auth.js';
+import { showConfirm } from './utils.js';
 
 const INITIAL_ROWS = 15;
 
@@ -59,17 +60,23 @@ export async function submitVocabTest(){
     if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Bạn chưa ghi từ nào cả.'; }
     return;
   }
-  try{
-    await addDoc(collection(db,'vocab_tests'), {
-      username: currentUser.username,
-      displayName: currentUser.displayName,
-      words,
-      submittedAt: serverTimestamp(),
-    });
-    if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent = `✓ Đã gửi ${words.length} từ. Cảm ơn bạn!`; }
-    initVocabTest(); // reset form sau khi nộp thành công
-  }catch(e){
-    if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent = 'Lỗi khi gửi bài: '+e.message; }
-  }
+  showConfirm('Nộp bài?', `Bạn có chắc muốn nộp ${words.length} từ đã ghi không? Sau khi nộp sẽ không sửa được nữa.`, async ()=>{
+    const submitBtn = document.getElementById('vt-submit-btn');
+    if(submitBtn) submitBtn.disabled = true; // chặn bấm nộp nhiều lần khi máy lag
+    try{
+      await addDoc(collection(db,'vocab_tests'), {
+        username: currentUser.username,
+        displayName: currentUser.displayName,
+        words,
+        submittedAt: serverTimestamp(),
+      });
+      if(msgEl){ msgEl.style.color='var(--green)'; msgEl.textContent = `✓ Đã gửi ${words.length} từ. Cảm ơn bạn!`; }
+      initVocabTest(); // reset form sau khi nộp thành công
+    }catch(e){
+      if(msgEl){ msgEl.style.color='var(--red)'; msgEl.textContent = 'Lỗi khi gửi bài: '+e.message; }
+    } finally {
+      if(submitBtn) submitBtn.disabled = false;
+    }
+  });
 }
 window.submitVocabTest = submitVocabTest;
