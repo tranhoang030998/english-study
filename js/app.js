@@ -28,7 +28,7 @@ import { initVocabTest, hasUnsavedVocabTest, clearVocabTest } from './vocabtest.
 
 export const ALL_PANELS=['practice-panel','sum-panel','rank-panel','score-panel',
                   'grammar-panel','minitest-panel','dashboard-panel','admin-panel','dictionary-panel','mywords-panel',
-                  'dictation-panel','vocabtest-panel'];
+                  'dictation-panel','vocabtest-panel','submissions-panel'];
 export let currentTop='flashcard';
 
 export function switchTop(section, btn){
@@ -83,6 +83,9 @@ function doSwitchTop(section, btn){
     ap.style.display='block';ap.style.marginLeft='auto';ap.style.marginRight='auto';
     loadAdminUsers();
     loadOnlineUsers();
+  } else if(section==='submissions'){
+    const sp=document.getElementById('submissions-panel');
+    sp.style.display='block';sp.style.marginLeft='auto';sp.style.marginRight='auto';
     if(window.loadVocabTests) window.loadVocabTests();
   }
 }
