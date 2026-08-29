@@ -1,5 +1,5 @@
 import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, orderBy, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { showConfirm, getVNDate } from './utils.js';
 import { ONLINE_THRESHOLD, AWAY_THRESHOLD } from './auth.js';
 import { loadRanking } from './flashcard.js';
@@ -266,22 +266,111 @@ export async function loadVocabTests(){
       listEl.innerHTML = '<div style="color:var(--muted);font-size:13px;">Chưa có bài nộp nào.</div>';
       return;
     }
-    listEl.innerHTML = snap.docs.map(d=>{
+    const toolbarHtml = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
+          <input type="checkbox" id="vt-select-all" onclick="toggleAllVocabSelect(this.checked)"> Chọn tất cả
+        </label>
+        <button class="admin-btn danger" style="padding:6px 12px;font-size:12px;" onclick="deleteSelectedVocabTests()">🗑 Xóa mục đã chọn</button>
+        <button class="admin-btn danger" style="padding:6px 12px;font-size:12px;background:#2d0808;border-color:#7f1d1d;color:#fca5a5;" onclick="deleteAllVocabTests()">🗑 Xóa TẤT CẢ bài nộp</button>
+      </div>`;
+    const cardsHtml = snap.docs.map(d=>{
       const data = d.data();
       const time = data.submittedAt?.toDate ? data.submittedAt.toDate().toLocaleString('vi-VN') : '';
       const words = (data.words||[]);
+      const grades = (data.grades||[]);
+      const correctN = grades.filter(g=>g==='correct').length;
+      const wrongN   = grades.filter(g=>g==='wrong').length;
+      const gradedN  = correctN + wrongN;
       return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <div style="font-weight:600;font-family:'Space Grotesk',sans-serif;">${data.displayName||data.username}</div>
-          <div style="font-size:11px;color:var(--muted);">${time}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;">
+            <input type="checkbox" class="vt-select-cb" data-id="${d.id}">
+            <span style="font-weight:600;font-family:'Space Grotesk',sans-serif;">${data.displayName||data.username}</span>
+          </label>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;">${time}</div>
+          <button onclick="deleteVocabTest('${d.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 4px;">🗑</button>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;">
-          ${words.map((w,i)=>`<span style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;">${i+1}. ${w}</span>`).join('')}
+        ${gradedN>0 ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Đã chấm: ${gradedN}/${words.length} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span></div>` : ''}
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          ${words.map((w,i)=>{
+            const g = grades[i];
+            const borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;">
+              <span style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">${i+1}. ${w}</span>
+              <button onclick="gradeVocabWord('${d.id}',${i},'correct')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='correct'?'1':'.4'};">✅</button>
+              <button onclick="gradeVocabWord('${d.id}',${i},'wrong')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='wrong'?'1':'.4'};">❌</button>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:10px;">
+          ${data.returned
+            ? `<div style="font-size:12px;color:var(--green);text-align:center;padding:8px;background:var(--green-bg);border-radius:8px;">✓ Đã trả bài cho học viên</div>`
+            : `<button onclick="returnVocabTest('${d.id}')" style="width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📤 Trả bài chấm</button>`}
         </div>
       </div>`;
     }).join('');
+    listEl.innerHTML = toolbarHtml + cardsHtml;
   }catch(e){
     listEl.innerHTML = '<div style="color:var(--red);font-size:12px;">Lỗi: '+e.message+'</div>';
   }
 }
 window.loadVocabTests = loadVocabTests;
+
+export function toggleAllVocabSelect(checked){
+  document.querySelectorAll('.vt-select-cb').forEach(cb=>{ cb.checked = checked; });
+}
+window.toggleAllVocabSelect = toggleAllVocabSelect;
+
+export async function deleteVocabTest(docId){
+  showConfirm('Xóa bài nộp', 'Xóa bài nộp này? Không thể hoàn tác.', async ()=>{
+    await deleteDoc(doc(db,'vocab_tests',docId));
+    loadVocabTests();
+  });
+}
+window.deleteVocabTest = deleteVocabTest;
+
+export async function deleteSelectedVocabTests(){
+  const ids = Array.from(document.querySelectorAll('.vt-select-cb:checked')).map(cb=>cb.dataset.id);
+  if(!ids.length){ alert('Bạn chưa chọn bài nộp nào.'); return; }
+  showConfirm('Xóa các bài đã chọn', `Xóa ${ids.length} bài nộp đã chọn? Không thể hoàn tác.`, async ()=>{
+    await Promise.all(ids.map(id=>deleteDoc(doc(db,'vocab_tests',id))));
+    loadVocabTests();
+  });
+}
+window.deleteSelectedVocabTests = deleteSelectedVocabTests;
+
+export async function deleteAllVocabTests(){
+  showConfirm('Xóa TẤT CẢ bài nộp', 'Xóa toàn bộ bài kiểm tra từ vựng đã nộp (kể cả bài chưa chấm)? Không thể hoàn tác.', async ()=>{
+    const snap = await getDocs(collection(db,'vocab_tests'));
+    await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+    loadVocabTests();
+  });
+}
+window.deleteAllVocabTests = deleteAllVocabTests;
+
+export async function gradeVocabWord(docId, wordIndex, verdict){
+  try{
+    const ref = doc(db,'vocab_tests',docId);
+    const snap = await getDoc(ref);
+    if(!snap.exists()) return;
+    const data = snap.data();
+    const grades = Array.isArray(data.grades) ? [...data.grades] : [];
+    while(grades.length < data.words.length) grades.push(null);
+    // Bấm lại đúng verdict đang chọn thì bỏ chấm (toggle về chưa chấm)
+    grades[wordIndex] = grades[wordIndex]===verdict ? null : verdict;
+    await updateDoc(ref, { grades });
+    loadVocabTests();
+  }catch(e){
+    alert('Lỗi khi chấm điểm: '+e.message);
+  }
+}
+window.gradeVocabWord = gradeVocabWord;
+
+export async function returnVocabTest(docId){
+  showConfirm('Trả bài chấm', 'Gửi kết quả chấm cho học viên xem trong Dashboard? Học viên sẽ thấy được từ nào đúng, từ nào sai.', async ()=>{
+    await updateDoc(doc(db,'vocab_tests',docId), { returned: true, returnedAt: serverTimestamp() });
+    loadVocabTests();
+  });
+}
+window.returnVocabTest = returnVocabTest;
