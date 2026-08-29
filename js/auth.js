@@ -87,6 +87,8 @@ export function showApp() {
   document.getElementById('user-name-display').textContent = currentUser.displayName;
   if(currentUser.isAdmin){
     document.getElementById('admin-tab-btn').style.display='';
+    const subBtn = document.getElementById('submissions-tab-btn');
+    if(subBtn) subBtn.style.display='';
   }
   // Set initial data-tab on sub-nav buttons
   document.querySelectorAll('#flashcard-subnav .tab-btn').forEach((b,i)=>{
