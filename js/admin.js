@@ -282,33 +282,39 @@ export async function loadVocabTests(){
       const correctN = grades.filter(g=>g==='correct').length;
       const wrongN   = grades.filter(g=>g==='wrong').length;
       const gradedN  = correctN + wrongN;
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;min-width:0;">
-            <input type="checkbox" class="vt-select-cb" data-id="${d.id}">
-            <span style="font-weight:600;font-family:'Space Grotesk',sans-serif;">${data.displayName||data.username}</span>
-          </label>
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;">${time}</div>
-          <button onclick="deleteVocabTest('${d.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:2px 4px;">🗑</button>
+      const statusBadge = data.returned
+        ? `<span style="font-size:10px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:1px 6px;white-space:nowrap;">✓ đã trả</span>`
+        : gradedN>0
+          ? `<span style="font-size:10px;color:var(--yellow);border:1px solid var(--yellow);border-radius:6px;padding:1px 6px;white-space:nowrap;">${correctN}/${words.length} đúng</span>`
+          : `<span style="font-size:10px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;white-space:nowrap;">chưa chấm</span>`;
+      return `<details style="background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;">
+        <summary style="padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" class="vt-select-cb" data-id="${d.id}" onclick="event.stopPropagation()">
+          <span style="font-weight:600;font-family:'Space Grotesk',sans-serif;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${data.displayName||data.username}</span>
+          ${statusBadge}
+          <span style="font-size:10px;color:var(--muted);white-space:nowrap;">${time}</span>
+          <button onclick="event.stopPropagation();deleteVocabTest('${d.id}')" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 4px;flex-shrink:0;">🗑</button>
+        </summary>
+        <div style="padding:0 12px 12px;">
+          ${gradedN>0 ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Đã chấm: ${gradedN}/${words.length} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span></div>` : ''}
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            ${words.map((w,i)=>{
+              const g = grades[i];
+              const borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
+              return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;">
+                <span style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">${i+1}. ${w}</span>
+                <button onclick="gradeVocabWord('${d.id}',${i},'correct')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='correct'?'1':'.4'};">✅</button>
+                <button onclick="gradeVocabWord('${d.id}',${i},'wrong')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='wrong'?'1':'.4'};">❌</button>
+              </div>`;
+            }).join('')}
+          </div>
+          <div style="margin-top:10px;">
+            ${data.returned
+              ? `<div style="font-size:12px;color:var(--green);text-align:center;padding:8px;background:var(--green-bg);border-radius:8px;">✓ Đã trả bài cho học viên</div>`
+              : `<button onclick="returnVocabTest('${d.id}')" style="width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📤 Trả bài chấm</button>`}
+          </div>
         </div>
-        ${gradedN>0 ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Đã chấm: ${gradedN}/${words.length} · <span style="color:var(--green);">✓ ${correctN} đúng</span> · <span style="color:var(--red);">✗ ${wrongN} sai</span></div>` : ''}
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          ${words.map((w,i)=>{
-            const g = grades[i];
-            const borderColor = g==='correct' ? 'var(--green)' : g==='wrong' ? 'var(--red)' : 'var(--border)';
-            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border:1px solid ${borderColor};border-radius:6px;">
-              <span style="flex:1;font-size:13px;font-family:'Space Grotesk',sans-serif;">${i+1}. ${w}</span>
-              <button onclick="gradeVocabWord('${d.id}',${i},'correct')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='correct'?'1':'.4'};">✅</button>
-              <button onclick="gradeVocabWord('${d.id}',${i},'wrong')" style="background:none;border:none;cursor:pointer;font-size:15px;opacity:${g==='wrong'?'1':'.4'};">❌</button>
-            </div>`;
-          }).join('')}
-        </div>
-        <div style="margin-top:10px;">
-          ${data.returned
-            ? `<div style="font-size:12px;color:var(--green);text-align:center;padding:8px;background:var(--green-bg);border-radius:8px;">✓ Đã trả bài cho học viên</div>`
-            : `<button onclick="returnVocabTest('${d.id}')" style="width:100%;padding:9px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">📤 Trả bài chấm</button>`}
-        </div>
-      </div>`;
+      </details>`;
     }).join('');
     listEl.innerHTML = toolbarHtml + cardsHtml;
   }catch(e){
