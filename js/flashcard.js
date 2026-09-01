@@ -1048,7 +1048,7 @@ function getSpellVocab(){
   return set;
 }
 
-const DICT_CACHE_KEY = 'toeic_dict_cache_v1';
+const DICT_CACHE_KEY = 'toeic_dict_cache_v2'; // đổi version để xóa sạch cache cũ bị nhiễm sai do bug 429
 const _knownWordCache = new Map();
 let _networkCallCount = 0; // đếm số lần THỰC SỰ gọi API trong phiên hiện tại
 (function loadDictCache(){
@@ -1074,6 +1074,7 @@ async function isKnownWord(word){
   if(getSpellVocab().has(w)) return true;
   if(_knownWordCache.has(w)) return _knownWordCache.get(w);
   let known = true;
+  let confirmed = false; // chỉ lưu cache khi API thật sự trả lời được, không lưu khi đoán tạm
   try{
     _networkCallCount++;
     let res = await fetch(DICT_API + encodeURIComponent(w));
@@ -1084,15 +1085,19 @@ async function isKnownWord(word){
     }
     if(res.status === 429){
       // Vẫn bị chặn sau khi thử lại — không đủ dữ kiện để kết luận, bỏ qua từ này
+      // lần này thôi, KHÔNG lưu cache để lần sau còn kiểm tra lại được.
       known = true;
     } else {
       known = res.ok;
+      confirmed = true;
     }
   }catch(e){
-    known = true; // lỗi mạng thì bỏ qua, không báo sai oan
+    known = true; // lỗi mạng thì bỏ qua, không báo sai oan, và cũng không lưu cache
   }
-  _knownWordCache.set(w, known);
-  persistDictCache();
+  if(confirmed){
+    _knownWordCache.set(w, known);
+    persistDictCache();
+  }
   return known;
 }
 
