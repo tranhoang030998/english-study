@@ -1282,7 +1282,6 @@ export async function addMyWord(){
   const vn = document.getElementById('mw-vn').value.trim();
   const ex = document.getElementById('mw-ex').value.trim();
   const msgEl = document.getElementById('mw-msg');
-  const addBtn = document.getElementById('mw-add-btn');
 
   if(!en || !vn){ msgEl.style.color='var(--red)'; msgEl.textContent='Vui lòng nhập đủ từ và nghĩa.'; return; }
 
@@ -1291,22 +1290,23 @@ export async function addMyWord(){
     msgEl.style.color='var(--yellow)'; msgEl.textContent='Từ này đã có trong danh sách.'; return;
   }
 
-  if(addBtn) addBtn.disabled = true;
-  msgEl.style.color='var(--muted)'; msgEl.textContent='Đang kiểm tra chính tả...';
-  const check = await checkPhraseSpelling(en);
-  if(addBtn) addBtn.disabled = false;
-  msgEl.textContent = '';
-
-  if(check && check.suggestion){
-    showConfirm(
-      'Kiểm tra chính tả',
-      `Bạn nhập "${en}" — có phải ý bạn là "${check.suggestion}" không?`,
-      ()=>{ document.getElementById('mw-en').value = check.suggestion; _insertMyWord(check.suggestion, vn, ex); },
-      ()=>{ _insertMyWord(en, vn, ex); }
-    );
-    return;
-  }
+  // Thêm ngay lập tức — không đợi mạng nữa, để tránh cảm giác đứng máy 5-10s.
   await _insertMyWord(en, vn, ex);
+
+  // Kiểm tra chính tả chạy NGẦM phía sau, không chặn thao tác thêm từ.
+  // Nếu phát hiện gần giống 1 từ/cụm quen thuộc thì mới hỏi có muốn sửa không.
+  checkPhraseSpelling(en).then(check=>{
+    if(check && check.suggestion){
+      showConfirm(
+        'Kiểm tra chính tả',
+        `Bạn vừa nhập "${en}" — có phải ý bạn là "${check.suggestion}" không?`,
+        ()=>{
+          const w = myWords.find(x=>x.en===en);
+          if(w){ w.en = check.suggestion; saveMyWords(); renderMyWords(); updateMyWordChip(); buildTopicChips(); }
+        }
+      );
+    }
+  }).catch(()=>{});
 }
 window.addMyWord = addMyWord;
 
