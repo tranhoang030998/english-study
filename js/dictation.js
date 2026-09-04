@@ -88,9 +88,9 @@ function renderDictationCard(){
   const item = dictDeck[dictIdx];
   document.getElementById('dict-progress').textContent = `Câu ${dictIdx+1}`;
   document.getElementById('dict-topic').textContent = item.topic;
-  document.getElementById('dict-input').value = '';
-  document.getElementById('dict-input').disabled = false;
-  document.getElementById('dict-result').style.display = 'none';
+  document.getElementById('dictation-input').value = '';
+  document.getElementById('dictation-input').disabled = false;
+  document.getElementById('dictation-result').style.display = 'none';
   document.getElementById('dict-check-btn').style.display = '';
   document.getElementById('dict-next-btn').style.display = 'none';
   dictChecked = false;
@@ -202,7 +202,7 @@ export function checkDictation(){
   stopDictationAudio();
   const item = dictDeck[dictIdx];
   if(!item) return;
-  const said = document.getElementById('dict-input').value.trim();
+  const said = document.getElementById('dictation-input').value.trim();
   const targetWords = tokenize(item.sentence);
   const saidWords = tokenize(said);
   const diff = wordDiff(targetWords, saidWords);
@@ -221,7 +221,7 @@ export function checkDictation(){
     return `<span style="color:var(--yellow);">${d.word}</span><sub style="color:var(--muted);font-size:9px;"> (thừa)</sub>`;
   }).join(' ');
 
-  const resultEl = document.getElementById('dict-result');
+  const resultEl = document.getElementById('dictation-result');
   resultEl.style.display = 'block';
   resultEl.innerHTML = `
     <div style="font-size:18px;font-weight:700;color:${color};margin-bottom:8px;">${pct}% — ${label}</div>
@@ -229,7 +229,7 @@ export function checkDictation(){
     <div style="font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;">Câu đúng: <span style="color:var(--text);">${item.sentence}</span></div>
   `;
 
-  document.getElementById('dict-input').disabled = true;
+  document.getElementById('dictation-input').disabled = true;
   document.getElementById('dict-check-btn').style.display = 'none';
   document.getElementById('dict-next-btn').style.display = '';
   dictChecked = true;
