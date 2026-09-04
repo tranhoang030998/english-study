@@ -722,7 +722,11 @@ export function retryCorrect(){
   document.querySelectorAll('[id$="-panel"]').forEach(el=>el.style.display='none');
   document.getElementById('practice-panel').style.display='';
   document.getElementById('flashcard-subnav').style.display='flex';
-  deck=correctCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||correctCards[0],cardMode:h.cardMode}));
+  deck=correctCards.map(h=>{
+    const found = ALL_WORDS.find(w=>w.en===h.en) || myWords.find(w=>w.en===h.en);
+    if(found) return {...found, cardMode:h.cardMode};
+    return {en:h.en, vn:h.vn, topic:h.topic||'Từ riêng', pos:'', en_alt:[], vn_alt:[], ex:'', cardMode:h.cardMode};
+  });
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];
   updateStats();renderCard();
@@ -739,7 +743,16 @@ export function retryWrong(){
   document.getElementById('rank-panel').style.display='none';
   document.getElementById('admin-panel').style.display='none';
   document.getElementById('score-panel').style.display='none';
-  deck=wrongCards.map(h=>({...ALL_WORDS.find(w=>w.en===h.en)||wrongCards[0],cardMode:h.cardMode}));
+  deck=wrongCards.map(h=>{
+    // Tìm từ trong cả 600 từ TOEIC gốc LẪN "Từ riêng" (trước đây chỉ tìm trong
+    // ALL_WORDS, nên từ riêng luôn tìm không ra và bị lỡ tay thay bằng từ sai
+    // đầu tiên trong danh sách — gây lặp y hệt 1 từ cho mọi thẻ).
+    const found = ALL_WORDS.find(w=>w.en===h.en) || myWords.find(w=>w.en===h.en);
+    if(found) return {...found, cardMode:h.cardMode};
+    // Không tìm thấy ở đâu cả (vd: từ riêng đã bị xóa sau khi làm bài) —
+    // vẫn dựng lại đúng thẻ từ dữ liệu đã lưu trong lịch sử, không dùng từ khác thay thế.
+    return {en:h.en, vn:h.vn, topic:h.topic||'Từ riêng', pos:'', en_alt:[], vn_alt:[], ex:'', cardMode:h.cardMode};
+  });
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   idx=0;correctCount=0;wrongCount=0;skipCount=0;history=[];savedCorrect=0;savedWrong=0;bestComboSession=0;resetCombo();wrongStreak=0;
   updateStats();renderCard();
