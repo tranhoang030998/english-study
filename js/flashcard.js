@@ -1418,6 +1418,7 @@ export function renderMyWords(){
     }
     return `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;">
+      <input type="checkbox" class="mw-select-cb" data-id="${w.id}" style="flex-shrink:0;">
       <div style="flex:1;">
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;">${w.en}
           <button data-word="${w.en}" onclick="dictSpeak(this.dataset.word)" style="background:none;border:none;cursor:pointer;font-size:14px;margin-left:4px;">🔊</button>
@@ -1467,15 +1468,29 @@ export async function saveMyWordEdit(id){
 window.saveMyWordEdit = saveMyWordEdit;
 
 // ── Xuất / Nhập từ riêng (chia sẻ giữa các học viên) ────────────────
+export function toggleAllMyWordsSelect(checked){
+  document.querySelectorAll('.mw-select-cb').forEach(cb=>{ cb.checked = checked; });
+}
+window.toggleAllMyWordsSelect = toggleAllMyWordsSelect;
+
 export function exportMyWords(){
   const msgEl = document.getElementById('mw-msg');
   if(!myWords.length){
     if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Chưa có từ nào để xuất.'; }
     return;
   }
+  const selectedIds = new Set(
+    Array.from(document.querySelectorAll('.mw-select-cb:checked')).map(cb=>cb.dataset.id)
+  );
+  // Có tick chọn từ nào thì chỉ xuất đúng những từ đó, không chọn gì thì xuất hết như cũ.
+  const wordsToExport = selectedIds.size>0 ? myWords.filter(w=>selectedIds.has(w.id)) : myWords;
+  if(!wordsToExport.length){
+    if(msgEl){ msgEl.style.color='var(--yellow)'; msgEl.textContent='Không có từ nào để xuất.'; }
+    return;
+  }
   const payload = {
     app: 'TOEIC KING', type: 'my-words', exportedBy: currentUser?.displayName || '',
-    words: myWords.map(w=>({en:w.en, vn:w.vn, ex:w.ex||''}))
+    words: wordsToExport.map(w=>({en:w.en, vn:w.vn, ex:w.ex||''}))
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
@@ -1487,6 +1502,11 @@ export function exportMyWords(){
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  if(msgEl){
+    msgEl.style.color='var(--green)';
+    msgEl.textContent = selectedIds.size>0 ? `✓ Đã xuất ${wordsToExport.length} từ đã chọn.` : `✓ Đã xuất tất cả ${wordsToExport.length} từ.`;
+    setTimeout(()=>{ msgEl.textContent=''; }, 3000);
+  }
 }
 window.exportMyWords = exportMyWords;
 
