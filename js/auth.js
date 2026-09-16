@@ -1,6 +1,6 @@
 import { db } from './firebase-config.js';
 import { doc, getDoc, updateDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { vnDateFromMs } from './utils.js';
+import { vnDateFromMs, showConfirm } from './utils.js';
 import { buildTopicChips, restart, loadBookmarks, loadMyWords, history, setHistory } from './flashcard.js';
 import { ALL_PANELS, currentTop, setCurrentTop } from './app.js';
 
@@ -52,6 +52,7 @@ export async function updateStreak(username) {
   const lastDay   = data.lastStudyDay || '';
 
   let streak = data.streak || 0;
+  const updates = {};
   if(lastDay === today){
     // Already counted today — no change
   } else if(lastDay === yesterday){
@@ -62,11 +63,51 @@ export async function updateStreak(username) {
     // Tự sửa lại lastStudyDay về hôm nay, KHÔNG đổi số streak,
     // để không bị kẹt mãi và không bị mất streak đang có.
   } else {
-    streak = 1;   // Missed a day — reset
+    // Bỏ lỡ 1 ngày — streak bị reset. Nếu streak cũ đủ lớn để tiếc và học viên
+    // còn lượt khôi phục (tối đa 3 lần/tài khoản), lưu lại số cũ để họ có thể
+    // tự khôi phục sau (xem restoreStreak()).
+    const restoresUsed = data.streakRestoresUsed || 0;
+    if(streak > 1 && restoresUsed < 3){
+      updates.streakRestoreAvailable = streak;
+    }
+    streak = 1;
   }
-  await updateDoc(ref, { streak, lastStudyDay: today });
+  await updateDoc(ref, { streak, lastStudyDay: today, ...updates });
   return streak;
 }
+
+export async function restoreStreak(){
+  if(!currentUser) return;
+  const ref = doc(db,'users',currentUser.username);
+  const snap = await getDoc(ref);
+  if(!snap.exists()) return;
+  const data = snap.data();
+  const available = data.streakRestoreAvailable || 0;
+  const usedCount  = data.streakRestoresUsed || 0;
+  if(available <= 0 || usedCount >= 3) return;
+
+  showConfirm(
+    'Khôi phục streak',
+    `Khôi phục streak về ${available} ngày? Bạn còn ${3-usedCount}/3 lượt khôi phục (dùng 1 lượt lần này).`,
+    async ()=>{
+      // Lấy giờ THẬT của server (không dùng đồng hồ thiết bị) để tránh lặp lại
+      // đúng bug lệch giờ đã từng gây streak bị reset/kẹt trước đây.
+      await updateDoc(ref, { _tsProbe: serverTimestamp() });
+      const tsSnap = await getDoc(ref);
+      const serverMs = tsSnap.data()._tsProbe?.toMillis ? tsSnap.data()._tsProbe.toMillis() : Date.now();
+      const today = vnDateFromMs(serverMs, 0);
+
+      await updateDoc(ref, {
+        streak: available,
+        lastStudyDay: today,
+        streakRestoreAvailable: 0,
+        streakRestoresUsed: usedCount + 1,
+      });
+      loadUserStreak();
+    }
+  );
+}
+window.restoreStreak = restoreStreak;
 
 export function doLogout() {
   saveLastSessionLocal(); // Sync save to localStorage before logout
@@ -112,8 +153,21 @@ export function showApp() {
 export async function loadUserStreak() {
   const ref  = doc(db, 'users', currentUser.username);
   const snap = await getDoc(ref);
-  const streak = snap.data()?.streak || 0;
+  const data = snap.data() || {};
+  const streak = data.streak || 0;
   document.getElementById('streak-display').textContent = streak > 0 ? `🔥${streak}` : '';
+
+  const restoreBtn = document.getElementById('streak-restore-btn');
+  if(restoreBtn){
+    const available = data.streakRestoreAvailable || 0;
+    const usedCount  = data.streakRestoresUsed || 0;
+    if(available > 0 && usedCount < 3){
+      restoreBtn.style.display = 'inline-flex';
+      restoreBtn.title = `Khôi phục streak về ${available} (còn ${3-usedCount}/3 lượt)`;
+    } else {
+      restoreBtn.style.display = 'none';
+    }
+  }
 }
 
 // Auto-login
