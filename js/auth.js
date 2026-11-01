@@ -64,16 +64,23 @@ export async function updateStreak(username) {
     // để không bị kẹt mãi và không bị mất streak đang có.
   } else {
     // Bỏ lỡ 1 ngày — streak bị reset. Nếu streak cũ đủ lớn để tiếc và học viên
-    // còn lượt khôi phục (tối đa 3 lần/tài khoản), lưu lại số cũ để họ có thể
+    // còn lượt khôi phục (tối đa 2 lần/tháng), lưu lại số cũ để họ có thể
     // tự khôi phục sau (xem restoreStreak()).
-    const restoresUsed = data.streakRestoresUsed || 0;
-    if(streak > 1 && restoresUsed < 3){
+    const restoresUsed = restoresUsedInMonth(data, today.slice(0,7));
+    if(streak > 1 && restoresUsed < MAX_RESTORES_PER_MONTH){
       updates.streakRestoreAvailable = streak;
     }
     streak = 1;
   }
   await updateDoc(ref, { streak, lastStudyDay: today, ...updates });
   return streak;
+}
+
+// Giới hạn khôi phục: 2 lượt / tháng (tính theo tháng lịch UTC+7).
+// Lượt đã dùng chỉ tính nếu streakRestoreMonth trùng tháng hiện tại; sang tháng mới tự về 0.
+const MAX_RESTORES_PER_MONTH = 2;
+function restoresUsedInMonth(data, month){
+  return data.streakRestoreMonth === month ? (data.streakRestoresUsed || 0) : 0;
 }
 
 export async function restoreStreak(){
@@ -83,25 +90,26 @@ export async function restoreStreak(){
   if(!snap.exists()) return;
   const data = snap.data();
   const available = data.streakRestoreAvailable || 0;
-  const usedCount  = data.streakRestoresUsed || 0;
-  if(available <= 0 || usedCount >= 3) return;
+  // Lấy giờ THẬT của server (không dùng đồng hồ thiết bị) để tránh lặp lại
+  // đúng bug lệch giờ đã từng gây streak bị reset/kẹt trước đây.
+  await updateDoc(ref, { _tsProbe: serverTimestamp() });
+  const tsSnap = await getDoc(ref);
+  const serverMs = tsSnap.data()._tsProbe?.toMillis ? tsSnap.data()._tsProbe.toMillis() : Date.now();
+  const today = vnDateFromMs(serverMs, 0);
+  const month = today.slice(0,7);
+  const usedCount = restoresUsedInMonth(data, month);
+  if(available <= 0 || usedCount >= MAX_RESTORES_PER_MONTH) return;
 
   showConfirm(
     'Khôi phục streak',
-    `Khôi phục streak về ${available} ngày? Bạn còn ${3-usedCount}/3 lượt khôi phục (dùng 1 lượt lần này).`,
+    `Khôi phục streak về ${available} ngày? Tháng này bạn còn ${MAX_RESTORES_PER_MONTH-usedCount}/${MAX_RESTORES_PER_MONTH} lượt khôi phục (dùng 1 lượt lần này).`,
     async ()=>{
-      // Lấy giờ THẬT của server (không dùng đồng hồ thiết bị) để tránh lặp lại
-      // đúng bug lệch giờ đã từng gây streak bị reset/kẹt trước đây.
-      await updateDoc(ref, { _tsProbe: serverTimestamp() });
-      const tsSnap = await getDoc(ref);
-      const serverMs = tsSnap.data()._tsProbe?.toMillis ? tsSnap.data()._tsProbe.toMillis() : Date.now();
-      const today = vnDateFromMs(serverMs, 0);
-
       await updateDoc(ref, {
         streak: available,
         lastStudyDay: today,
         streakRestoreAvailable: 0,
         streakRestoresUsed: usedCount + 1,
+        streakRestoreMonth: month,
       });
       loadUserStreak();
     }
@@ -160,10 +168,10 @@ export async function loadUserStreak() {
   const restoreBtn = document.getElementById('streak-restore-btn');
   if(restoreBtn){
     const available = data.streakRestoreAvailable || 0;
-    const usedCount  = data.streakRestoresUsed || 0;
-    if(available > 0 && usedCount < 3){
+    const usedCount  = restoresUsedInMonth(data, vnDateFromMs(Date.now(), 0).slice(0,7));
+    if(available > 0 && usedCount < MAX_RESTORES_PER_MONTH){
       restoreBtn.style.display = 'inline-flex';
-      restoreBtn.title = `Khôi phục streak về ${available} (còn ${3-usedCount}/3 lượt)`;
+      restoreBtn.title = `Khôi phục streak về ${available} (tháng này còn ${MAX_RESTORES_PER_MONTH-usedCount}/${MAX_RESTORES_PER_MONTH} lượt)`;
     } else {
       restoreBtn.style.display = 'none';
     }
